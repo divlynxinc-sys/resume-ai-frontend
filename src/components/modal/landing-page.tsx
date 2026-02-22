@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ArrowRight, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link, Gauge } from "lucide-react";
+import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ArrowRight, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
+import { AppButtonLink } from "@/components/ui/AppButton";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import { PricingSection } from "./pricing";
@@ -35,19 +36,15 @@ function Hero() {
             in minutes. Stand out from the competition and land your dream job.
           </p>
           <div className="mt-6 flex items-center justify-center gap-4">
-            <a
-              href="#signup"
-              className="group rounded-xl bg-white px-5 py-2.5 text-[#0b1220] text-sm font-medium inline-flex items-center gap-2 shadow-[0_12px_40px_rgba(2,6,23,0.35)] hover:bg-white/95">
+            <AppButtonLink to="/signup" variant="primary" size="lg" className="group shadow-[0_8px_24px_rgba(37,99,235,0.35)]">
               <Sparkles className="size-4" />
               Start Free Today
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </a>
-            <a
-              href="#templates"
-              className="h-11 px-5 rounded-xl bg-white/6 border border-white/12 text-white text-sm inline-flex items-center gap-2">
+            </AppButtonLink>
+            <AppButtonLink to="/templates" variant="secondary" size="lg">
               <LayoutGrid className="size-4" />
               Browse Templates
-            </a>
+            </AppButtonLink>
           </div>
         </div>
       </div>
@@ -154,7 +151,7 @@ function Testimonial({
         </div>
         <Quote className={`ml-auto size-4 opacity-50 ${styles.icon.split(" ")[0]}`} />
       </div>
-      <p className="mt-3 text-sm text-white/70">“{quote}”</p>
+      <p className="mt-3 text-sm text-white/70">"{quote}"</p>
     </div>
   );
 }
@@ -174,7 +171,7 @@ export default function LandingPageScreen() {
   }, []);
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <Hero />
 
@@ -200,7 +197,7 @@ export default function LandingPageScreen() {
           <FeatureCard icon={<BarChart3 className="size-5" />} title="Impact Metrics" desc="Quantified outcomes (growth %, savings, speed gains) that prove results." color="orange" />
           <FeatureCard icon={<UserCheck className="size-5" />} title="Core Skills & Tools" desc="Evidence of the exact skills, frameworks, and tools recruiters expect." color="teal" />
           <FeatureCard icon={<BadgeCheck className="size-5" />} title="Consistency & Integrity" desc="No contradictions, duplicates, or exaggerated claims; polished wording." color="pink" />
-          <FeatureCard icon={<Link className="size-5" />} title="Links & Contact Hygiene" desc="Functional links, professional email, and complete profile details." color="indigo" />
+          <FeatureCard icon={<LinkIcon className="size-5" />} title="Links & Contact Hygiene" desc="Functional links, professional email, and complete profile details." color="indigo" />
         </div>
 
         <div className="mt-12">

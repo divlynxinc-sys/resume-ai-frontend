@@ -30,7 +30,7 @@ function CTABanner() {
 
 export default function SecurityScreen() {
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
 
       <section className="mx-auto max-w-6xl px-4 pt-12">

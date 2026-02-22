@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppButton } from "@/components/ui/AppButton";
 import { createPortal } from "react-dom";
 import {
   Home,
@@ -21,28 +23,32 @@ import {
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { dashboardService } from "@/services";
 
 export function Sidebar({ activeRoute }: { activeRoute?: string }) {
-  const current = (activeRoute ?? (typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "dashboard")) || "dashboard";
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const current = (activeRoute ?? (typeof window !== "undefined" ? window.location.pathname.replace(/^\//, "") : "dashboard")) || "dashboard";
   // Sidebar rotating tips
   const tips: { title: string; icon: ReactNode; points: string[]; link?: string }[] = [
     {
       title: "ATS Tips",
       icon: <FileText className="size-4" />,
       points: ["Use job keywords", "Keep layout simple", "Avoid images and tables"],
-      link: "#tailoring",
+      link: "/tailoring",
     },
     {
       title: "AI Chat",
       icon: <MessagesSquare className="size-4" />,
       points: ["Ask for better wording", "Generate bullet points", "Iterate quickly in chat"],
-      link: "#ai-chat",
+      link: "/ai-chat",
     },
     {
       title: "Resume Builder",
       icon: <Wand2 className="size-4" />,
       points: ["Start from a template", "Fill core sections", "Export or share"],
-      link: "#resumes",
+      link: "/resumes",
     },
   ];
   const [tipIndex, setTipIndex] = useState(0);
@@ -51,25 +57,30 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const doLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <aside className="w-64 shrink-0 border-r border-white/10 bg-[#0b1220] text-white/90">
+    <aside className="w-64 shrink-0 border-r border-white/10 bg-[var(--app-bg)] text-white/90">
       {showLogoutModal && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
           <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1629] p-6 shadow-2xl transform transition-all">
             <h3 className="text-lg font-semibold text-white">Log out?</h3>
             <p className="mt-2 text-sm text-white/70">Are you sure you want to log out of your account?</p>
             <div className="mt-6 flex justify-end gap-3">
-              <button 
-                onClick={() => setShowLogoutModal(false)} 
+              <button
+                onClick={() => setShowLogoutModal(false)}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => {
-                  window.location.hash = "#home";
+                  doLogout();
                   setShowLogoutModal(false);
-                }} 
+                }}
                 className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors"
               >
                 Log out
@@ -88,7 +99,7 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
         <NavItem icon={<Crown className="size-4 text-yellow-400" />} label="Explore Pro Plans" route="pricing" active={current === "pricing"} />
         <NavItem icon={<Settings className="size-4 text-slate-400" />} label="Settings" route="account" active={current === "account"} />
         <NavItem icon={<HelpCircle className="size-4 text-teal-400" />} label="Help Center" route="help-center" active={current === "help-center"} />
-        <NavItem icon={<LogOut className="size-4 text-red-400" />} label="Logout" route="home" onClick={() => setShowLogoutModal(true)} />
+        <NavItem icon={<LogOut className="size-4 text-red-400" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} />
       </nav>
       <div className="mt-2 h-px bg-white/10 mx-3" />
       <div className="mt-auto px-3 py-4 space-y-3">
@@ -97,13 +108,13 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
             <div className="mb-2 px-1 flex items-center justify-between">
                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Quick Guide</span>
             </div>
-            
+
             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]">
               <div className="flex items-center gap-2 mb-2">
                 <div className="text-white/60 scale-75">{currentTip.icon}</div>
                 <div className="text-xs font-medium text-white/80">{currentTip.title}</div>
               </div>
-              
+
               <ul className="space-y-2 pl-1">
                 {currentTip.points.map((p) => (
                   <li key={p} className="text-[11px] text-white/60 flex items-start gap-2">
@@ -114,8 +125,8 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
               </ul>
 
               <div className="mt-3 flex items-center justify-end">
-                <button 
-                  onClick={nextTip} 
+                <button
+                  onClick={nextTip}
                   className="flex items-center gap-1 text-[10px] text-white/40 hover:text-white transition-colors"
                 >
                   Next <ChevronRight className="size-2.5" />
@@ -131,9 +142,10 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
 }
 
 function NavItem({ icon, label, route, active = false, onClick }: { icon: ReactNode; label: string; route: string; active?: boolean; onClick?: () => void }) {
+  const navigate = useNavigate();
   return (
     <button
-      onClick={onClick ? onClick : () => (window.location.hash = `#${route}`)}
+      onClick={onClick ? onClick : () => navigate(`/${route}`)}
       className={
         "w-full text-left flex items-center gap-3 rounded-xl px-4 py-2 text-sm cursor-pointer transition-colors " +
         (active ? "bg-white/5 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")
@@ -147,30 +159,43 @@ function NavItem({ icon, label, route, active = false, onClick }: { icon: ReactN
 
 
 function HeroCard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const displayName = user?.name ?? user?.email ?? "there";
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-white">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Welcome back, Alex!</h2>
-          <p className="text-white/60 mt-1">Ready to land your dream job? Let’s get started.</p>
+          <h2 className="text-2xl font-bold">Welcome back, {displayName}!</h2>
+          <p className="text-white/60 mt-1">Ready to land your dream job? Let's get started.</p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-600/20 px-5 py-2.5 text-white backdrop-blur-sm transition-all hover:bg-blue-600/30 hover:shadow-lg hover:shadow-blue-500/20" onClick={() => (window.location.hash = "#resumes")}> 
+        <AppButton variant="primary" size="lg" onClick={() => navigate("/resumes")}>
           <Plus className="size-4" />
           Create New Resume
-        </button>
+        </AppButton>
       </div>
     </section>
   );
 }
 
 function RecentActivity() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
 
-  const activities = [
-    { name: "Software Engineer Resume", date: "2023-11-15" },
-    { name: "Product Manager Resume", date: "2023-10-20" },
-    { name: "Marketing Specialist Resume", date: "2023-09-05" },
-  ];
+  useEffect(() => {
+    dashboardService.getRecentActivity(10)
+      .then((data) =>
+        setActivities(
+          data.map((item) => ({
+            id: item.id,
+            name: item.title,
+            date: new Date(item.updated_at).toLocaleDateString(),
+          }))
+        )
+      )
+      .catch(() => {});
+  }, []);
 
   const filteredActivities = activities.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -202,7 +227,7 @@ function RecentActivity() {
         {filteredActivities.length > 0 ? (
           filteredActivities.map((row, i) => (
             <div
-              key={row.name}
+              key={row.id}
               className={
                 "grid grid-cols-[1fr_160px_160px] items-center px-6 py-3 text-white " +
                 (i % 2 === 0 ? "bg-white/[0.02]" : "")
@@ -214,14 +239,14 @@ function RecentActivity() {
                 <button
                   className="hover:text-white"
                   title="Edit"
-                  onClick={() => (window.location.hash = "#resumes")}
+                  onClick={() => navigate("/resumes")}
                 >
                   <Edit2 className="size-4" />
                 </button>
                 <button
                   className="hover:text-white"
                   title="Download"
-                  onClick={() => (window.location.hash = "#resumes")}
+                  onClick={() => navigate("/resumes")}
                 >
                   <Download className="size-4" />
                 </button>
@@ -261,8 +286,16 @@ function CreditsGuidelineNote({ onClose }: { onClose: () => void }) {
 
 export default function DashboardModal() {
   const [showCreditsTip, setShowCreditsTip] = useState(true);
+  const [_summary, setSummary] = useState<any>(null);
+
+  useEffect(() => {
+    dashboardService.getSummary()
+      .then((data: any) => setSummary(data))
+      .catch(() => {/* summary is optional, fail silently */});
+  }, []);
+
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="dashboard" mainClassName="space-y-6">
           {showCreditsTip && (

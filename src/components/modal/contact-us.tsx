@@ -33,7 +33,7 @@ function IconButton({ children }: { children: ReactNode }) {
 
 export default function ContactUsModal() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <main className="max-w-5xl mx-auto px-4 py-16">
         <h1 className="text-4xl font-semibold text-center">Get in Touch with Us</h1>
         <p className="text-white/60 text-center mt-2">

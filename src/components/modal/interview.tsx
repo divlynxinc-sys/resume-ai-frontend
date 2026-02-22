@@ -77,7 +77,7 @@ function Hero() {
 
 export default function InterviewScreen() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="interview" mainClassName="mx-auto max-w-[1100px] pb-16">
         <Hero />

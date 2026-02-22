@@ -82,7 +82,7 @@ function LineChart() {
 
 export default function AdvancedAnalyticsModal() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <main className="max-w-[1100px] mx-auto px-6 py-10">
         <h1 className="text-2xl sm:text-3xl font-semibold">Resume Analytics</h1>

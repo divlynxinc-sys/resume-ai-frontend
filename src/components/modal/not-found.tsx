@@ -22,7 +22,7 @@ function ArtBoard() {
 
 export default function NotFound() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <main className="px-4">
         <div className="mt-6">

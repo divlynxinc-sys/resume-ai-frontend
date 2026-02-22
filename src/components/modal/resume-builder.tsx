@@ -1,8 +1,11 @@
 import type { ReactNode, ChangeEvent } from "react";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Wand2, AlertCircle, CheckCircle2 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { resumeService } from "@/services";
+import type { ResumeContent } from "@/services/resume";
 
 
 function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: 'preview' | 'ats') => void }) {
@@ -25,7 +28,7 @@ function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: '
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Magic Builder</h1>
         <p className="text-white/60 mt-2">Build your resume in minutes with our AI-powered tools.</p>
       </div>
-      
+
       <div className="flex items-center gap-2 bg-[#0f162a] p-1.5 rounded-xl border border-white/10 self-start md:self-center">
         <SwitchButton active={mode === 'preview'} onClick={() => setMode('preview')}>Resume Preview</SwitchButton>
         <SwitchButton active={mode === 'ats'} onClick={() => setMode('ats')}>ATS Score</SwitchButton>
@@ -34,7 +37,6 @@ function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: '
   );
 }
 
-// Added: Tab and resume data types
 type TabKey = "personal" | "experience" | "education" | "skills" | "summary" | "job" | "custom";
 
 interface Experience {
@@ -94,6 +96,112 @@ const emptyResume: ResumeData = {
   customSections: [],
 };
 
+/** Map API ResumeContent → local ResumeData */
+function mapContentToLocal(content: ResumeContent): ResumeData {
+  const info = (content.info ?? {}) as Record<string, string>;
+  const experiences = (content.experience ?? []) as Record<string, string>[];
+  const education = (content.education ?? []) as Record<string, string>[];
+  const skills = (content.skills ?? []) as string[];
+  const summary = typeof content.summary === "string" ? content.summary : "";
+  const job = (content.job_description ?? {}) as Record<string, string>;
+
+  return {
+    name: info.full_name ?? "",
+    email: info.email ?? "",
+    phone: info.phone ?? "",
+    location: info.location ?? "",
+    linkedin: info.linkedin_url ?? "",
+    portfolio: info.portfolio_url ?? "",
+    experiences: experiences.length > 0
+      ? experiences.map((e) => ({
+          role: e.role ?? "",
+          company: e.company ?? "",
+          location: e.location ?? "",
+          startDate: e.start_date ?? "",
+          endDate: e.end_date ?? "",
+          bullets: e.description ? e.description.split("\n").filter(Boolean) : [],
+        }))
+      : emptyResume.experiences,
+    education: education.length > 0
+      ? education.map((e) => ({
+          school: e.school ?? "",
+          degree: e.degree ?? "",
+          field: e.field_of_study ?? "",
+          startDate: e.start_date ?? "",
+          endDate: e.end_date ?? "",
+          location: e.location ?? "",
+        }))
+      : emptyResume.education,
+    skills,
+    summary,
+    job: {
+      title: job.job_title ?? "",
+      company: job.company ?? "",
+      location: job.location ?? "",
+      description: job.description ?? "",
+    },
+    customSections: [],
+  };
+}
+
+/** Map local ResumeData section → API payload */
+function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; body: unknown } | null {
+  switch (tab) {
+    case "personal":
+      return {
+        section: "info",
+        body: {
+          full_name: resume.name,
+          email: resume.email,
+          phone: resume.phone,
+          location: resume.location,
+          linkedin_url: resume.linkedin,
+          portfolio_url: resume.portfolio,
+        },
+      };
+    case "experience":
+      return {
+        section: "experience",
+        body: resume.experiences.map((e) => ({
+          role: e.role,
+          company: e.company,
+          start_date: e.startDate ?? "",
+          end_date: e.endDate ?? "",
+          location: e.location ?? "",
+          description: e.bullets.join("\n"),
+        })),
+      };
+    case "education":
+      return {
+        section: "education",
+        body: resume.education.map((e) => ({
+          school: e.school,
+          degree: e.degree ?? "",
+          start_date: e.startDate ?? "",
+          end_date: e.endDate ?? "",
+          location: e.location ?? "",
+          field_of_study: e.field ?? "",
+        })),
+      };
+    case "skills":
+      return { section: "skills", body: resume.skills };
+    case "summary":
+      return { section: "summary", body: resume.summary };
+    case "job":
+      return {
+        section: "job_description",
+        body: {
+          job_title: resume.job.title,
+          company: resume.job.company,
+          description: resume.job.description,
+          location: resume.job.location ?? "",
+        },
+      };
+    default:
+      return null;
+  }
+}
+
 function Tabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
   const items: { key: TabKey; label: string }[] = [
     { key: "personal", label: "Personal Info" },
@@ -130,7 +238,6 @@ function Label({ children }: { children: ReactNode }) {
   return <div className="text-xs text-white/60 mb-2">{children}</div>;
 }
 
-// Updated: TextInput now controlled
 function TextInput({ placeholder = "", value, onChange, type = "text" }: { placeholder?: string; value?: string; onChange?: (v: string) => void; type?: string }) {
   return (
     <input
@@ -143,7 +250,6 @@ function TextInput({ placeholder = "", value, onChange, type = "text" }: { place
   );
 }
 
-// Added: TextArea component
 function TextArea({ placeholder = "", value, onChange, rows = 4 }: { placeholder?: string; value?: string; onChange?: (v: string) => void; rows?: number }) {
   return (
     <textarea
@@ -156,34 +262,33 @@ function TextArea({ placeholder = "", value, onChange, rows = 4 }: { placeholder
   );
 }
 
-// Forms per section
 function PersonalInfoForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
   return (
     <div className="rounded-xl border border-white/10 p-4 bg-white/[0.04]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label>Full Name</Label>
-          <TextInput value={resume.name} onChange={(v) => setResume({ ...resume, name: v })} placeholder="" />
+          <TextInput value={resume.name} onChange={(v) => setResume({ ...resume, name: v })} />
         </div>
         <div>
           <Label>Email</Label>
-          <TextInput value={resume.email} onChange={(v) => setResume({ ...resume, email: v })} placeholder="" />
+          <TextInput value={resume.email} onChange={(v) => setResume({ ...resume, email: v })} />
         </div>
         <div>
           <Label>Phone</Label>
-          <TextInput value={resume.phone} onChange={(v) => setResume({ ...resume, phone: v })} placeholder="" />
+          <TextInput value={resume.phone} onChange={(v) => setResume({ ...resume, phone: v })} />
         </div>
         <div>
           <Label>Location</Label>
-          <TextInput value={resume.location} onChange={(v) => setResume({ ...resume, location: v })} placeholder="" />
+          <TextInput value={resume.location} onChange={(v) => setResume({ ...resume, location: v })} />
         </div>
         <div className="md:col-span-2">
           <Label>LinkedIn Profile URL</Label>
-          <TextInput value={resume.linkedin} onChange={(v) => setResume({ ...resume, linkedin: v })} placeholder="" />
+          <TextInput value={resume.linkedin} onChange={(v) => setResume({ ...resume, linkedin: v })} />
         </div>
         <div className="md:col-span-2">
           <Label>Portfolio URL</Label>
-          <TextInput value={resume.portfolio} onChange={(v) => setResume({ ...resume, portfolio: v })} placeholder="" />
+          <TextInput value={resume.portfolio} onChange={(v) => setResume({ ...resume, portfolio: v })} />
         </div>
       </div>
     </div>
@@ -195,9 +300,6 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
     const list = [...resume.experiences];
     list[idx] = { ...list[idx], ...patch };
     setResume({ ...resume, experiences: list });
-  };
-  const updateBulletText = (idx: number, text: string) => {
-    updateExp(idx, { bullets: text.split("\n").map((t) => t.trim()).filter(Boolean) });
   };
   const addExp = () => {
     setResume({
@@ -216,15 +318,15 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Role</Label>
-              <TextInput value={exp.role} onChange={(v) => updateExp(idx, { role: v })} placeholder="" />
+              <TextInput value={exp.role} onChange={(v) => updateExp(idx, { role: v })} />
             </div>
             <div>
               <Label>Company</Label>
-              <TextInput value={exp.company} onChange={(v) => updateExp(idx, { company: v })} placeholder="" />
+              <TextInput value={exp.company} onChange={(v) => updateExp(idx, { company: v })} />
             </div>
             <div>
               <Label>Location</Label>
-              <TextInput value={exp.location ?? ""} onChange={(v) => updateExp(idx, { location: v })} placeholder="" />
+              <TextInput value={exp.location ?? ""} onChange={(v) => updateExp(idx, { location: v })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -238,7 +340,11 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
             </div>
             <div className="md:col-span-2">
               <Label>Highlights (one per line)</Label>
-              <TextArea value={exp.bullets.join("\n")} onChange={(v) => updateBulletText(idx, v)} rows={5} />
+              <TextArea
+                value={exp.bullets.join("\n")}
+                onChange={(v) => updateExp(idx, { bullets: v.split("\n").map((t) => t.trim()).filter(Boolean) })}
+                rows={5}
+              />
             </div>
           </div>
           <div className="mt-3 flex justify-end">
@@ -369,7 +475,7 @@ function JobDescriptionForm({ resume, setResume }: { resume: ResumeData; setResu
       </div>
       <div className="md:col-span-2">
         <Label>Job Description / Key Requirements</Label>
-        <TextArea value={resume.job.description} onChange={(v) => updateJob({ description: v })} rows={8} placeholder="Paste the job description here, including responsibilities and qualifications." />
+        <TextArea value={resume.job.description} onChange={(v) => updateJob({ description: v })} rows={8} placeholder="Paste the job description here." />
       </div>
     </div>
   );
@@ -421,7 +527,7 @@ function AIAssistantCard() {
         <div className="font-semibold">AI Assistant</div>
       </div>
       <p className="text-sm text-white/60 mt-2">Get personalized suggestions and generate content with AI.</p>
-      <a href="#ai-chat" className="mt-4 w-full rounded-lg border border-blue-500/30 bg-transparent px-4 py-2 text-sm text-blue-100 shadow-[0_0_10px_rgba(59,130,246,0.1)] transition-all hover:bg-blue-500/10 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] inline-flex items-center justify-center">Generate with Juno AI</a>
+      <Link to="/ai-chat" className="mt-4 w-full rounded-lg border border-blue-500/30 bg-transparent px-4 py-2 text-sm text-blue-100 shadow-[0_0_10px_rgba(59,130,246,0.1)] transition-all hover:bg-blue-500/10 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] inline-flex items-center justify-center">Generate with Juno AI</Link>
     </div>
   );
 }
@@ -433,9 +539,7 @@ function ResumePreview({ mode }: { mode: 'preview' | 'ats' }) {
 
       {mode === 'preview' ? (
         <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-6 flex items-center justify-center">
-          {/* Beige board background */}
           <div className="w-[280px] h-[380px] rounded-xl bg-[#e9c5a6] shadow-inner flex items-center justify-center">
-            {/* Paper */}
             <div className="w-[220px] h-[320px] bg-white rounded-sm shadow-xl">
               <div className="p-4 space-y-2">
                 <div className="h-3 w-24 bg-black/70" />
@@ -455,69 +559,52 @@ function ResumePreview({ mode }: { mode: 'preview' | 'ats' }) {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-6 relative overflow-hidden group">
-          {/* Background glow */}
+        <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-blue-500/10 blur-[60px] rounded-full pointer-events-none" />
-          
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div>
               <div className="text-sm font-medium text-white/60">Overall ATS Score</div>
-              <div className="text-4xl font-bold mt-2 bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">86/100</div>
+              <div className="text-4xl font-bold mt-2">86/100</div>
               <div className="text-xs text-emerald-400 mt-2 font-medium flex items-center gap-1.5">
                  <CheckCircle2 className="size-3.5" />
                  <span>Excellent Score</span>
               </div>
             </div>
-            
-            {/* Circular Progress */}
             <div className="relative size-24">
                <svg className="size-full -rotate-90">
                  <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                 <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="263.89" strokeDashoffset="36.94" strokeLinecap="round" className="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                 <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="263.89" strokeDashoffset="36.94" strokeLinecap="round" className="text-blue-500" />
                </svg>
                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">86%</div>
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 relative z-10">
             {[
-              { label: "Keyword Match", score: 82, desc: "Matched 41/50 role keywords", color: "bg-emerald-500" },
-              { label: "Formatting & Structure", score: 88, desc: "Consistent headings, bullet points", color: "bg-blue-500" },
-              { label: "Contact Info", score: 95, desc: "Email, phone, LinkedIn present", color: "bg-indigo-500" },
-              { label: "Section Detection", score: 78, desc: "All core sections detected", color: "bg-violet-500" },
-              { label: "Readability", score: 84, desc: "Clear phrasing and action verbs", color: "bg-sky-500" },
-              { label: "ATS Compatibility", score: 89, desc: "Simple layout, parsable text", color: "bg-cyan-500" },
+              { label: "Keyword Match", score: 82, color: "bg-emerald-500" },
+              { label: "Formatting", score: 88, color: "bg-blue-500" },
+              { label: "Contact Info", score: 95, color: "bg-indigo-500" },
+              { label: "Section Detection", score: 78, color: "bg-violet-500" },
             ].map((item) => (
-               <div key={item.label} className="group/item">
+               <div key={item.label}>
                  <div className="flex justify-between text-xs mb-2">
-                   <span className="text-white/90 font-medium group-hover/item:text-blue-400 transition-colors">{item.label}</span>
+                   <span className="text-white/90 font-medium">{item.label}</span>
                    <span className="text-white/60 font-mono">{item.score}%</span>
                  </div>
-                 <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden ring-1 ring-white/5">
-                   <div className={`h-full rounded-full ${item.color} shadow-[0_0_10px_rgba(0,0,0,0.2)] transition-all duration-1000 ease-out`} style={{ width: `${item.score}%` }} />
+                 <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.score}%` }} />
                  </div>
-                 <div className="mt-1.5 text-[11px] text-white/40 leading-relaxed">{item.desc}</div>
                </div>
             ))}
           </div>
-
-          <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
-            <h4 className="text-sm font-semibold text-white/90 mb-4 flex items-center gap-2">
+          <div className="mt-6 pt-4 border-t border-white/10 relative z-10">
+            <h4 className="text-sm font-semibold text-white/90 mb-3 flex items-center gap-2">
               <AlertCircle className="size-4 text-amber-400" />
-              Improvement Suggestions
+              Suggestions
             </h4>
-            <div className="space-y-3">
-              {[
-                "Add keyword “Agile” in Experience section",
-                "Consider a dedicated “Skills” header for better parsing",
-                "Replace images/icons with plain text for ATS",
-                "Use consistent date format (e.g., Jan 2022 – Present)"
-              ].map((tip, i) => (
-                <div key={i} className="flex gap-3 text-xs text-white/70 group/tip hover:text-white/90 transition-colors">
-                  <div className="mt-1 size-1.5 rounded-full bg-amber-500/40 group-hover/tip:bg-amber-400 shrink-0" />
-                  <span className="leading-relaxed">{tip}</span>
-                </div>
-              ))}
+            <div className="space-y-2 text-xs text-white/60">
+              <div>• Add more action verbs to experience bullets</div>
+              <div>• Include a dedicated Skills section</div>
+              <div>• Use consistent date format (e.g., Jan 2022 – Present)</div>
             </div>
           </div>
         </div>
@@ -529,51 +616,90 @@ function ResumePreview({ mode }: { mode: 'preview' | 'ats' }) {
 export default function ResumeBuilderScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
-  const [resume, setResume] = useState<ResumeData>(() => {
-    try {
-      const raw = localStorage.getItem('resumeData');
-      if (!raw) return emptyResume;
-      const data = JSON.parse(raw) as Partial<ResumeData>;
-      return {
-        ...emptyResume,
-        ...data,
-        experiences: data.experiences ?? emptyResume.experiences,
-        education: data.education ?? emptyResume.education,
-        skills: data.skills ?? emptyResume.skills,
-        summary: data.summary ?? emptyResume.summary,
-        job: data.job ?? emptyResume.job,
-        customSections: data.customSections ?? emptyResume.customSections,
-      };
-    } catch {
-      return emptyResume;
-    }
-  });
-  // Entry modals state
+
+  // Always start blank — data is loaded via API only
+  const [resume, setResume] = useState<ResumeData>(emptyResume);
+  const [resumeId, setResumeId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Modal states
   const [startModalOpen, setStartModalOpen] = useState(true);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Persist mid-session edits to localStorage (not on initial load)
+  useEffect(() => {
+    if (resumeId !== null) {
+      try { localStorage.setItem('resumeData', JSON.stringify(resume)); } catch {}
+    }
+  }, [resume, resumeId]);
+
+  /** Start from scratch: create a new blank resume on the backend */
+  const handleStartScratch = async () => {
+    setStartModalOpen(false);
+    setResume(emptyResume);
+    localStorage.removeItem('resumeData');
+    try {
+      const r = await resumeService.create({ title: "New Resume", template_id: null });
+      setResumeId(r.id);
+    } catch {
+      // resume still usable locally even if API fails
+    }
+  };
+
   const onFileSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
-    if (!file) { setUploadError(null); return; }
+    setUploadError(null);
+    if (!file) return;
     const ext = file.name.toLowerCase().split('.').pop();
-    if (ext && (ext === 'pdf' || ext === 'docx')) {
-      setUploadError(null);
-    } else {
+    if (ext !== 'pdf' && ext !== 'docx') {
       setUploadError('Please upload a PDF or DOCX file.');
     }
   };
 
-  useEffect(() => {
-    try { localStorage.setItem('resumeData', JSON.stringify(resume)); } catch {}
-  }, [resume]);
+  /** Build upon existing: upload file → parse → fill form */
+  const handleUploadContinue = async () => {
+    if (!selectedFile || uploadError) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      // fromUpload creates the resume AND returns parsed content in one call
+      const r = await resumeService.fromUpload(selectedFile, "Uploaded Resume");
+      setResumeId(r.id);
+      setResume(mapContentToLocal(r.content));
+      setUploadModalOpen(false);
+      setSelectedFile(null);
+    } catch (err: unknown) {
+      setUploadError((err as Error).message || "Failed to parse resume. Try a different file.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const order: TabKey[] = ['personal', 'experience', 'education', 'skills', 'summary', 'job', 'custom'];
-  const goNext = () => {
+
+  /** Save current section then advance */
+  const goNext = async () => {
+    if (resumeId !== null) {
+      const mapped = localToApiSection(activeTab, resume);
+      if (mapped) {
+        setSaving(true);
+        try {
+          await resumeService.patchContent(resumeId, mapped.section, mapped.body);
+        } catch {
+          // fail silently — data is still in local state
+        } finally {
+          setSaving(false);
+        }
+      }
+    }
     const idx = order.indexOf(activeTab);
     if (idx < order.length - 1) setActiveTab(order[idx + 1]);
   };
+
   const goPrev = () => {
     const idx = order.indexOf(activeTab);
     if (idx > 0) setActiveTab(order[idx - 1]);
@@ -581,27 +707,19 @@ export default function ResumeBuilderScreen() {
 
   const renderForm = () => {
     switch (activeTab) {
-      case 'personal':
-        return <PersonalInfoForm resume={resume} setResume={setResume} />;
-      case 'experience':
-        return <ExperienceForm resume={resume} setResume={setResume} />;
-      case 'education':
-        return <EducationForm resume={resume} setResume={setResume} />;
-      case 'skills':
-        return <SkillsForm resume={resume} setResume={setResume} />;
-      case 'summary':
-        return <SummaryForm resume={resume} setResume={setResume} />;
-      case 'job':
-        return <JobDescriptionForm resume={resume} setResume={setResume} />;
-      case 'custom':
-        return <CustomSectionsForm resume={resume} setResume={setResume} />;
-      default:
-        return null;
+      case 'personal':   return <PersonalInfoForm resume={resume} setResume={setResume} />;
+      case 'experience': return <ExperienceForm resume={resume} setResume={setResume} />;
+      case 'education':  return <EducationForm resume={resume} setResume={setResume} />;
+      case 'skills':     return <SkillsForm resume={resume} setResume={setResume} />;
+      case 'summary':    return <SummaryForm resume={resume} setResume={setResume} />;
+      case 'job':        return <JobDescriptionForm resume={resume} setResume={setResume} />;
+      case 'custom':     return <CustomSectionsForm resume={resume} setResume={setResume} />;
+      default:           return null;
     }
   };
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="my-resumes" mainClassName="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left (main form) */}
@@ -613,13 +731,19 @@ export default function ResumeBuilderScreen() {
             {renderForm()}
           </div>
 
-          <div className="mt-6 flex justify-between">
+          <div className="mt-6 flex justify-between items-center">
             <button className="rounded-lg border border-white/15 px-5 py-2 text-sm text-white/80 hover:bg-white/[0.06]" onClick={goPrev}>Back</button>
-            <button className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white" onClick={goNext}>Save & Next</button>
+            <button
+              className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white disabled:opacity-60"
+              onClick={goNext}
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Save & Next"}
+            </button>
           </div>
         </div>
 
-        {/* Right side: assistant + preview */}
+        {/* Right side */}
         <div className="space-y-8">
           <AIAssistantCard />
           <ResumePreview mode={previewMode} />
@@ -633,10 +757,20 @@ export default function ResumeBuilderScreen() {
             <div className="text-lg font-semibold">How would you like to start?</div>
             <p className="text-white/60 mt-1 text-sm">Choose an option to proceed.</p>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button className="rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-white hover:bg-white/10" onClick={() => setStartModalOpen(false)}>Start from scratch</button>
-              <button className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-4 py-3 text-white hover:brightness-110" onClick={() => { setStartModalOpen(false); setUploadModalOpen(true); }}>Build upon existing</button>
+              <button
+                className="rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-white hover:bg-white/10"
+                onClick={handleStartScratch}
+              >
+                Start from scratch
+              </button>
+              <button
+                className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-4 py-3 text-white hover:brightness-110"
+                onClick={() => { setStartModalOpen(false); setUploadModalOpen(true); }}
+              >
+                Build upon existing
+              </button>
             </div>
-            <button className="mt-4 text-xs text-white/60 hover:text-white" onClick={() => setStartModalOpen(false)}>Skip</button>
+            <button className="mt-4 text-xs text-white/60 hover:text-white" onClick={handleStartScratch}>Skip</button>
           </div>
         </div>
       )}
@@ -646,15 +780,36 @@ export default function ResumeBuilderScreen() {
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
           <div role="dialog" aria-modal="true" className="w-[560px] max-w-[92vw] rounded-2xl bg-[#0f162a] border border-white/12 p-6">
             <div className="text-lg font-semibold">Upload your resume</div>
-            <p className="text-white/60 mt-1 text-sm">We support PDF and DOCX formats.</p>
+            <p className="text-white/60 mt-1 text-sm">We support PDF and DOCX formats. Your data will be extracted automatically.</p>
             <div className="mt-4 rounded-xl bg-white/[0.03] border border-white/10 p-4">
-              <input type="file" accept=".pdf,.docx" onChange={onFileSelected} className="w-full text-sm file:mr-3 file:rounded-md file:bg-white/10 file:text-white file:px-3 file:py-2 file:border file:border-white/20" />
+              <input
+                type="file"
+                accept=".pdf,.docx"
+                onChange={onFileSelected}
+                className="w-full text-sm file:mr-3 file:rounded-md file:bg-white/10 file:text-white file:px-3 file:py-2 file:border file:border-white/20"
+              />
               {uploadError && <div className="mt-2 text-xs text-red-400">{uploadError}</div>}
               {selectedFile && !uploadError && <div className="mt-2 text-xs text-white/70">Selected: {selectedFile.name}</div>}
             </div>
             <div className="mt-4 flex justify-end gap-3">
-              <button className="rounded-lg px-4 py-2 text-sm bg-white/6 border border-white/12 text-white/80 hover:text-white" onClick={() => { setUploadModalOpen(false); setSelectedFile(null); setUploadError(null); }}>Cancel</button>
-              <button disabled={!selectedFile || !!uploadError} className="rounded-lg px-4 py-2 text-sm bg-[oklch(0.488_0.243_264.376)] text-white disabled:opacity-50" onClick={() => { setUploadModalOpen(false); }}>Continue</button>
+              <button
+                className="rounded-lg px-4 py-2 text-sm bg-white/6 border border-white/12 text-white/80 hover:text-white"
+                onClick={() => { setUploadModalOpen(false); setSelectedFile(null); setUploadError(null); handleStartScratch(); }}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!selectedFile || !!uploadError || uploading}
+                className="rounded-lg px-4 py-2 text-sm bg-[oklch(0.488_0.243_264.376)] text-white disabled:opacity-50 min-w-[90px]"
+                onClick={handleUploadContinue}
+              >
+                {uploading ? (
+                  <span className="flex items-center gap-2 justify-center">
+                    <span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Parsing…
+                  </span>
+                ) : "Continue"}
+              </button>
             </div>
           </div>
         </div>

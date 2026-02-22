@@ -49,7 +49,7 @@ function Footer() {
 
 export default function TestimonialsScreen() {
   return (
-    <div className="min-h-screen bg-[#0b1220] text-white">
+    <div className="min-h-screen bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <main className="mx-auto max-w-7xl px-6">
         <section className="pt-10 text-center">

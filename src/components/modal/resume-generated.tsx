@@ -21,7 +21,7 @@ function Halo() {
 
 export default function ResumeGeneratedScreen() {
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white flex items-center justify-center px-4">
       <div className="relative w-full max-w-xl">
         {/* card glow */}
         <div className="absolute -inset-6 rounded-[32px] bg-blue-600/10 blur-2xl" aria-hidden />

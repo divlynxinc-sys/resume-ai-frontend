@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 
@@ -66,7 +67,7 @@ export default function PaymentSuccessScreen() {
   const isPro = title.toLowerCase() === "pro";
 
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
@@ -78,7 +79,7 @@ export default function PaymentSuccessScreen() {
           <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">You're all set!</h1>
           <p className="mt-2 text-white/70">Thank you for subscribing. Your {title} plan is now active.</p>
           {isPro && (
-            <p className="mt-1 text-indigo-300 font-semibold">You’re Pro now.</p>
+            <p className="mt-1 text-indigo-300 font-semibold">You're Pro now.</p>
           )}
         </div>
 
@@ -93,7 +94,7 @@ export default function PaymentSuccessScreen() {
                   {subtitle ? <div className="text-sm text-white/60">{subtitle}</div> : null}
                 </div>
               </div>
-              <a href="#dashboard" className="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/30">Go to Dashboard</a>
+              <Link to="/dashboard" className="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/30">Go to Dashboard</Link>
             </div>
 
             <div className="mt-8">
@@ -115,7 +116,7 @@ export default function PaymentSuccessScreen() {
         </div>
 
         <div className="mt-8 text-center">
-          <a href="#templates" className="rounded-full bg-[#0C1426] border border-white/12 hover:bg-[#0D172B] px-5 py-2.5 text-sm text-white">Explore Templates</a>
+          <Link to="/templates" className="rounded-full bg-[#0C1426] border border-white/12 hover:bg-[#0D172B] px-5 py-2.5 text-sm text-white">Explore Templates</Link>
         </div>
       </main>
 

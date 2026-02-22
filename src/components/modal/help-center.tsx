@@ -84,7 +84,7 @@ export default function HelpCenterScreen() {
   const [query, setQuery] = useState("");
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="help-center" mainClassName="max-w-[1100px] mx-auto py-8">
         <PageTitle title="Help Center & Knowledge Base" subtitle="Your guide to mastering ResumeAI" />

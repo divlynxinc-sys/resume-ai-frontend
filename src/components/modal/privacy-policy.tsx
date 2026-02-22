@@ -73,7 +73,7 @@ export default function PrivacyPolicyScreen() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
   return (
-    <div className="min-h-svh bg-[#0B1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <section className="mx-auto max-w-6xl px-4 py-10">
         <div className="grid grid-cols-12 gap-6">

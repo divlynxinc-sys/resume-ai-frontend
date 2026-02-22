@@ -1,7 +1,28 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { settingsService, profileService } from "@/services";
+import type { AccountSummary } from "@/services/settings";
+
+function Toast({ message, visible }: { message: string; visible: boolean }) {
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-green-500/30 bg-[#0f1f10] px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+      }`}
+    >
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20">
+        <svg className="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </span>
+      <span className="text-sm text-green-300 font-medium">{message}</span>
+    </div>
+  );
+}
 
 function PageTitle({ children, subtitle }: { children: ReactNode; subtitle?: string }) {
   return (
@@ -14,17 +35,37 @@ function PageTitle({ children, subtitle }: { children: ReactNode; subtitle?: str
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.35)] ${className}`}>{children}</div>
+    <div className={`rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.35)] ${className}`}>
+      {children}
+    </div>
   );
 }
 
-function LabeledInput({ label, placeholder }: { label: string; placeholder: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  readOnly,
+  type = "text",
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange?: (v: string) => void;
+  readOnly?: boolean;
+  type?: string;
+  placeholder?: string;
+}) {
   return (
     <div>
       <div className="text-xs text-white/60 mb-2">{label}</div>
       <input
+        type={type}
+        value={value}
+        readOnly={readOnly}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-white/15 bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-white/25"
+        onChange={(e) => onChange?.(e.target.value)}
+        className="w-full rounded-lg border border-white/15 bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-white/25 read-only:opacity-60 read-only:cursor-default"
       />
     </div>
   );
@@ -52,49 +93,290 @@ function SectionHeader({ title }: { title: string }) {
   return <div className="text-white/80 font-medium mb-3">{title}</div>;
 }
 
+/** Initials avatar for when there's no photo */
+function AvatarCircle({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+  return (
+    <div className="size-28 rounded-full bg-gradient-to-br from-blue-600/60 to-purple-600/60 border border-white/15 flex items-center justify-center text-2xl font-bold text-white select-none">
+      {initials || "?"}
+    </div>
+  );
+}
+
 export default function AccountManagementScreen() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  // Profile state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+
+  // Password change state
+  const [pwExpanded, setPwExpanded] = useState(false);
+  const [oldPw, setOldPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Subscription state
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+
+  // Preferences state
   const [twoFA, setTwoFA] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [accentColor, setAccentColor] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
-  const [inAppNotif, setInAppNotif] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  // Toast
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMsg, setToastMsg] = useState("Password updated successfully!");
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((msg = "Password updated successfully!") => {
+    setToastMsg(msg);
+    setToastVisible(true);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastVisible(false), 5000);
+  }, []);
+
+  // Export / delete
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Hidden file input for avatar (UI only — no API endpoint yet)
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Load profile
+    profileService.getMe()
+      .then((p) => { setName(p.name); setEmail(p.email); })
+      .catch(() => {});
+
+    // Load account summary
+    settingsService.getAccountSummary()
+      .then(setSummary)
+      .catch(() => {});
+
+    // Load preferences
+    settingsService.getPreferences()
+      .then((prefs) => {
+        if (prefs.theme) setTheme(prefs.theme as "dark" | "light");
+        setEmailNotif(prefs.email_notifications);
+        setTwoFA(prefs.two_factor_enabled);
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Profile save ───────────────────────────────────────────────────────────
+  const handleProfileSave = async () => {
+    setProfileSaving(true);
+    setProfileMsg(null);
+    try {
+      await profileService.updateMe({ name });
+      setProfileMsg("Profile updated!");
+    } catch (err: unknown) {
+      setProfileMsg((err as Error).message || "Update failed.");
+    } finally {
+      setProfileSaving(false);
+      setTimeout(() => setProfileMsg(null), 3000);
+    }
+  };
+
+  // ── Password change ────────────────────────────────────────────────────────
+  const handlePasswordChange = async () => {
+    if (!oldPw || !newPw || !confirmPw) {
+      setPwMsg({ text: "All fields are required.", ok: false });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwMsg({ text: "New passwords don't match.", ok: false });
+      return;
+    }
+    setPwSaving(true);
+    setPwMsg(null);
+    try {
+      await profileService.changePassword({
+        old_password: oldPw,
+        new_password: newPw,
+        confirm_password: confirmPw,
+      });
+      showToast("Password updated successfully!");
+      setOldPw(""); setNewPw(""); setConfirmPw("");
+      setTimeout(() => { setPwExpanded(false); setPwMsg(null); }, 500);
+    } catch (err: unknown) {
+      setPwMsg({ text: (err as Error).message || "Failed to change password.", ok: false });
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  // ── Preferences save ───────────────────────────────────────────────────────
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await settingsService.updatePreferences({
+        theme,
+        email_notifications: emailNotif,
+        two_factor_enabled: twoFA,
+      });
+      setSaveMsg("Saved!");
+    } catch {
+      setSaveMsg("Failed to save.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaveMsg(null), 3000);
+    }
+  };
+
+  // ── Export data ────────────────────────────────────────────────────────────
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await settingsService.exportData();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "my-data-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Export failed. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // ── Delete account ─────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    if (!window.confirm("Permanently delete your account and all data? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await settingsService.deleteAccount();
+      await logout();
+      navigate("/login");
+    } catch {
+      setDeleting(false);
+      alert("Delete failed. Please try again.");
+    }
+  };
+
+  const displayName = name || user?.name || user?.email || "User";
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="account" mainClassName="mx-auto max-w-5xl pb-12">
         <PageTitle subtitle="Manage your profile, security, preferences, and privacy">
           Account & Customization Hub
         </PageTitle>
 
-        {/* Profile Information */}
+        {/* ── Profile Information ── */}
         <section className="mt-8">
           <SectionHeader title="Profile Information" />
           <Card>
             <div className="grid grid-cols-1 md:grid-cols-[12rem_1fr] gap-6 items-start">
+              {/* Avatar */}
               <div className="space-y-3">
-                <div className="size-28 rounded-full bg-white/10 border border-white/15" />
-                <button className="w-full rounded-md bg-white/8 border border-white/12 px-3 py-2 text-sm text-white/80 hover:text-white">
+                <AvatarCircle name={displayName} />
+                {/* Photo upload — no API endpoint yet; hidden but shows coming-soon */}
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" />
+                <button
+                  onClick={() => alert("Photo upload coming soon.")}
+                  className="w-full rounded-md bg-white/8 border border-white/12 px-3 py-2 text-sm text-white/60 cursor-not-allowed"
+                  title="Photo upload not yet available"
+                >
                   Upload New Photo
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <LabeledInput label="Full Name" placeholder="Alex Doe" />
-                <LabeledInput label="Email Address" placeholder="alex.doe@example.com" />
+
+              {/* Editable fields */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Full Name" value={name} onChange={setName} placeholder="Your name" />
+                  <Field label="Email Address" value={email} readOnly />
+                </div>
+                <div className="flex items-center gap-4 pt-1">
+                  {profileMsg && (
+                    <span className={`text-sm ${profileMsg.includes("!") ? "text-green-400" : "text-red-400"}`}>
+                      {profileMsg}
+                    </span>
+                  )}
+                  <button
+                    onClick={handleProfileSave}
+                    disabled={profileSaving}
+                    className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white disabled:opacity-60"
+                  >
+                    {profileSaving ? "Saving…" : "Save Profile"}
+                  </button>
+                </div>
               </div>
             </div>
           </Card>
         </section>
 
-        {/* Password & Security */}
+        {/* ── Password & Security ── */}
         <section className="mt-8">
           <SectionHeader title="Password & Security" />
           <Card>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="text-sm text-white/80">Change Password</div>
-                <button className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm hover:bg-white/10">Update Password</button>
+                <button
+                  onClick={() => { setPwExpanded((v) => !v); setPwMsg(null); }}
+                  className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm hover:bg-white/10"
+                >
+                  {pwExpanded ? "Cancel" : "Update Password"}
+                </button>
+
+                {pwExpanded && (
+                  <div className="mt-3 space-y-3">
+                    <Field
+                      label="Current Password"
+                      type="password"
+                      value={oldPw}
+                      onChange={setOldPw}
+                      placeholder="••••••••"
+                    />
+                    <Field
+                      label="New Password"
+                      type="password"
+                      value={newPw}
+                      onChange={setNewPw}
+                      placeholder="••••••••"
+                    />
+                    <Field
+                      label="Confirm New Password"
+                      type="password"
+                      value={confirmPw}
+                      onChange={setConfirmPw}
+                      placeholder="••••••••"
+                    />
+                    {pwMsg && (
+                      <p className={`text-xs ${pwMsg.ok ? "text-green-400" : "text-red-400"}`}>
+                        {pwMsg.text}
+                      </p>
+                    )}
+                    <button
+                      onClick={handlePasswordChange}
+                      disabled={pwSaving}
+                      className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white disabled:opacity-60 w-full"
+                    >
+                      {pwSaving ? "Changing…" : "Change Password"}
+                    </button>
+                  </div>
+                )}
               </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
@@ -108,25 +390,31 @@ export default function AccountManagementScreen() {
           </Card>
         </section>
 
-        {/* Subscription & Billing */}
+        {/* ── Subscription & Billing ── */}
         <section className="mt-8">
           <SectionHeader title="Subscription & Billing" />
           <Card>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div>
                 <div className="text-sm text-white/70">Current Plan</div>
-                <div className="mt-1 text-white font-semibold">Pro</div>
-                <div className="mt-2 text-xs text-white/60">AI credits: 540</div>
+                <div className="mt-1 text-white font-semibold">{summary?.current_plan ?? "—"}</div>
+                <div className="mt-2 text-xs text-white/60">
+                  AI credits: {summary?.credits_remaining != null ? summary.credits_remaining : "—"}
+                </div>
               </div>
               <div className="flex flex-wrap gap-3 justify-start md:justify-end">
-                <a href="#pricing" className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Upgrade Plan</a>
-                <button className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm">Manage Billing</button>
+                <Link to="/pricing" className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">
+                  Upgrade Plan
+                </Link>
+                <button className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm">
+                  Manage Billing
+                </button>
               </div>
             </div>
           </Card>
         </section>
 
-        {/* Theme & Appearance */}
+        {/* ── Theme & Appearance ── */}
         <section className="mt-8">
           <SectionHeader title="Theme & Appearance" />
           <Card>
@@ -136,7 +424,7 @@ export default function AccountManagementScreen() {
                   <div className="text-sm font-medium">Dark Mode</div>
                   <div className="text-xs text-white/60">Use a darker theme</div>
                 </div>
-                <Switch checked={darkMode} onChange={setDarkMode} />
+                <Switch checked={theme === "dark"} onChange={(v) => setTheme(v ? "dark" : "light")} />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -149,47 +437,61 @@ export default function AccountManagementScreen() {
           </Card>
         </section>
 
-        {/* Notification Preferences */}
+        {/* ── Notification Preferences ── */}
         <section className="mt-8">
           <SectionHeader title="Notification Preferences" />
           <Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">Email Notifications</div>
-                  <div className="text-xs text-white/60">Receive updates and tips by email</div>
-                </div>
-                <Switch checked={emailNotif} onChange={setEmailNotif} />
+            <div className="flex items-center justify-between max-w-sm">
+              <div>
+                <div className="text-sm font-medium">Email Notifications</div>
+                <div className="text-xs text-white/60">Receive updates and tips by email</div>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">In‑App Notifications</div>
-                  <div className="text-xs text-white/60">Show alerts inside the app</div>
-                </div>
-                <Switch checked={inAppNotif} onChange={setInAppNotif} />
-              </div>
+              <Switch checked={emailNotif} onChange={setEmailNotif} />
             </div>
           </Card>
         </section>
 
-        {/* Data & Privacy */}
+        {/* ── Data & Privacy ── */}
         <section className="mt-8">
           <SectionHeader title="Data & Privacy" />
           <Card className="border-red-500/30 bg-red-900/15">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm">Export My Data</button>
-              <button className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm text-white">Delete My Account</button>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm disabled:opacity-60"
+              >
+                {exporting ? "Exporting…" : "Export My Data"}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 hover:bg-red-500 px-4 py-2 text-sm text-white disabled:opacity-60"
+              >
+                {deleting ? "Deleting…" : "Delete My Account"}
+              </button>
             </div>
           </Card>
         </section>
 
-        {/* Save */}
-        <div className="mt-8 flex justify-end">
-          <button className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-5 py-3 text-white text-sm shadow-[0_8px_24px_rgba(43,91,217,0.35)]">
-            Save Changes
+        {/* ── Preferences Save ── */}
+        <div className="mt-8 flex items-center justify-end gap-4">
+          {saveMsg && (
+            <span className={`text-sm ${saveMsg === "Saved!" ? "text-green-400" : "text-red-400"}`}>
+              {saveMsg}
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-5 py-3 text-white text-sm shadow-[0_8px_24px_rgba(43,91,217,0.35)] disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save Preferences"}
           </button>
         </div>
       </PageWithSidebar>
+
+      <Toast message={toastMsg} visible={toastVisible} />
     </div>
   );
 }
