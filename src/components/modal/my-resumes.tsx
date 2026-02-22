@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
+import { resumeService } from "@/services";
 
 // Lightweight types. Adjust if your builder persists richer resume data.
 interface ResumeItem {
@@ -26,6 +28,7 @@ function SleepingKoala() {
 }
 
 function EmptyState() {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center text-center">
       <SleepingKoala />
@@ -35,9 +38,7 @@ function EmptyState() {
           Kickstart your journey by building your first resume.
         </p>
         <button
-          onClick={() => {
-            window.location.hash = "#resumes"; // Link to builder
-          }}
+          onClick={() => navigate("/resumes")}
           className="px-5 py-2.5 rounded-xl bg-[oklch(0.488_0.243_264.376)] text-white shadow-md shadow-[oklch(0.488_0.243_264.376)/30] hover:brightness-110 transition-colors"
         >
           Create Your First Resume
@@ -48,6 +49,7 @@ function EmptyState() {
 }
 
 function ResumeCard({ item }: { item: ResumeItem }) {
+  const navigate = useNavigate();
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 flex flex-col gap-3 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between">
@@ -60,9 +62,7 @@ function ResumeCard({ item }: { item: ResumeItem }) {
       </div>
       <div className="flex items-center gap-2">
         <button
-          onClick={() => {
-            window.location.hash = "#resumes"; // Edit in builder
-          }}
+          onClick={() => navigate("/resumes")}
           className="px-3 py-1.5 text-sm rounded-md bg-white text-black hover:bg-white/90"
         >
           Edit
@@ -86,29 +86,39 @@ export default function MyResumesScreen() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("resumes");
-      if (!raw) {
-        setResumes([]);
-        return;
-      }
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        // Normalize a bit in case of partial data
+    resumeService.list({ limit: 50 })
+      .then((data: any) => {
+        const items = Array.isArray(data) ? data : (data?.results ?? data?.data ?? []);
         setResumes(
-          parsed.map((r: any, idx: number) => ({
+          items.map((r: any, idx: number) => ({
             id: r?.id ?? String(idx),
             title: r?.title ?? "Untitled Resume",
-            updatedAt: r?.updatedAt,
+            updatedAt: r?.updatedAt ?? r?.updated_at,
           }))
         );
-      } else {
-        setResumes([]);
-      }
-    } catch (e) {
-      console.warn("Failed to parse resumes from localStorage", e);
-      setResumes([]);
-    }
+      })
+      .catch((e: any) => {
+        console.warn("Failed to load resumes from API", e);
+        // Fallback to localStorage
+        try {
+          const raw = localStorage.getItem("resumes");
+          if (!raw) { setResumes([]); return; }
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setResumes(
+              parsed.map((r: any, idx: number) => ({
+                id: r?.id ?? String(idx),
+                title: r?.title ?? "Untitled Resume",
+                updatedAt: r?.updatedAt,
+              }))
+            );
+          } else {
+            setResumes([]);
+          }
+        } catch {
+          setResumes([]);
+        }
+      });
   }, []);
 
   const hasResumes = resumes.length > 0;
@@ -117,7 +127,7 @@ export default function MyResumesScreen() {
   );
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
 
       <PageWithSidebar activeRoute="my-resumes">
@@ -125,7 +135,7 @@ export default function MyResumesScreen() {
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h1 className="text-2xl font-black tracking-tight">My Resumes</h1>
-              
+
               {/* Search Bar */}
               <div className="relative w-full md:w-80 group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -153,7 +163,7 @@ export default function MyResumesScreen() {
                    </div>
                    <h3 className="text-lg font-medium text-white/80">No matches found</h3>
                    <p className="text-sm text-white/50 mt-1">Try searching for a different resume name.</p>
-                   <button 
+                   <button
                      onClick={() => setSearchQuery("")}
                      className="mt-6 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                    >

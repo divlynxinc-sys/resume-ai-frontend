@@ -17,7 +17,7 @@ function Hero() {
 
 export default function FooterDemoScreen() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white flex flex-col">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white flex flex-col">
       <main className="flex-1">
         <Hero />
       </main>

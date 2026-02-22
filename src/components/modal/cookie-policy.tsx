@@ -51,7 +51,7 @@ export default function CookiePolicyScreen() {
   const [targeting, setTargeting] = useState(false);
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <main className="max-w-[1000px] mx-auto px-6 py-10">
         <Card className="">

@@ -16,7 +16,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 
 export default function CookieConsentScreen() {
   return (
-    <div className="h-svh bg-[#0b1220] text-white">
+    <div className="h-svh bg-[var(--app-bg)] text-white">
       {/* Popup anchored bottom-left */}
       <div className="fixed left-6 bottom-6 w-[500px] max-w-[92vw]">
         <Card>

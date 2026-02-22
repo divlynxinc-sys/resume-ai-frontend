@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 
@@ -70,7 +71,7 @@ export default function UserDetailsScreen() {
   }, []);
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar mainClassName="max-w-[1100px] mx-auto py-8">
         <PageHeader title="User Details" subtitle="Information saved from your AI Resume Builder." />
@@ -81,14 +82,14 @@ export default function UserDetailsScreen() {
               No details found. Please fill your information in the AI Builder.
             </p>
             <div className="mt-4">
-              <a href="#resumes" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Go to AI Builder</a>
+              <Link to="/resumes" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Go to AI Builder</Link>
             </div>
           </div>
         ) : (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left: Details */}
             <div className="lg:col-span-2 space-y-6">
-              <SectionCard title="Personal Info" rightAction={<a href="#resumes" className="text-xs text-white/70 hover:text-white">Edit in Builder</a>}>
+              <SectionCard title="Personal Info" rightAction={<Link to="/resumes" className="text-xs text-white/70 hover:text-white">Edit in Builder</Link>}>
                 <InfoRow label="Full Name" value={resume.name} />
                 <InfoRow label="Email" value={resume.email} />
                 <InfoRow label="Phone" value={resume.phone} />
@@ -191,7 +192,7 @@ export default function UserDetailsScreen() {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <a href="#resumes" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Open Builder</a>
+                  <Link to="/resumes" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Open Builder</Link>
                 </div>
               </section>
             </div>

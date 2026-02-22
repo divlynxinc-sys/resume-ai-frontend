@@ -120,7 +120,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-8 max-w-5xl mx-auto">

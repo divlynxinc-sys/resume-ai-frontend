@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import { SiVisa, SiApplepay, SiGooglepay, SiPaypal, SiStripe } from "react-icons/si";
 import { FiLock } from "react-icons/fi";
@@ -68,6 +69,7 @@ function CardBrands() {
 }
 
 export default function SubscriptionScreen() {
+  const navigate = useNavigate();
   const [method, setMethod] = useState<"card" | "apple" | "google" | "paypal">("card");
   const [plan, setPlan] = useState<Plan | null>(null);
 
@@ -87,7 +89,7 @@ export default function SubscriptionScreen() {
   const subtitle = plan?.subtitle || "";
 
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
 
       <main className="mx-auto max-w-6xl px-6 pt-8 pb-16">
@@ -127,7 +129,7 @@ export default function SubscriptionScreen() {
 
               {method !== "card" && (
                 <div className="mt-6 text-sm text-white/70">
-                  <p>When you continue, you’ll be redirected to complete the payment via {method === "apple" ? "Apple Pay" : method === "google" ? "Google Pay" : "PayPal"}.</p>
+                  <p>When you continue, you'll be redirected to complete the payment via {method === "apple" ? "Apple Pay" : method === "google" ? "Google Pay" : "PayPal"}.</p>
                 </div>
               )}
             </div>
@@ -147,10 +149,10 @@ export default function SubscriptionScreen() {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="text-xs text-white/60">By subscribing you agree to our <a href="#terms" className="text-cyan-300 hover:underline">Terms</a> and <a href="#privacy" className="text-cyan-300 hover:underline">Privacy Policy</a>.</div>
+              <div className="text-xs text-white/60">By subscribing you agree to our <Link to="/terms" className="text-cyan-300 hover:underline">Terms</Link> and <Link to="/privacy" className="text-cyan-300 hover:underline">Privacy Policy</Link>.</div>
               <button
                 onClick={() => {
-                  window.location.hash = "#success";
+                  navigate("/success");
                 }}
                 className="rounded-xl bg-sky-500 hover:bg-sky-400 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-500/30"
               >

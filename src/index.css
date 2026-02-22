@@ -1,6 +1,178 @@
 @import "tailwindcss";
 
+/* ── App-level theme variables ─────────────────────────────────────────────── */
+/* Applied by ThemeContext via class on <html>. Default = dark (matches app). */
+html,
+html.dark {
+  --app-bg: #0b1220;
+  --app-surface: #0f1629;
+  --app-fg: rgba(255, 255, 255, 0.87);
+  color-scheme: dark;
 
+  /* ── Button tokens ── */
+  --btn-primary-bg:        #2563eb;
+  --btn-primary-hover:     #1d4ed8;
+  --btn-primary-text:      #ffffff;
+
+  --btn-secondary-bg:      rgba(255, 255, 255, 0.07);
+  --btn-secondary-hover:   rgba(255, 255, 255, 0.13);
+  --btn-secondary-border:  rgba(255, 255, 255, 0.15);
+  --btn-secondary-text:    rgba(255, 255, 255, 0.88);
+
+  --btn-ghost-bg:          transparent;
+  --btn-ghost-hover:       rgba(255, 255, 255, 0.07);
+  --btn-ghost-text:        rgba(255, 255, 255, 0.65);
+  --btn-ghost-text-hover:  rgba(255, 255, 255, 0.95);
+
+  --btn-danger-bg:         #dc2626;
+  --btn-danger-hover:      #b91c1c;
+  --btn-danger-text:       #ffffff;
+}
+
+html.light {
+  --app-bg: #edf2fb;
+  --app-surface: #ffffff;
+  --app-fg: #0f1b35;
+  color-scheme: light;
+
+  /* ── Button tokens ── */
+  --btn-primary-bg:        #2563eb;
+  --btn-primary-hover:     #1d4ed8;
+  --btn-primary-text:      #ffffff;
+
+  --btn-secondary-bg:      #eef3fc;
+  --btn-secondary-hover:   #dce7f7;
+  --btn-secondary-border:  rgba(15, 27, 53, 0.18);
+  --btn-secondary-text:    #1e3a7a;
+
+  --btn-ghost-bg:          transparent;
+  --btn-ghost-hover:       rgba(15, 27, 53, 0.07);
+  --btn-ghost-text:        rgba(15, 27, 53, 0.60);
+  --btn-ghost-text-hover:  rgba(15, 27, 53, 0.90);
+
+  --btn-danger-bg:         #dc2626;
+  --btn-danger-hover:      #b91c1c;
+  --btn-danger-text:       #ffffff;
+}
+
+/* ── Light mode: Airtasker-inspired overrides ──────────────────────────────── */
+
+/* 1. Text: all white/light text → dark navy */
+html.light [class*="text-white"] { color: rgba(15, 27, 53, 0.87) !important; }
+
+/* Restore white text on solid colored buttons/badges */
+html.light [class*="bg-blue-"][class*="text-white"],
+html.light [class*="bg-blue-"] [class*="text-white"],
+html.light [class*="bg-indigo-"][class*="text-white"],
+html.light [class*="bg-indigo-"] [class*="text-white"],
+html.light [class*="bg-red-"][class*="text-white"],
+html.light [class*="bg-red-"] [class*="text-white"],
+html.light [class*="bg-green-"][class*="text-white"],
+html.light [class*="bg-green-"] [class*="text-white"],
+html.light [class*="bg-purple-"][class*="text-white"],
+html.light [class*="bg-purple-"] [class*="text-white"],
+html.light [class*="bg-violet-"][class*="text-white"],
+html.light [class*="bg-violet-"] [class*="text-white"],
+html.light [class*="bg-sky-"][class*="text-white"],
+html.light [class*="bg-sky-"] [class*="text-white"],
+html.light [class*="bg-emerald-"][class*="text-white"],
+html.light [class*="bg-emerald-"] [class*="text-white"],
+html.light [class*="bg-[oklch"][class*="text-white"],
+html.light [class*="bg-[oklch"] [class*="text-white"],
+html.light [class*="bg-gradient-"][class*="text-white"],
+html.light [class*="bg-gradient-"] [class*="text-white"] { color: white !important; }
+
+/* 2. Borders: white/transparent borders → subtle dark */
+html.light [class*="border-white"] { border-color: rgba(15, 27, 53, 0.12) !important; }
+
+/* 3. Backgrounds: low-opacity white cards → solid white */
+html.light [class*="bg-white/[0.0"] { background-color: #ffffff !important; }
+
+/* Semi-transparent white surfaces → light tint */
+html.light [class*="bg-white/5"],
+html.light [class*="bg-white/8"],
+html.light [class*="bg-white/10"],
+html.light [class*="bg-white/15"],
+html.light [class*="bg-white/20"] { background-color: rgba(15, 27, 53, 0.05) !important; }
+
+/* 4. Hardcoded dark surfaces → white */
+html.light .bg-\[\#0f1629\],
+html.light .bg-\[\#0f162a\],
+html.light .bg-\[\#0C1426\],
+html.light .bg-\[\#0e1526\],
+html.light .bg-\[\#131d35\] { background-color: #ffffff !important; color: #0f1b35 !important; }
+
+/* 5. Inputs and form fields */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.light textarea,
+html.light select {
+  background-color: #f4f7fd !important;
+  color: #0f1b35 !important;
+  border-color: rgba(15, 27, 53, 0.15) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: rgba(15, 27, 53, 0.35) !important; }
+
+/* 6. Navbar → white */
+html.light header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: rgba(15, 27, 53, 0.08) !important;
+}
+
+/* 7. Dropdowns / floating panels */
+html.light [class*="bg-[#0f1629]"],
+html.light [class*="bg-[#0f162a]"] { background-color: #ffffff !important; }
+
+/* Dividers inside dropdowns/cards */
+html.light .h-px.bg-white\/10,
+html.light [class*="h-px"][class*="bg-white"] { background-color: rgba(15, 27, 53, 0.08) !important; }
+
+/* 8. Shadows — tone down dark shadows for light bg */
+html.light [class*="shadow-[0_12px_40px"] {
+  box-shadow: 0 1px 8px rgba(15, 27, 53, 0.08), 0 4px 20px rgba(15, 27, 53, 0.06) !important;
+}
+html.light [class*="shadow-[0_8px_24px"] {
+  box-shadow: 0 1px 6px rgba(15, 27, 53, 0.07), 0 2px 12px rgba(36, 85, 247, 0.10) !important;
+}
+html.light [class*="shadow-[0_8px_20px"] {
+  box-shadow: 0 1px 6px rgba(15, 27, 53, 0.08) !important;
+}
+
+/* 8b. Standard Tailwind shadows - lighter in light mode */
+html.light .shadow-xl,
+html.light .shadow-2xl {
+  box-shadow: 0 4px 24px rgba(15, 27, 53, 0.10), 0 1px 6px rgba(15, 27, 53, 0.06) !important;
+}
+html.light [class*="shadow-[0_8px_40px"] {
+  box-shadow: 0 4px 24px rgba(15, 27, 53, 0.10), 0 1px 6px rgba(15, 27, 53, 0.06) !important;
+}
+html.light [class*="shadow-[0_30px"] {
+  box-shadow: 0 4px 20px rgba(15, 27, 53, 0.08) !important;
+}
+
+/* 9. Button hover glow — light mode variant */
+html.light button:not(:disabled):hover,
+html.light [role="button"]:not([aria-disabled="true"]):hover {
+  box-shadow: 0 0 0 1px rgba(15, 27, 53, 0.06), 0 2px 12px rgba(36, 85, 247, 0.15) !important;
+}
+
+/* 10. Nav item text labels — inherit dark color in light mode (icons keep their own color) */
+/* No SVG override here — colored icons (text-sky-400, text-emerald-400 etc.) must be preserved */
+
+/* ── Global button / interactive element polish ─────────────────────────────── */
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/* Dark mode button hover glow */
+html.dark button:not(:disabled):hover,
+html.dark [role="button"]:not([aria-disabled="true"]):hover,
+html:not(.light) button:not(:disabled):hover,
+html:not(.light) [role="button"]:not([aria-disabled="true"]):hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06),
+              0 0 20px rgba(100, 149, 237, 0.14);
+}
 
 :root {
   --radius: 0.625rem;

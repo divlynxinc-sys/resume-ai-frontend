@@ -110,7 +110,7 @@ function CompareCard({ variant }: { variant: "before" | "after" }) {
 
 export default function ResumeComparisonScreen() {
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <div className="grid grid-cols-12">
         <div className="col-span-12 md:col-span-3 lg:col-span-2">
           <Sidebar />

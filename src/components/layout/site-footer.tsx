@@ -56,7 +56,7 @@ function Column({
 
 export default function SiteFooter() {
   return (
-    <footer className="text-white border-t border-white/10 bg-[#0b1220]">
+    <footer className="text-white border-t border-white/10 bg-[var(--app-bg)]">
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-12">
         <Brand />
 

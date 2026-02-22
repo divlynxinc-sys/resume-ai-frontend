@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 
@@ -23,6 +24,7 @@ type PlanProps = {
 };
 
 function PlanCard({ title, price, subtitle, button, features, highlight, label, pop, popMode }: PlanProps) {
+  const navigate = useNavigate();
   const isAlways = pop && popMode === "always";
   return (
     <div
@@ -59,7 +61,7 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
             try {
               sessionStorage.setItem("selectedPlan", JSON.stringify({ title, price, subtitle }));
             } catch {}
-            window.location.hash = "contact-us";
+            navigate("/contact-us");
           }}
           className={`mt-5 w-full rounded-lg px-4 py-2.5 text-sm font-medium ${highlight ? "bg-sky-500 text-white hover:bg-sky-400" : "bg-[#0C1426] text-white hover:bg-[#0D172B] border border-white/12"}`}
         >
@@ -80,7 +82,7 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
 
 export default function EnterpriseScreen() {
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <section className="mx-auto max-w-6xl px-4 pt-12 pb-20">
         <div className="flex items-center gap-3">
@@ -129,7 +131,7 @@ export default function EnterpriseScreen() {
           <h3 className="text-xl font-semibold">Need something custom?</h3>
           <p className="mt-2 text-white/70">We work with organizations of all sizes. Let us tailor a package that fits your workflows, compliance requirements, and growth plans.</p>
           <div className="mt-4">
-            <a href="#contact-us" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Contact Sales</a>
+            <Link to="/contact-us" className="inline-flex items-center rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">Contact Sales</Link>
           </div>
         </div>
       </section>

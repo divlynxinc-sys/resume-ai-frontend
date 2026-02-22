@@ -24,7 +24,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white flex items-center justify-center px-4">
       <div className="relative">
         {/* Soft glow */}
         <div className="absolute -inset-8 rounded-[32px] bg-gradient-to-b from-blue-500/10 to-indigo-600/10 blur-2xl" aria-hidden />

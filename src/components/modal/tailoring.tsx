@@ -150,7 +150,7 @@ export function TailoringSection() {
 
 export default function TailoringScreen() {
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar activeRoute="tailoring">
         <TailoringSection />

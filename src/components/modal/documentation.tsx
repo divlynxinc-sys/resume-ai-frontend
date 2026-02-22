@@ -45,7 +45,7 @@ export default function DocumentationScreen() {
   const js = `function greet(name) {\n  console.log('Hello, ${name}!');\n}`;
 
   return (
-    <div className="min-h-svh bg-[#0b1220] text-white grid grid-cols-[16rem_1fr]">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white grid grid-cols-[16rem_1fr]">
       {/* Sidebar */}
       <aside className="bg-[#0f162a] border-r border-white/10 p-4">
         <div className="text-white/80 text-xs">Docs <span className="text-white/50">v1.0.0</span></div>

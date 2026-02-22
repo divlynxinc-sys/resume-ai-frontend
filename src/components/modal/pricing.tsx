@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { pricingService } from "@/services";
 
 
 
@@ -19,6 +22,7 @@ type PlanProps = {
 };
 
 function PlanCard({ title, price, subtitle, button, features, highlight, label, labelClassName, pop, popMode }: PlanProps) {
+  const navigate = useNavigate();
   const isAlways = pop && popMode === "always";
   return (
     <div
@@ -58,7 +62,7 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
             try {
               sessionStorage.setItem("selectedPlan", JSON.stringify({ title, price, subtitle }));
             } catch {}
-            window.location.hash = "subscribe";
+            navigate("/subscribe");
           }}
           className={`mt-6 w-full rounded-lg px-5 py-3.5 text-base font-medium cursor-pointer bg-[#0C1426] text-white hover:bg-[#0D172B] border border-white/12`}
         >
@@ -77,7 +81,69 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
   );
 }
 
+type PlanData = {
+  title: string;
+  price: string;
+  subtitle?: string;
+  button: string;
+  features: string[];
+  highlight?: boolean;
+  label?: string;
+};
+
+const defaultPlans: PlanData[] = [
+  {
+    title: "Free",
+    price: "$0",
+    subtitle: "/ forever",
+    button: "Get Started",
+    features: ["5 AI Credits", "Basic Templates", "Standard Support"],
+  },
+  {
+    title: "Starter",
+    price: "$9.99",
+    subtitle: "/ 50 credits",
+    button: "Get Starter",
+    features: ["50 AI Credits", "All Templates", "Priority Support"],
+  },
+  {
+    title: "Premium",
+    price: "$29.99",
+    subtitle: "/ 200 credits",
+    button: "Get Premium",
+    features: ["200 AI Credits", "AI Cover Letters", "Premium Support"],
+    highlight: true,
+    label: "Most Popular",
+  },
+  {
+    title: "Pro",
+    price: "$49.99",
+    subtitle: "/ 500 credits",
+    button: "Get Pro",
+    features: ["500 AI Credits", "Interview Prep", "24/7 VIP Support"],
+  },
+];
+
 export function PricingSection() {
+  const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
+
+  useEffect(() => {
+    pricingService.listPlans().then((data) => {
+      if (data && data.length > 0) {
+        setPlans(data.map((p) => ({
+          id: p.id,
+          title: p.name,
+          price: p.price === 0 ? "Free" : `$${p.price}`,
+          subtitle: `/ ${p.credits} credits`,
+          button: `Get ${p.name}`,
+          features: p.features,
+          highlight: p.is_popular,
+          label: p.is_popular ? "Most Popular" : undefined,
+        })));
+      }
+    }).catch(() => {});
+  }, []);
+
   return (
     <section className="mx-auto max-w-6xl px-4 pt-4 pb-20 text-center">
       <h1 className="mt-2 text-2xl md:text-3xl font-extrabold tracking-tight">Intelligent Pricing for Your Success</h1>
@@ -87,36 +153,18 @@ export function PricingSection() {
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        <PlanCard
-          title="Free"
-          price="$0"
-          subtitle="/ forever"
-          button="Get Started"
-          features={["5 AI Credits", "Basic Templates", "Standard Support"]}
-        />
-        <PlanCard
-          title="Starter"
-          price="$9.99"
-          subtitle="/ 50 credits"
-          button="Get Starter"
-          features={["50 AI Credits", "All Templates", "Priority Support"]}
-        />
-        <PlanCard
-          title="Premium"
-          price="$29.99"
-          subtitle="/ 200 credits"
-          button="Get Premium"
-          features={["200 AI Credits", "AI Cover Letters", "Premium Support"]}
-          highlight
-          label="Most Popular"
-        />
-        <PlanCard
-          title="Pro"
-          price="$49.99"
-          subtitle="/ 500 credits"
-          button="Get Pro"
-          features={["500 AI Credits", "Interview Prep", "24/7 VIP Support"]}
-        />
+        {plans.map((plan) => (
+          <PlanCard
+            key={plan.title}
+            title={plan.title}
+            price={plan.price}
+            subtitle={plan.subtitle}
+            button={plan.button}
+            features={plan.features}
+            highlight={plan.highlight}
+            label={plan.label}
+          />
+        ))}
       </div>
     </section>
   );
@@ -124,7 +172,7 @@ export function PricingSection() {
 
 export default function PricingScreen() {
   return (
-    <div className="min-h-screen w-full bg-[#0B1220] text-white">
+    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
       <PageWithSidebar mainClassName="">
         <PricingSection />

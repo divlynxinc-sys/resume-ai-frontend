@@ -159,7 +159,7 @@ function ExamplePromptDropdown() {
 
 export default function AIChatModal() {
   return (
-    <div className="h-svh bg-[#0b1220] text-white overflow-hidden relative">
+    <div className="h-svh bg-[var(--app-bg)] text-white overflow-hidden relative">
       <SiteNavbar />
 
       <main className="max-w-[1100px] mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-56px)] overflow-visible relative">
@@ -167,13 +167,13 @@ export default function AIChatModal() {
         {/* Left Column */}
         <div className="lg:col-span-2 h-full min-h-0 flex flex-col relative z-20">
           {/* ✅ Heading block creates new stacking context */}
-          <div className="relative z-20 inline-block bg-[#0b1220]">
-            <h1 className="relative text-4xl md:text-4xl font-extrabold tracking-tight leading-tight text-white z-20 bg-[#0b1220] px-2 py-1">
+          <div className="relative z-20 inline-block bg-[var(--app-bg)]">
+            <h1 className="relative text-4xl md:text-4xl font-extrabold tracking-tight leading-tight text-white z-20 bg-[var(--app-bg)] px-2 py-1">
               Juno AI Assistant
             </h1>
           </div>
 
-          <p className="text-white/60 mt-1 relative z-20 bg-[#0b1220] inline-block px-2">
+          <p className="text-white/60 mt-1 relative z-20 bg-[var(--app-bg)] inline-block px-2">
             Get instant feedback and suggestions to improve your resume.
           </p>
 

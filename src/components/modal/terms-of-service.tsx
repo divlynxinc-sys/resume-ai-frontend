@@ -24,7 +24,7 @@ export default function TermsOfServiceScreen() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
   return (
-    <div className="min-h-screen bg-[#0b1220] text-white">
+    <div className="min-h-screen bg-[var(--app-bg)] text-white">
       <SiteNavbar />
 
       <main className="mx-auto max-w-4xl px-6">

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { ReactNode, FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import resumeLogo from "../../assets/resume-ai-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -21,7 +23,7 @@ function DividerLabel({ children }: { children: ReactNode }) {
   return (
     <div className="relative my-5">
       <div className="h-px bg-white/10" />
-      <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-1/2 bg-[#0b1220] px-2 text-xs text-white/60">
+      <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-1/2 bg-[var(--app-surface)] px-2 text-xs text-white/60">
         {children}
       </span>
     </div>
@@ -30,8 +32,8 @@ function DividerLabel({ children }: { children: ReactNode }) {
 
 function SocialButton({ icon, label, iconClass }: { icon: ReactNode; label: string; iconClass?: string }) {
   return (
-    <button className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[#0C1426] border border-white/12 text-white/80 hover:text-white">
-      <span className={`text-base ${iconClass ?? "text-white/70"}`}>{icon}</span>
+    <button className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)]">
+      <span className={`text-base ${iconClass ?? ""}`}>{icon}</span>
       <span className="text-sm">{label}</span>
     </button>
   );
@@ -44,6 +46,9 @@ export default function LoginScreen() {
   const [error, setError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
+
+  const { login, refreshUser } = useAuth();
+  const navigate = useNavigate();
 
   const validateEmailField = (value: string) => {
     if (!value.trim()) return "Email is required.";
@@ -69,19 +74,28 @@ export default function LoginScreen() {
       return;
     }
     setStatus("loading");
-    await new Promise((res) => setTimeout(res, 800));
-    setStatus("idle");
     try {
-      localStorage.setItem("authToken", "demo-token");
+      // Temporary dev bypass — remove once DB integration is live
+      if (email === "admin@divlynx.com" && password === "Pass@123") {
+        localStorage.setItem("accessToken", "dev-bypass-token");
+        localStorage.setItem("refreshToken", "dev-bypass-refresh");
+        await refreshUser();
+        const firstShown = localStorage.getItem("firstLoginShown");
+        navigate(firstShown ? "/dashboard" : "/onboarding");
+        return;
+      }
+      await login(email, password);
       const firstShown = localStorage.getItem("firstLoginShown");
-      window.location.hash = firstShown ? "#dashboard" : "#onboarding";
-    } catch {
-      window.location.hash = "#dashboard";
+      navigate(firstShown ? "/dashboard" : "/onboarding");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setStatus("idle");
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[#0B1220] text-white flex items-center justify-center px-4 overflow-hidden">
+    <div className="relative min-h-screen w-full bg-[var(--app-bg)] text-white flex items-center justify-center px-4 overflow-hidden">
       <div className="w-full max-w-md">
         <TopLogo />
 
@@ -89,7 +103,7 @@ export default function LoginScreen() {
           {/* Soft glow */}
           <div className="absolute -inset-8 rounded-[32px] bg-gradient-to-b from-blue-500/10 to-indigo-600/10 blur-2xl" aria-hidden />
 
-          <div className="relative rounded-2xl border border-white/10 bg-[#0F1629]/80 backdrop-blur-xl shadow-xl">
+          <div className="relative rounded-2xl border border-white/10 bg-[var(--app-surface)] backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
             <form onSubmit={onSubmit} className="p-6 sm:p-8">
               <label htmlFor="email" className="sr-only">Email address</label>
               <input
@@ -107,7 +121,7 @@ export default function LoginScreen() {
                 required
                 aria-invalid={!!emailError}
                 aria-describedby={emailError ? "email-error" : undefined}
-                className={`w-full rounded-lg border bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-white/25 ${emailError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
+                className={`w-full rounded-lg border bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 ${emailError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
                 disabled={status === "loading"}
               />
               {emailError ? (
@@ -131,7 +145,7 @@ export default function LoginScreen() {
                 minLength={8}
                 aria-invalid={!!passwordError}
                 aria-describedby={passwordError ? "password-error" : undefined}
-                className={`mt-3 w-full rounded-lg border bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-white/25 ${passwordError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
+                className={`mt-3 w-full rounded-lg border bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm outline-none placeholder:text-white/40 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 ${passwordError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
                 disabled={status === "loading"}
               />
               {passwordError ? (
@@ -139,7 +153,7 @@ export default function LoginScreen() {
               ) : null}
 
               <div className="mt-2 text-right">
-                <a href="#forgot-password" className="text-xs text-blue-400 hover:text-blue-300">Forgot your password?</a>
+                <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">Forgot your password?</Link>
               </div>
 
               {error ? <div className="mt-2 text-xs text-red-400">{error}</div> : null}
@@ -164,8 +178,8 @@ export default function LoginScreen() {
               </div>
 
               <div className="mt-5 text-center text-xs text-white/60">
-                Don’t have an account?{' '}
-                <a href="#signup" className="text-blue-400 hover:text-blue-300">Sign up</a>
+                Don't have an account?{' '}
+                <Link to="/signup" className="text-blue-400 hover:text-blue-300">Sign up</Link>
               </div>
             </form>
           </div>
