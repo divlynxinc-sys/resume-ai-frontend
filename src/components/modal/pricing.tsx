@@ -34,7 +34,7 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
         <div className={`pointer-events-none absolute -inset-3 rounded-[28px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.18),transparent_60%)] blur-2xl ${isAlways ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`} />
       ) : null}
       <div
-        className={`relative rounded-2xl bg-[#0F1629] border border-white/10 px-8 py-8 h-full flex flex-col ${
+        className={`relative rounded-2xl bg-[#0f1629] border border-white/10 px-8 py-8 h-full flex flex-col ${
           highlight ? "shadow-[0_0_50px_0_rgba(56,189,248,0.6)] border-sky-500/30" : ""
         } ${pop ? (isAlways ? "ring-1 ring-cyan-400/40 shadow-[0_18px_50px_rgba(56,189,248,0.35)]" : "ring-1 ring-white/10 group-hover:ring-cyan-400/40 group-hover:shadow-[0_18px_50px_rgba(56,189,248,0.35)]") : ""}`}
       >
@@ -64,7 +64,7 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
             } catch {}
             navigate("/subscribe");
           }}
-          className={`mt-6 w-full rounded-lg px-5 py-3.5 text-base font-medium cursor-pointer bg-[#0C1426] text-white hover:bg-[#0D172B] border border-white/12`}
+          className={`mt-6 w-full rounded-lg px-5 py-3.5 text-base font-medium cursor-pointer bg-[#0e1526] text-white hover:bg-[#131d35] border border-white/12`}
         >
           {button}
         </button>

@@ -1,6 +1,6 @@
 import type { ReactNode, ChangeEvent } from "react";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Wand2, AlertCircle, CheckCircle2 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -614,6 +614,9 @@ function ResumePreview({ mode }: { mode: 'preview' | 'ats' }) {
 }
 
 export default function ResumeBuilderScreen() {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("id");
+
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
 
@@ -622,12 +625,28 @@ export default function ResumeBuilderScreen() {
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Modal states
-  const [startModalOpen, setStartModalOpen] = useState(true);
+  // Modal states — hide start modal when editing an existing resume
+  const [startModalOpen, setStartModalOpen] = useState(!editId);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Load existing resume when editing
+  useEffect(() => {
+    if (!editId) return;
+    const id = Number(editId);
+    if (Number.isNaN(id)) return;
+    resumeService.get(id)
+      .then((r) => {
+        setResumeId(r.id);
+        if (r.content) setResume(mapContentToLocal(r.content));
+      })
+      .catch(() => {
+        // If load fails, fall back to new resume flow
+        setStartModalOpen(true);
+      });
+  }, [editId]);
 
   // Persist mid-session edits to localStorage (not on initial load)
   useEffect(() => {

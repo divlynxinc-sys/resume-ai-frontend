@@ -25,6 +25,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { dashboardService } from "@/services";
+import { resumeService } from "@/services/resume";
 
 export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   const navigate = useNavigate();
@@ -182,8 +183,10 @@ function RecentActivity() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchActivities = () => {
     dashboardService.getRecentActivity(10)
       .then((data) =>
         setActivities(
@@ -195,7 +198,24 @@ function RecentActivity() {
         )
       )
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchActivities();
   }, []);
+
+  const handleDelete = async (id: number) => {
+    setLoading(true);
+    try {
+      await resumeService.delete(id);
+      setActivities((prev) => prev.filter((a) => a.id !== id));
+      setDeletingId(null);
+    } catch {
+      /* silently fail */
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredActivities = activities.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -203,6 +223,34 @@ function RecentActivity() {
 
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+      {/* Delete Confirmation Modal */}
+      {deletingId !== null && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1629] p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white">Delete Resume?</h3>
+            <p className="mt-2 text-sm text-white/70">
+              Are you sure you want to delete this resume? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deletingId)}
+                disabled={loading}
+                className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+              >
+                {loading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
         <div className="relative w-full sm:w-64 group">
@@ -239,18 +287,22 @@ function RecentActivity() {
                 <button
                   className="hover:text-white"
                   title="Edit"
-                  onClick={() => navigate("/resumes")}
+                  onClick={() => navigate(`/resumes?id=${row.id}`)}
                 >
                   <Edit2 className="size-4" />
                 </button>
                 <button
                   className="hover:text-white"
                   title="Download"
-                  onClick={() => navigate("/resumes")}
+                  onClick={() => navigate(`/resumes?id=${row.id}`)}
                 >
                   <Download className="size-4" />
                 </button>
-                <button className="hover:text-red-400" title="Delete">
+                <button
+                  className="hover:text-red-400"
+                  title="Delete"
+                  onClick={() => setDeletingId(row.id)}
+                >
                   <Trash className="size-4 text-red-500" />
                 </button>
               </div>
