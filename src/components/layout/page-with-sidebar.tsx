@@ -15,10 +15,10 @@ export default function PageWithSidebar({
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] relative">
-      <div 
+      <div
         className={`shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "w-[260px]" : "w-0"}`}
       >
-        <div className="w-[260px] h-full">
+        <div className="w-[260px] sticky top-0 h-screen overflow-y-auto">
            <Sidebar activeRoute={activeRoute} />
         </div>
       </div>
