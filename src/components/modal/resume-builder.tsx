@@ -104,6 +104,32 @@ function mapContentToLocal(content: ResumeContent): ResumeData {
   const skills = (content.skills ?? []) as string[];
   const summary = typeof content.summary === "string" ? content.summary : "";
   const job = (content.job_description ?? {}) as Record<string, string>;
+  const custom = (content.custom ?? {}) as Record<string, unknown>;
+
+  // Backend stores AI-relevant inputs under `custom.projects`, and we also store the raw UI structure under `custom.sections`.
+  const backendSections = custom.sections;
+  const backendProjects = (custom as any).projects;
+
+  const customSectionsFromBackend =
+    Array.isArray(backendSections)
+      ? (backendSections as any[]).map((s) => ({
+          title: typeof s?.title === "string" ? s.title : "",
+          content: typeof s?.content === "string" ? s.content : "",
+        }))
+      : [];
+
+  const customSectionsFromProjects =
+    Array.isArray(backendProjects) && customSectionsFromBackend.length === 0
+      ? (backendProjects as any[]).map((p) => {
+          const bullets = Array.isArray(p?.bullets) ? p.bullets : typeof p?.bullets === "string" ? [p.bullets] : [];
+          return {
+            title: typeof p?.title === "string" ? p.title : "Project",
+            content: bullets.map((b) => String(b)).join("\n"),
+          };
+        })
+      : [];
+
+  const customSections = customSectionsFromBackend.length > 0 ? customSectionsFromBackend : customSectionsFromProjects;
 
   return {
     name: info.full_name ?? "",
@@ -140,7 +166,7 @@ function mapContentToLocal(content: ResumeContent): ResumeData {
       location: job.location ?? "",
       description: job.description ?? "",
     },
-    customSections: [],
+    customSections,
   };
 }
 
@@ -197,6 +223,33 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
           location: resume.job.location ?? "",
         },
       };
+    case "custom": {
+      // Backend AI adapter currently reads `custom.projects` (array of {title, link, bullets}).
+      // We treat any custom section whose title includes "project" as a project input for AI.
+      const sections = resume.customSections ?? [];
+      const projects = sections
+        .filter((sec) => (sec.title ?? "").toLowerCase().includes("project"))
+        .map((sec) => {
+          const bullets = (sec.content ?? "")
+            .split("\n")
+            .map((line) => line.replace(/^(\-|\*|•|\d+\.)\s*/g, "").trim())
+            .filter(Boolean);
+
+          return {
+            title: sec.title || "Project",
+            link: "",
+            bullets,
+          };
+        });
+
+      return {
+        section: "custom",
+        body: {
+          projects,
+          sections, // keep the raw structure for later features
+        },
+      };
+    }
     default:
       return null;
   }
@@ -702,20 +755,32 @@ export default function ResumeBuilderScreen() {
 
   /** Save current section then advance */
   const goNext = async () => {
+    const idx = order.indexOf(activeTab);
+
     if (resumeId !== null) {
       const mapped = localToApiSection(activeTab, resume);
-      if (mapped) {
-        setSaving(true);
-        try {
+
+      // "Save & Next" on the final tab triggers AI optimization/generation.
+      setSaving(true);
+      try {
+        if (mapped) {
           await resumeService.patchContent(resumeId, mapped.section, mapped.body);
-        } catch {
-          // fail silently — data is still in local state
-        } finally {
-          setSaving(false);
         }
+
+        if (activeTab === "custom") {
+          const optimized = await resumeService.optimizeWithAi(resumeId);
+          if (optimized?.resume) {
+            setResume(mapContentToLocal(optimized.resume));
+            setPreviewMode("ats");
+          }
+        }
+      } catch (err) {
+        // fail silently — user still has local edits
+        console.error(err);
+      } finally {
+        setSaving(false);
       }
     }
-    const idx = order.indexOf(activeTab);
     if (idx < order.length - 1) setActiveTab(order[idx + 1]);
   };
 
