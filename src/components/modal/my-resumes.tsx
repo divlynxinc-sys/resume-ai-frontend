@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
@@ -48,13 +48,44 @@ function EmptyState() {
   );
 }
 
-function ResumeCard({ item }: { item: ResumeItem }) {
+function ResumeCard({ item, onRename }: { item: ResumeItem; onRename: (id: string, newTitle: string) => void }) {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(item.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const commit = () => {
+    const trimmed = editValue.trim() || "Untitled";
+    setEditing(false);
+    if (trimmed !== item.title) onRename(item.id, trimmed);
+  };
+
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 flex flex-col gap-3 hover:bg-white/[0.06]">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-base font-medium">{item.title || "Untitled Resume"}</h3>
+          {editing ? (
+            <input
+              ref={inputRef}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                if (e.key === "Escape") { setEditValue(item.title); setEditing(false); }
+              }}
+              className="w-full rounded border border-white/20 bg-white/10 px-2 py-0.5 text-base font-medium text-white outline-none focus:border-blue-500/50"
+              autoFocus
+            />
+          ) : (
+            <h3
+              className="text-base font-medium cursor-default"
+              onDoubleClick={() => { setEditValue(item.title); setEditing(true); setTimeout(() => inputRef.current?.select(), 0); }}
+              title="Double-click to rename"
+            >
+              {item.title || "Untitled Resume"}
+            </h3>
+          )}
           {item.updatedAt && (
             <p className="text-xs text-white/60">Updated {item.updatedAt}</p>
           )}
@@ -69,7 +100,6 @@ function ResumeCard({ item }: { item: ResumeItem }) {
         </button>
         <button
           onClick={() => {
-            // Placeholder: implement download from stored data when available
             alert("Download is not set up yet. We can wire this to export from the builder.");
           }}
           className="px-3 py-1.5 text-sm rounded-md border border-white/20 hover:bg-white/[0.06]"
@@ -120,6 +150,13 @@ export default function MyResumesScreen() {
         }
       });
   }, []);
+
+  const handleRename = async (id: string, newTitle: string) => {
+    setResumes((prev) => prev.map((r) => r.id === id ? { ...r, title: newTitle } : r));
+    try {
+      await resumeService.update(Number(id), { title: newTitle });
+    } catch { /* silently fail — local state already updated */ }
+  };
 
   const hasResumes = resumes.length > 0;
   const filteredResumes = resumes.filter((r) =>
@@ -173,7 +210,7 @@ export default function MyResumesScreen() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredResumes.map((item) => (
-                    <ResumeCard key={item.id} item={item} />
+                    <ResumeCard key={item.id} item={item} onRename={handleRename} />
                   ))}
                 </div>
               )}

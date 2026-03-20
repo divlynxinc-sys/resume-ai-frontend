@@ -69,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    await authService.signup(name, email, password);
+    const { access_token, refresh_token } = await authService.signup(name, email, password);
+    localStorage.setItem("accessToken", access_token);
+    localStorage.setItem("refreshToken", refresh_token);
+    await refreshUser();
   };
 
   const logout = async () => {

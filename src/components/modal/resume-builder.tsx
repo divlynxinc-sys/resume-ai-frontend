@@ -1,11 +1,14 @@
 import type { ReactNode, ChangeEvent } from "react";
-import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Wand2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AlertCircle, CheckCircle2, Download, ChevronDown } from "lucide-react";
+import html2pdf from "html2pdf.js";
+import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
 import type { ResumeContent } from "@/services/resume";
+import { useToast } from "@/contexts/ToastContext";
 
 
 function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: 'preview' | 'ats') => void }) {
@@ -479,9 +482,12 @@ function EducationForm({ resume, setResume }: { resume: ResumeData; setResume: (
 function SkillsForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
   const [input, setInput] = useState<string>("");
   const addSkill = () => {
-    const s = input.trim();
-    if (!s) return;
-    setResume({ ...resume, skills: [...resume.skills, s] });
+    const newSkills = input
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s && !resume.skills.includes(s));
+    if (!newSkills.length) return;
+    setResume({ ...resume, skills: [...resume.skills, ...newSkills] });
     setInput("");
   };
   const removeSkill = (idx: number) => {
@@ -579,19 +585,6 @@ function CustomSectionsForm({ resume, setResume }: { resume: ResumeData; setResu
   );
 }
 
-function AIAssistantCard() {
-  return (
-    <div className="relative rounded-2xl bg-white/5 border border-white/10 p-6">
-      <span className="absolute -top-2 -right-2 rounded-full bg-blue-600/20 text-blue-300 text-[10px] font-semibold px-2 py-1 border border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.6)]">FEATURED</span>
-      <div className="flex items-center gap-2">
-        <Wand2 className="size-4 text-white/80" />
-        <div className="font-semibold">AI Assistant</div>
-      </div>
-      <p className="text-sm text-white/60 mt-2">Get personalized suggestions and generate content with AI.</p>
-      <Link to="/ai-chat" className="mt-4 w-full rounded-lg border border-blue-500/30 bg-transparent px-4 py-2 text-sm text-blue-100 shadow-[0_0_10px_rgba(59,130,246,0.1)] transition-all hover:bg-blue-500/10 hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] inline-flex items-center justify-center">Generate with Juno AI</Link>
-    </div>
-  );
-}
 
 function hasResumeContent(r: ResumeData): boolean {
   const hasExp = r.experiences.some(
@@ -608,14 +601,62 @@ function hasResumeContent(r: ResumeData): boolean {
   );
 }
 
+/** Convert the builder's flat ResumeData → TemplateInput shape for template rendering */
+function toTemplateInput(resume: ResumeData): TemplateInput {
+  return {
+    candidate_info: {
+      name: resume.name,
+      email: resume.email,
+      phone: resume.phone,
+      linkedin: resume.linkedin || undefined,
+      portfolio: resume.portfolio || undefined,
+    },
+    resume: {
+      summary: resume.summary,
+      experiences: resume.experiences
+        .filter(e => e.role || e.company || e.bullets.length)
+        .map(e => ({
+          role: e.role,
+          company: e.company,
+          location: e.location,
+          startDate: e.startDate ?? '',
+          endDate: e.endDate,
+          bullets: e.bullets,
+        })),
+      projects: [],
+      education: resume.education
+        .filter(e => e.school || e.degree)
+        .map(e => ({
+          school: e.school,
+          degree: e.degree ?? '',
+          field: e.field ?? '',
+          location: e.location,
+          endDate: e.endDate ?? '',
+        })),
+      skills: resume.skills.length
+        ? [{ category: 'Skills', skills: resume.skills }]
+        : [],
+    },
+  };
+}
+
+/** Build resume HTML using the selected template */
+function buildResumeHtmlForPdf(resume: ResumeData, templateSlug = 'modern-minimal'): string {
+  return renderTemplate(templateSlug, toTemplateInput(resume));
+}
+
 function ResumePreview({
   mode,
   resume,
   ats,
+  fileName,
+  templateSlug = 'modern-minimal',
 }: {
   mode: "preview" | "ats";
   resume: ResumeData;
   ats: AtsOptimizeSummary | null;
+  fileName: string;
+  templateSlug?: string;
 }) {
   const score = typeof ats?.final_ats_score === "number" ? ats.final_ats_score : null;
   const keywordsFound = Array.isArray(ats?.keywords_found) ? ats.keywords_found : [];
@@ -623,10 +664,79 @@ function ResumePreview({
   const circumference = 2 * Math.PI * 42;
   const pct = score != null ? Math.min(100, Math.max(0, score)) : 0;
   const dashOffset = circumference - (pct / 100) * circumference;
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  // Write template HTML into the iframe and scale to fit container
+  const previewHtml = hasResumeContent(resume) ? buildResumeHtmlForPdf(resume, templateSlug) : '';
+  useEffect(() => {
+    const iframe = previewIframeRef.current;
+    const container = previewContainerRef.current;
+    if (!iframe || !previewHtml || !container) return;
+    const doc = iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(previewHtml);
+      doc.close();
+    }
+    const scale = container.clientWidth / 794;
+    iframe.style.transform = `scale(${scale})`;
+  }, [previewHtml]);
+
+  const handleDownloadPdf = async () => {
+    setDownloadOpen(false);
+    setDownloading(true);
+    try {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = buildResumeHtmlForPdf(resume, templateSlug);
+      const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
+      await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: `${resolvedName}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(wrapper)
+        .save();
+    } catch {
+      /* silently fail */
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div>
-      <div className="font-semibold mb-4">{mode === "preview" ? "Resume Preview" : "ATS Score"}</div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="font-semibold">{mode === "preview" ? "Resume Preview" : "ATS Score"}</div>
+        {mode === "preview" && hasResumeContent(resume) && (
+          <div className="relative">
+            <button
+              onClick={() => setDownloadOpen((v) => !v)}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            >
+              <Download className="size-3.5" />
+              {downloading ? "Downloading…" : "Download"}
+              <ChevronDown className={`size-3 transition-transform ${downloadOpen ? "rotate-180" : ""}`} />
+            </button>
+            {downloadOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setDownloadOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-lg border border-white/10 bg-[#0C1426] shadow-xl overflow-hidden">
+                  <button onClick={handleDownloadPdf} className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors">
+                    Download as PDF
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {mode === "preview" ? (
         <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-4">
@@ -635,78 +745,18 @@ function ResumePreview({
               Fill the form or use <strong className="text-white/70">Save &amp; Next</strong> on the last tab to run AI optimize — your resume will show here.
             </div>
           ) : (
-            <div className="max-h-[480px] overflow-y-auto rounded-xl bg-[#e9c5a6] p-3 shadow-inner">
-              <div className="bg-white rounded-sm shadow-xl text-[11px] text-gray-900 leading-snug p-4 min-h-[300px]">
-                <div className="text-base font-bold text-gray-900 border-b border-gray-200 pb-2 mb-2">
-                  {resume.name || "Your name"}
-                </div>
-                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[9px] text-gray-600 mb-3">
-                  {[resume.email, resume.phone, resume.location, resume.linkedin, resume.portfolio]
-                    .filter(Boolean)
-                    .map((bit, i) => (
-                      <span key={i}>{bit}</span>
-                    ))}
-                </div>
-                {resume.summary ? (
-                  <>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Summary</div>
-                    <p className="text-gray-800 mb-3 whitespace-pre-wrap">{resume.summary}</p>
-                  </>
-                ) : null}
-                {resume.experiences.some((e) => e.role || e.company || e.bullets.length) ? (
-                  <>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Experience</div>
-                    <div className="space-y-2 mb-3">
-                      {resume.experiences
-                        .filter((e) => e.role || e.company || e.bullets.length)
-                        .map((e, idx) => (
-                          <div key={idx}>
-                            <div className="font-semibold text-gray-900">
-                              {e.role}
-                              {e.company ? ` — ${e.company}` : ""}
-                            </div>
-                            {(e.startDate || e.endDate) && (
-                              <div className="text-[9px] text-gray-500">
-                                {[e.startDate, e.endDate].filter(Boolean).join(" – ")}
-                              </div>
-                            )}
-                            {e.bullets.length > 0 && (
-                              <ul className="list-disc pl-4 mt-0.5 text-gray-800 space-y-0.5">
-                                {e.bullets.map((b, j) => (
-                                  <li key={j}>{b}</li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  </>
-                ) : null}
-                {resume.education.some((e) => e.school || e.degree) ? (
-                  <>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Education</div>
-                    <div className="space-y-1 mb-3">
-                      {resume.education
-                        .filter((e) => e.school || e.degree)
-                        .map((e, idx) => (
-                          <div key={idx}>
-                            <div className="font-semibold">{e.school}</div>
-                            <div className="text-[9px] text-gray-600">
-                              {[e.degree, e.field].filter(Boolean).join(" · ")}
-                              {(e.startDate || e.endDate) && ` · ${[e.startDate, e.endDate].filter(Boolean).join(" – ")}`}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </>
-                ) : null}
-                {resume.skills.length > 0 ? (
-                  <>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Skills</div>
-                    <p className="text-gray-800">{resume.skills.join(", ")}</p>
-                  </>
-                ) : null}
-              </div>
+            /* A4 page preview — rendered in an iframe scaled to fit container */
+            <div
+              ref={previewContainerRef}
+              className="relative w-full overflow-hidden rounded-lg shadow-2xl"
+              style={{ aspectRatio: "210 / 297" }}
+            >
+              <iframe
+                ref={previewIframeRef}
+                title="Resume preview"
+                className="absolute top-0 left-0 origin-top-left border-none"
+                style={{ width: 794, height: 1123 }}
+              />
             </div>
           )}
         </div>
@@ -795,14 +845,19 @@ function ResumePreview({
 export default function ResumeBuilderScreen() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");
+  const initialTemplate = searchParams.get("template") || 'modern-minimal';
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
+  const [templateSlug, setTemplateSlug] = useState(initialTemplate);
 
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(emptyResume);
   const [resumeId, setResumeId] = useState<number | null>(null);
+  const [resumeFileName, setResumeFileName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   /** Last ATS summary from `ai/optimize` (drives ATS tab + real scores). */
   const [atsFromOptimize, setAtsFromOptimize] = useState<AtsOptimizeSummary | null>(null);
 
@@ -821,6 +876,7 @@ export default function ResumeBuilderScreen() {
     resumeService.get(id)
       .then((r) => {
         setResumeId(r.id);
+        if (r.title) setResumeFileName(r.title);
         if (r.content) setResume(mapContentToLocal(r.content));
       })
       .catch(() => {
@@ -836,6 +892,15 @@ export default function ResumeBuilderScreen() {
     }
   }, [resume, resumeId]);
 
+  // Sync title to backend when resumeFileName changes
+  useEffect(() => {
+    if (resumeId === null) return;
+    const timer = setTimeout(() => {
+      resumeService.update(resumeId, { title: resumeFileName || resume.name || "Untitled" }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [resumeFileName]);
+
   /** Start from scratch: create a new blank resume on the backend */
   const handleStartScratch = async () => {
     setStartModalOpen(false);
@@ -844,8 +909,9 @@ export default function ResumeBuilderScreen() {
     try {
       const r = await resumeService.create({ title: "New Resume", template_id: null });
       setResumeId(r.id);
+      showToast("Resume created successfully!");
     } catch {
-      // resume still usable locally even if API fails
+      showToast("Failed to create resume on server.", "error");
     }
   };
 
@@ -872,8 +938,11 @@ export default function ResumeBuilderScreen() {
       setResume(mapContentToLocal(r.content));
       setUploadModalOpen(false);
       setSelectedFile(null);
+      showToast("Resume uploaded and parsed successfully!");
     } catch (err: unknown) {
-      setUploadError((err as Error).message || "Failed to parse resume. Try a different file.");
+      const msg = (err as Error).message || "Failed to parse resume. Try a different file.";
+      setUploadError(msg);
+      showToast(msg, "error");
     } finally {
       setUploading(false);
     }
@@ -890,12 +959,21 @@ export default function ResumeBuilderScreen() {
 
       // "Save & Next" on the final tab triggers AI optimization/generation.
       setSaving(true);
+      setOptimizeError(null);
       try {
         if (mapped) {
           await resumeService.patchContent(resumeId, mapped.section, mapped.body);
+          if (activeTab !== "custom") {
+            showToast("Section saved successfully!");
+          }
         }
 
         if (activeTab === "custom") {
+          if (!resume.job.description.trim()) {
+            setOptimizeError("Please fill in the Job Description before generating your optimized resume.");
+            setSaving(false);
+            return;
+          }
           const optimized = await resumeService.optimizeWithAi(resumeId);
           if (optimized?.resume) {
             setResume(mapContentToLocal(optimized.resume));
@@ -904,11 +982,18 @@ export default function ResumeBuilderScreen() {
               setAtsFromOptimize(rawAts as AtsOptimizeSummary);
             }
             setPreviewMode("ats");
+            showToast("Resume optimized and generated successfully!");
           }
         }
       } catch (err) {
-        // fail silently — user still has local edits
         console.error(err);
+        if (activeTab === "custom") {
+          const msg = (err as Error).message || "Failed to optimize resume. Please try again.";
+          setOptimizeError(msg);
+          showToast(msg, "error");
+        } else {
+          showToast("Failed to save section.", "error");
+        }
       } finally {
         setSaving(false);
       }
@@ -937,15 +1022,32 @@ export default function ResumeBuilderScreen() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
-      <PageWithSidebar activeRoute="my-resumes" mainClassName="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <PageWithSidebar activeRoute="my-resumes" mainClassName="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8">
         {/* Left (main form) */}
-        <div className="lg:col-span-2">
+        <div>
           <PageHeader mode={previewMode} setMode={setPreviewMode} />
+
+          <div className="mt-4 mb-2">
+            <input
+              type="text"
+              value={resumeFileName}
+              onChange={(e) => setResumeFileName(e.target.value)}
+              placeholder={resume.name || "Untitled"}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-white/40 outline-none focus:border-white/25 focus:bg-white/[0.07] transition-colors"
+            />
+          </div>
+
           <Tabs active={activeTab} onChange={setActiveTab} />
 
           <div className="mt-6">
             {renderForm()}
           </div>
+
+          {optimizeError && (
+            <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {optimizeError}
+            </div>
+          )}
 
           <div className="mt-6 flex justify-between items-center">
             <button className="rounded-lg border border-white/15 px-5 py-2 text-sm text-white/80 hover:bg-white/[0.06]" onClick={goPrev}>Back</button>
@@ -959,10 +1061,9 @@ export default function ResumeBuilderScreen() {
           </div>
         </div>
 
-        {/* Right side */}
-        <div className="space-y-8">
-          <AIAssistantCard />
-          <ResumePreview mode={previewMode} resume={resume} ats={atsFromOptimize} />
+        {/* Right side — Preview */}
+        <div className="xl:sticky xl:top-[80px] xl:self-start">
+          <ResumePreview mode={previewMode} resume={resume} ats={atsFromOptimize} fileName={resumeFileName} templateSlug={templateSlug} />
         </div>
       </PageWithSidebar>
 

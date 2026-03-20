@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppButton } from "@/components/ui/AppButton";
 import { createPortal } from "react-dom";
@@ -26,6 +26,7 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
+import html2pdf from "html2pdf.js";
 
 export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   const navigate = useNavigate();
@@ -95,7 +96,7 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
         <NavItem icon={<Home className="size-4 text-sky-400" />} label="Dashboard" route="dashboard" active={current === "dashboard"} />
         <NavItem icon={<FileText className="size-4 text-emerald-400" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} />
         <NavItem icon={<LayoutGrid className="size-4 text-violet-400" />} label="Templates" route="templates" active={current === "templates"} />
-        <NavItem icon={<Wand2 className="size-4 text-pink-400" />} label="Juno AI" route="tailoring" active={current === "tailoring"} />
+        {/* <NavItem icon={<Wand2 className="size-4 text-pink-400" />} label="Juno AI" route="tailoring" active={current === "tailoring"} /> */}
         {/*<NavItem icon={<MessagesSquare className="size-4 text-orange-400" />} label=" AI Interviews" route="interview" active={current === "interview"} />*/}
         <NavItem icon={<Crown className="size-4 text-yellow-400" />} label="Explore Pro Plans" route="pricing" active={current === "pricing"} />
         <NavItem icon={<Settings className="size-4 text-slate-400" />} label="Settings" route="account" active={current === "account"} />
@@ -179,12 +180,70 @@ function HeroCard() {
   );
 }
 
+function buildResumePrintHtml(resume: any): string {
+  const c = resume.content ?? {};
+  const info = c.info ?? {};
+  const experiences = Array.isArray(c.experience) ? c.experience : [];
+  const education = Array.isArray(c.education) ? c.education : [];
+  const skills = Array.isArray(c.skills) ? c.skills : [];
+  const summary = typeof c.summary === "string" ? c.summary : "";
+  const name = info.full_name ?? resume.title ?? "Resume";
+  const contactBits = [info.email, info.phone, info.location, info.linkedin_url, info.portfolio_url].filter(Boolean);
+
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name} - Resume</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Georgia,serif;color:#1a1a1a;padding:40px 50px;max-width:800px;margin:0 auto;font-size:11pt;line-height:1.5}
+  h1{font-size:18pt;margin-bottom:4px}
+  .contact{font-size:9pt;color:#555;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .section-title{font-size:10pt;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#333;border-bottom:1px solid #ccc;padding-bottom:2px;margin:14px 0 6px}
+  .entry-title{font-weight:bold;font-size:10.5pt}
+  .entry-meta{font-size:9pt;color:#666;margin-bottom:2px}
+  ul{padding-left:18px;margin:2px 0 8px}
+  li{margin-bottom:2px}
+  .skills{display:flex;flex-wrap:wrap;gap:6px}
+  .skill{background:#f0f0f0;padding:2px 8px;border-radius:3px;font-size:9pt}
+  @media print{body{padding:20px 30px}}
+</style></head><body>`;
+
+  html += `<h1>${name}</h1>`;
+  if (contactBits.length) html += `<div class="contact">${contactBits.map(b => `<span>${b}</span>`).join("")}</div>`;
+  if (summary) html += `<div class="section-title">Summary</div><p>${summary}</p>`;
+  if (experiences.length) {
+    html += `<div class="section-title">Experience</div>`;
+    for (const e of experiences) {
+      html += `<div class="entry-title">${e.role ?? ""}${e.company ? ` — ${e.company}` : ""}</div>`;
+      const dates = [e.start_date, e.end_date].filter(Boolean).join(" – ");
+      if (dates) html += `<div class="entry-meta">${dates}</div>`;
+      const desc = typeof e.description === "string" ? e.description.split("\n").filter(Boolean) : [];
+      if (desc.length) html += `<ul>${desc.map((d: string) => `<li>${d}</li>`).join("")}</ul>`;
+    }
+  }
+  if (education.length) {
+    html += `<div class="section-title">Education</div>`;
+    for (const e of education) {
+      html += `<div class="entry-title">${e.degree ?? ""}${e.field_of_study ? ` in ${e.field_of_study}` : ""}${e.school ? ` — ${e.school}` : ""}</div>`;
+      const dates = [e.start_date, e.end_date].filter(Boolean).join(" – ");
+      if (dates || e.location) html += `<div class="entry-meta">${[dates, e.location].filter(Boolean).join(" | ")}</div>`;
+    }
+  }
+  if (skills.length) {
+    html += `<div class="section-title">Skills</div><div class="skills">${skills.map((s: string) => `<span class="skill">${s}</span>`).join("")}</div>`;
+  }
+  html += `</body></html>`;
+  return html;
+}
+
 function RecentActivity() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [editingNameId, setEditingNameId] = useState<number | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const fetchActivities = () => {
     dashboardService.getRecentActivity(10)
@@ -204,6 +263,43 @@ function RecentActivity() {
     fetchActivities();
   }, []);
 
+  const handleDownload = async (id: number) => {
+    setDownloadingId(id);
+    try {
+      const resume = await resumeService.get(id);
+      const html = buildResumePrintHtml(resume);
+      const container = document.createElement("div");
+      container.innerHTML = html;
+      // Extract just the body content and apply inline styles
+      const bodyContent = container.querySelector("body")?.innerHTML ?? html;
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = bodyContent;
+      wrapper.style.fontFamily = "Georgia, serif";
+      wrapper.style.color = "#1a1a1a";
+      wrapper.style.padding = "40px 50px";
+      wrapper.style.maxWidth = "800px";
+      wrapper.style.margin = "0 auto";
+      wrapper.style.fontSize = "11pt";
+      wrapper.style.lineHeight = "1.5";
+
+      const fileName = resume.title?.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Resume";
+      await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: `${fileName}.pdf`,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(wrapper)
+        .save();
+    } catch {
+      /* silently fail */
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     setLoading(true);
     try {
@@ -215,6 +311,22 @@ function RecentActivity() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const startEditing = (id: number, currentName: string) => {
+    setEditingNameId(id);
+    setEditingNameValue(currentName);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  };
+
+  const commitRename = async () => {
+    if (editingNameId === null) return;
+    const trimmed = editingNameValue.trim() || "Untitled";
+    setActivities((prev) => prev.map((a) => a.id === editingNameId ? { ...a, name: trimmed } : a));
+    setEditingNameId(null);
+    try {
+      await resumeService.update(editingNameId, { title: trimmed });
+    } catch { /* silently fail — local state already updated */ }
   };
 
   const filteredActivities = activities.filter((item) =>
@@ -281,7 +393,28 @@ function RecentActivity() {
                 (i % 2 === 0 ? "bg-white/[0.02]" : "")
               }
             >
-              <span className="truncate">{row.name}</span>
+              {editingNameId === row.id ? (
+                <input
+                  ref={nameInputRef}
+                  value={editingNameValue}
+                  onChange={(e) => setEditingNameValue(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename();
+                    if (e.key === "Escape") setEditingNameId(null);
+                  }}
+                  className="w-full rounded border border-white/20 bg-white/10 px-2 py-0.5 text-sm text-white outline-none focus:border-blue-500/50"
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className="truncate cursor-default"
+                  onDoubleClick={() => startEditing(row.id, row.name)}
+                  title="Double-click to rename"
+                >
+                  {row.name}
+                </span>
+              )}
               <span className="text-right text-white/70">{row.date}</span>
               <div className="flex items-center justify-end gap-3 text-white/70">
                 <button
@@ -292,9 +425,10 @@ function RecentActivity() {
                   <Edit2 className="size-4" />
                 </button>
                 <button
-                  className="hover:text-white"
+                  className="hover:text-white disabled:opacity-50"
                   title="Download"
-                  onClick={() => navigate(`/resumes?id=${row.id}`)}
+                  disabled={downloadingId === row.id}
+                  onClick={() => handleDownload(row.id)}
                 >
                   <Download className="size-4" />
                 </button>
