@@ -1,0 +1,223 @@
+{
+  "templateId": "modern-minimalist",
+  "templateName": "Modern Minimalist",
+  "layout": "single-column",
+  "sections": [
+    {
+      "sectionId": "header",
+      "sectionName": "Header",
+      "order": 1,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "fullName",
+          "fieldName": "Full Name",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "jobTitle",
+          "fieldName": "Job Title / Headline",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "phone",
+          "fieldName": "Phone",
+          "fieldType": "phone",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "email",
+          "fieldName": "Email",
+          "fieldType": "email",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "socialMedia",
+          "fieldName": "Social Media Handle",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "fieldId": "address",
+          "fieldName": "Address",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "summary",
+      "sectionName": "Professional Summary",
+      "order": 2,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "summary",
+          "fieldName": "Summary",
+          "fieldType": "textarea",
+          "required": true,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "keyCompetencies",
+      "sectionName": "Key Competencies",
+      "order": 3,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "competencies",
+          "fieldName": "Competencies",
+          "fieldType": "list",
+          "required": true,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "professionalExperience",
+      "sectionName": "Professional Experience",
+      "order": 4,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "experienceItem",
+          "fieldName": "Experience Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "jobTitle",
+              "fieldName": "Job Title",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "company",
+              "fieldName": "Company",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "dateRange",
+              "fieldName": "Date Range",
+              "fieldType": "date-range",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "description",
+              "fieldName": "Description",
+              "fieldType": "textarea",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "educationCertifications",
+      "sectionName": "Education & Certifications",
+      "order": 5,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "educationItem",
+          "fieldName": "Education / Certification Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "title",
+              "fieldName": "Degree / Certification Title",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "institution",
+              "fieldName": "Institution",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "details",
+              "fieldName": "Details / Specialisation",
+              "fieldType": "text",
+              "required": false,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "volunteerCommunity",
+      "sectionName": "Volunteer & Community Activities",
+      "order": 6,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "volunteerItem",
+          "fieldName": "Volunteer Entry",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "role",
+              "fieldName": "Role",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "organization",
+              "fieldName": "Organization",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "dateRange",
+              "fieldName": "Date Range",
+              "fieldType": "date-range",
+              "required": false,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "references",
+      "sectionName": "References",
+      "order": 7,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "referencesNote",
+          "fieldName": "References Note",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": false
+        }
+      ]
+    }
+  ]
+}

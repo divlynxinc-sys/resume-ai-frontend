@@ -1,0 +1,223 @@
+{
+  "templateId": "classic-professional",
+  "templateName": "Classic Professional",
+  "layout": "single-column",
+  "sections": [
+    {
+      "sectionId": "header",
+      "sectionName": "Header",
+      "order": 1,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "fullName",
+          "fieldName": "Full Name",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "email",
+          "fieldName": "Email",
+          "fieldType": "email",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "phone",
+          "fieldName": "Phone",
+          "fieldType": "phone",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "linkedin",
+          "fieldName": "LinkedIn",
+          "fieldType": "url",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "fieldId": "portfolio",
+          "fieldName": "Portfolio Website",
+          "fieldType": "url",
+          "required": false,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "experience",
+      "sectionName": "Experience",
+      "order": 2,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "experienceItem",
+          "fieldName": "Experience Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "jobTitle",
+              "fieldName": "Job Title",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "company",
+              "fieldName": "Company",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "dateRange",
+              "fieldName": "Date Range",
+              "fieldType": "date-range",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "location",
+              "fieldName": "Location",
+              "fieldType": "text",
+              "required": false,
+              "repeatable": false
+            },
+            {
+              "fieldId": "responsibilities",
+              "fieldName": "Responsibilities",
+              "fieldType": "list",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "projects",
+      "sectionName": "Projects",
+      "order": 3,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "projectItem",
+          "fieldName": "Project Entry",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "projectName",
+              "fieldName": "Project Name",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "projectSubtitle",
+              "fieldName": "Subtitle / Technologies",
+              "fieldType": "text",
+              "required": false,
+              "repeatable": false
+            },
+            {
+              "fieldId": "projectLink",
+              "fieldName": "Project Link",
+              "fieldType": "url",
+              "required": false,
+              "repeatable": false
+            },
+            {
+              "fieldId": "description",
+              "fieldName": "Description",
+              "fieldType": "list",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "education",
+      "sectionName": "Education",
+      "order": 4,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "educationItem",
+          "fieldName": "Education Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "degree",
+              "fieldName": "Degree",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "institution",
+              "fieldName": "Institution",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "location",
+              "fieldName": "Location",
+              "fieldType": "text",
+              "required": false,
+              "repeatable": false
+            },
+            {
+              "fieldId": "graduationYear",
+              "fieldName": "Graduation Year",
+              "fieldType": "text",
+              "required": false,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "skills",
+      "sectionName": "Skills",
+      "order": 5,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "skillCategory",
+          "fieldName": "Skill Category",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "categoryName",
+              "fieldName": "Category Name",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "skills",
+              "fieldName": "Skills",
+              "fieldType": "list",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

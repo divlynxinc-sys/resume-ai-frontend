@@ -1,0 +1,185 @@
+{
+  "templateId": "blue-minimalist",
+  "templateName": "Blue Minimalist",
+  "layout": "single-column",
+  "sections": [
+    {
+      "sectionId": "header",
+      "sectionName": "Header",
+      "order": 1,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "fullName",
+          "fieldName": "Full Name",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "jobTitle",
+          "fieldName": "Job Title",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "photo",
+          "fieldName": "Profile Photo",
+          "fieldType": "image",
+          "required": false,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "summary",
+      "sectionName": "Summary",
+      "order": 2,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "summary",
+          "fieldName": "Professional Summary",
+          "fieldType": "textarea",
+          "required": true,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "experience",
+      "sectionName": "Experience",
+      "order": 3,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "experienceItem",
+          "fieldName": "Experience Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "jobTitle",
+              "fieldName": "Job Title",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "company",
+              "fieldName": "Company",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "dateRange",
+              "fieldName": "Date Range",
+              "fieldType": "date-range",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "responsibilities",
+              "fieldName": "Responsibilities",
+              "fieldType": "list",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "education",
+      "sectionName": "Education",
+      "order": 4,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "educationItem",
+          "fieldName": "Education Entry",
+          "fieldType": "text",
+          "required": true,
+          "repeatable": true,
+          "fields": [
+            {
+              "fieldId": "degree",
+              "fieldName": "Degree",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "institution",
+              "fieldName": "Institution",
+              "fieldType": "text",
+              "required": true,
+              "repeatable": false
+            },
+            {
+              "fieldId": "dateRange",
+              "fieldName": "Date Range",
+              "fieldType": "date-range",
+              "required": true,
+              "repeatable": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "skills",
+      "sectionName": "Skills",
+      "order": 5,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "skillItems",
+          "fieldName": "Skills",
+          "fieldType": "list",
+          "required": true,
+          "repeatable": false
+        }
+      ]
+    },
+    {
+      "sectionId": "contact",
+      "sectionName": "Contact",
+      "order": 6,
+      "column": "full",
+      "fields": [
+        {
+          "fieldId": "website",
+          "fieldName": "Website",
+          "fieldType": "url",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "fieldId": "email",
+          "fieldName": "Email",
+          "fieldType": "email",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "fieldId": "address",
+          "fieldName": "Address",
+          "fieldType": "text",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "fieldId": "phone",
+          "fieldName": "Phone",
+          "fieldType": "phone",
+          "required": true,
+          "repeatable": false
+        }
+      ]
+    }
+  ]
+}
