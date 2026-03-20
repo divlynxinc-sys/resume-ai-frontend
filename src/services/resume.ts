@@ -32,6 +32,13 @@ export interface ResumeListResponse {
   total: number;
 }
 
+export interface OptimizeResumeResponse {
+  message: string;
+  resume: ResumeContent;
+  ats: unknown;
+  ats_score_id: number | null;
+}
+
 export const resumeService = {
   list: (params?: { limit?: number; offset?: number; q?: string }) => {
     const qs = new URLSearchParams();
@@ -81,6 +88,18 @@ export const resumeService = {
       `/resumes/${id}/content?section=${section}`,
       body
     ),
+
+  optimizeWithAi: (id: number, params?: { update_resume_content?: boolean; store_ats_score?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.update_resume_content != null) {
+      qs.set("update_resume_content", params.update_resume_content ? "true" : "false");
+    }
+    if (params?.store_ats_score != null) {
+      qs.set("store_ats_score", params.store_ats_score ? "true" : "false");
+    }
+    const qsStr = qs.toString();
+    return api.post<OptimizeResumeResponse>(`/resumes/${id}/ai/optimize${qsStr ? `?${qsStr}` : ""}`);
+  },
 
   saveAtsScore: (id: number, data: unknown) =>
     api.post<unknown>(`/resumes/${id}/ats-score`, data),

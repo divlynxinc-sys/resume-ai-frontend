@@ -14,31 +14,35 @@ export default function PageWithSidebar({
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] relative">
+    <div className="flex min-h-[calc(100vh-64px)]">
+      {/* Fixed sidebar */}
       <div
-        className={`shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "w-[260px]" : "w-0"}`}
+        className={`fixed top-[64px] left-0 h-[calc(100vh-64px)] z-40 transition-all duration-300 ease-in-out ${isOpen ? "w-[260px]" : "w-0"} overflow-hidden`}
       >
-        <div className="w-[260px] sticky top-0 h-screen overflow-y-auto">
-           <Sidebar activeRoute={activeRoute} />
+        <div className="w-[260px] h-full overflow-y-auto">
+          <Sidebar activeRoute={activeRoute} />
         </div>
       </div>
-      
-      {/* Toggle Button */}
+
+      {/* Toggle button — anchored to sidebar edge */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed z-50 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out
           flex items-center justify-center
           size-6 rounded-full border border-white/10 bg-[#0f162a] text-white shadow-lg hover:bg-white/10
-          ${isOpen ? "left-[248px]" : "left-4"}
+          ${isOpen ? "left-[248px]" : "left-2"}
         `}
         title={isOpen ? "Hide sidebar" : "Show sidebar"}
       >
-         {isOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
+        {isOpen ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
       </button>
+
+      {/* Spacer to offset content for fixed sidebar */}
+      <div className={`shrink-0 transition-all duration-300 ease-in-out ${isOpen ? "w-[260px]" : "w-0"}`} />
 
       <div className="flex-1 min-w-0 relative">
         <div className={"px-6 py-6 " + (mainClassName ?? "")}>
-            {children}
+          {children}
         </div>
       </div>
     </div>

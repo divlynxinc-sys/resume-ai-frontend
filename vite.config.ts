@@ -14,10 +14,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://resumeai-api-0df7.onrender.com",
+        target: "http://localhost:8010",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
-        secure: true,
+        secure: false,
       },
     },
   },

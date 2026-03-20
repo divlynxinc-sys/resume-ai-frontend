@@ -1,28 +1,12 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useToast } from "@/contexts/ToastContext";
 import { settingsService, profileService } from "@/services";
 import type { AccountSummary } from "@/services/settings";
-
-function Toast({ message, visible }: { message: string; visible: boolean }) {
-  return (
-    <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-green-500/30 bg-[#0f1f10] px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-      }`}
-    >
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/20">
-        <svg className="h-3 w-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </span>
-      <span className="text-sm text-green-300 font-medium">{message}</span>
-    </div>
-  );
-}
 
 function PageTitle({ children, subtitle }: { children: ReactNode; subtitle?: string }) {
   return (
@@ -111,6 +95,7 @@ export default function AccountManagementScreen() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { showToast } = useToast();
 
   // Profile state
   const [name, setName] = useState("");
@@ -136,17 +121,6 @@ export default function AccountManagementScreen() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
-  // Toast
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMsg, setToastMsg] = useState("Password updated successfully!");
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((msg = "Password updated successfully!") => {
-    setToastMsg(msg);
-    setToastVisible(true);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastVisible(false), 5000);
-  }, []);
 
   // Export / delete
   const [exporting, setExporting] = useState(false);
@@ -491,7 +465,6 @@ export default function AccountManagementScreen() {
         </div>
       </PageWithSidebar>
 
-      <Toast message={toastMsg} visible={toastVisible} />
     </div>
   );
 }
