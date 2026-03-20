@@ -66,6 +66,14 @@ interface JobDetails {
 
 interface CustomSection { title: string; content: string; }
 
+/** Shape returned from `POST /resumes/:id/ai/optimize` → `ats` */
+interface AtsOptimizeSummary {
+  final_ats_score?: number;
+  keywords_found?: string[];
+  keywords_missing?: string[];
+  iterations_needed?: number;
+}
+
 interface ResumeData {
   name: string;
   email: string;
@@ -585,81 +593,199 @@ function AIAssistantCard() {
   );
 }
 
-function ResumePreview({ mode }: { mode: 'preview' | 'ats' }) {
+function hasResumeContent(r: ResumeData): boolean {
+  const hasExp = r.experiences.some(
+    (e) => (e.role || e.company || (e.bullets && e.bullets.length > 0))
+  );
+  const hasEdu = r.education.some((e) => e.school || e.degree);
+  return Boolean(
+    r.name ||
+      r.email ||
+      r.summary ||
+      (r.skills && r.skills.length) ||
+      hasExp ||
+      hasEdu
+  );
+}
+
+function ResumePreview({
+  mode,
+  resume,
+  ats,
+}: {
+  mode: "preview" | "ats";
+  resume: ResumeData;
+  ats: AtsOptimizeSummary | null;
+}) {
+  const score = typeof ats?.final_ats_score === "number" ? ats.final_ats_score : null;
+  const keywordsFound = Array.isArray(ats?.keywords_found) ? ats.keywords_found : [];
+  const keywordsMissing = Array.isArray(ats?.keywords_missing) ? ats.keywords_missing : [];
+  const circumference = 2 * Math.PI * 42;
+  const pct = score != null ? Math.min(100, Math.max(0, score)) : 0;
+  const dashOffset = circumference - (pct / 100) * circumference;
+
   return (
     <div>
-      <div className="font-semibold mb-4">{mode === 'preview' ? 'Resume Preview' : 'ATS Score'}</div>
+      <div className="font-semibold mb-4">{mode === "preview" ? "Resume Preview" : "ATS Score"}</div>
 
-      {mode === 'preview' ? (
-        <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-6 flex items-center justify-center">
-          <div className="w-[280px] h-[380px] rounded-xl bg-[#e9c5a6] shadow-inner flex items-center justify-center">
-            <div className="w-[220px] h-[320px] bg-white rounded-sm shadow-xl">
-              <div className="p-4 space-y-2">
-                <div className="h-3 w-24 bg-black/70" />
-                <div className="h-2 w-36 bg-black/20" />
-                <div className="mt-4 space-y-2">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-2 w-full bg-black/10" />
-                  ))}
+      {mode === "preview" ? (
+        <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-4">
+          {!hasResumeContent(resume) ? (
+            <div className="text-sm text-white/50 text-center py-12 px-4">
+              Fill the form or use <strong className="text-white/70">Save &amp; Next</strong> on the last tab to run AI optimize — your resume will show here.
+            </div>
+          ) : (
+            <div className="max-h-[480px] overflow-y-auto rounded-xl bg-[#e9c5a6] p-3 shadow-inner">
+              <div className="bg-white rounded-sm shadow-xl text-[11px] text-gray-900 leading-snug p-4 min-h-[300px]">
+                <div className="text-base font-bold text-gray-900 border-b border-gray-200 pb-2 mb-2">
+                  {resume.name || "Your name"}
                 </div>
-                <div className="mt-4 space-y-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-2 w-11/12 bg-black/10" />
-                  ))}
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[9px] text-gray-600 mb-3">
+                  {[resume.email, resume.phone, resume.location, resume.linkedin, resume.portfolio]
+                    .filter(Boolean)
+                    .map((bit, i) => (
+                      <span key={i}>{bit}</span>
+                    ))}
                 </div>
+                {resume.summary ? (
+                  <>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Summary</div>
+                    <p className="text-gray-800 mb-3 whitespace-pre-wrap">{resume.summary}</p>
+                  </>
+                ) : null}
+                {resume.experiences.some((e) => e.role || e.company || e.bullets.length) ? (
+                  <>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Experience</div>
+                    <div className="space-y-2 mb-3">
+                      {resume.experiences
+                        .filter((e) => e.role || e.company || e.bullets.length)
+                        .map((e, idx) => (
+                          <div key={idx}>
+                            <div className="font-semibold text-gray-900">
+                              {e.role}
+                              {e.company ? ` — ${e.company}` : ""}
+                            </div>
+                            {(e.startDate || e.endDate) && (
+                              <div className="text-[9px] text-gray-500">
+                                {[e.startDate, e.endDate].filter(Boolean).join(" – ")}
+                              </div>
+                            )}
+                            {e.bullets.length > 0 && (
+                              <ul className="list-disc pl-4 mt-0.5 text-gray-800 space-y-0.5">
+                                {e.bullets.map((b, j) => (
+                                  <li key={j}>{b}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                ) : null}
+                {resume.education.some((e) => e.school || e.degree) ? (
+                  <>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Education</div>
+                    <div className="space-y-1 mb-3">
+                      {resume.education
+                        .filter((e) => e.school || e.degree)
+                        .map((e, idx) => (
+                          <div key={idx}>
+                            <div className="font-semibold">{e.school}</div>
+                            <div className="text-[9px] text-gray-600">
+                              {[e.degree, e.field].filter(Boolean).join(" · ")}
+                              {(e.startDate || e.endDate) && ` · ${[e.startDate, e.endDate].filter(Boolean).join(" – ")}`}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                ) : null}
+                {resume.skills.length > 0 ? (
+                  <>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-700 mb-1">Skills</div>
+                    <p className="text-gray-800">{resume.skills.join(", ")}</p>
+                  </>
+                ) : null}
               </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="rounded-2xl bg-[#0f162a] border border-white/10 p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-blue-500/10 blur-[60px] rounded-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-8 relative z-10">
-            <div>
-              <div className="text-sm font-medium text-white/60">Overall ATS Score</div>
-              <div className="text-4xl font-bold mt-2">86/100</div>
-              <div className="text-xs text-emerald-400 mt-2 font-medium flex items-center gap-1.5">
-                 <CheckCircle2 className="size-3.5" />
-                 <span>Excellent Score</span>
+          {score == null ? (
+            <div className="relative z-10 text-sm text-white/50 py-6">
+              Run <strong className="text-white/70">Save &amp; Next</strong> on the Custom tab to optimize with AI — your ATS score from the pipeline will appear here.
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <div>
+                  <div className="text-sm font-medium text-white/60">Overall ATS Score</div>
+                  <div className="text-4xl font-bold mt-2">
+                    {score}/100
+                  </div>
+                  <div className="text-xs text-emerald-400 mt-2 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="size-3.5" />
+                    <span>{score >= 80 ? "Strong match" : score >= 60 ? "Good progress" : "Room to improve"}</span>
+                  </div>
+                </div>
+                <div className="relative size-24 shrink-0">
+                  <svg className="size-full -rotate-90" viewBox="0 0 96 96">
+                    <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="42"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      fill="transparent"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={dashOffset}
+                      strokeLinecap="round"
+                      className="text-blue-500"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">{score}%</div>
+                </div>
               </div>
-            </div>
-            <div className="relative size-24">
-               <svg className="size-full -rotate-90">
-                 <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                 <circle cx="48" cy="48" r="42" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="263.89" strokeDashoffset="36.94" strokeLinecap="round" className="text-blue-500" />
-               </svg>
-               <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">86%</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 relative z-10">
-            {[
-              { label: "Keyword Match", score: 82, color: "bg-emerald-500" },
-              { label: "Formatting", score: 88, color: "bg-blue-500" },
-              { label: "Contact Info", score: 95, color: "bg-indigo-500" },
-              { label: "Section Detection", score: 78, color: "bg-violet-500" },
-            ].map((item) => (
-               <div key={item.label}>
-                 <div className="flex justify-between text-xs mb-2">
-                   <span className="text-white/90 font-medium">{item.label}</span>
-                   <span className="text-white/60 font-mono">{item.score}%</span>
-                 </div>
-                 <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
-                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.score}%` }} />
-                 </div>
-               </div>
-            ))}
-          </div>
-          <div className="mt-6 pt-4 border-t border-white/10 relative z-10">
-            <h4 className="text-sm font-semibold text-white/90 mb-3 flex items-center gap-2">
-              <AlertCircle className="size-4 text-amber-400" />
-              Suggestions
-            </h4>
-            <div className="space-y-2 text-xs text-white/60">
-              <div>• Add more action verbs to experience bullets</div>
-              <div>• Include a dedicated Skills section</div>
-              <div>• Use consistent date format (e.g., Jan 2022 – Present)</div>
-            </div>
-          </div>
+              {keywordsFound.length > 0 && (
+                <div className="relative z-10 mb-4">
+                  <div className="text-xs font-semibold text-white/80 mb-2">Keywords found</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {keywordsFound.slice(0, 24).map((k) => (
+                      <span key={k} className="rounded-md bg-emerald-500/20 text-emerald-200 text-[10px] px-2 py-0.5 border border-emerald-500/30">
+                        {k}
+                      </span>
+                    ))}
+                    {keywordsFound.length > 24 && (
+                      <span className="text-[10px] text-white/40">+{keywordsFound.length - 24} more</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {keywordsMissing.length > 0 && (
+                <div className="relative z-10 mb-4">
+                  <div className="text-xs font-semibold text-white/80 mb-2 flex items-center gap-2">
+                    <AlertCircle className="size-3.5 text-amber-400" />
+                    Gaps (missing keywords)
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {keywordsMissing.slice(0, 20).map((k) => (
+                      <span key={k} className="rounded-md bg-amber-500/15 text-amber-100 text-[10px] px-2 py-0.5 border border-amber-500/25">
+                        {k}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {typeof ats?.iterations_needed === "number" && (
+                <div className="text-[10px] text-white/40 relative z-10">
+                  Optimization passes: {ats.iterations_needed}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -677,6 +803,8 @@ export default function ResumeBuilderScreen() {
   const [resume, setResume] = useState<ResumeData>(emptyResume);
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Last ATS summary from `ai/optimize` (drives ATS tab + real scores). */
+  const [atsFromOptimize, setAtsFromOptimize] = useState<AtsOptimizeSummary | null>(null);
 
   // Modal states — hide start modal when editing an existing resume
   const [startModalOpen, setStartModalOpen] = useState(!editId);
@@ -771,6 +899,10 @@ export default function ResumeBuilderScreen() {
           const optimized = await resumeService.optimizeWithAi(resumeId);
           if (optimized?.resume) {
             setResume(mapContentToLocal(optimized.resume));
+            const rawAts = optimized.ats;
+            if (rawAts && typeof rawAts === "object" && !Array.isArray(rawAts)) {
+              setAtsFromOptimize(rawAts as AtsOptimizeSummary);
+            }
             setPreviewMode("ats");
           }
         }
@@ -830,7 +962,7 @@ export default function ResumeBuilderScreen() {
         {/* Right side */}
         <div className="space-y-8">
           <AIAssistantCard />
-          <ResumePreview mode={previewMode} />
+          <ResumePreview mode={previewMode} resume={resume} ats={atsFromOptimize} />
         </div>
       </PageWithSidebar>
 
