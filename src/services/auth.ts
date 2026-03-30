@@ -38,4 +38,7 @@ export const authService = {
     api.post<LoginResponse>("/auth/refresh", { refresh_token }),
 
   logoutAll: () => api.post<{ message: string }>("/auth/logout-all"),
+
+  googleAuth: (credential: string) =>
+    api.post<LoginResponse>("/auth/google", { credential }),
 };

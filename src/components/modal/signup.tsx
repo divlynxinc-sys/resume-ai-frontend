@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
 import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -25,19 +26,21 @@ function BrandBar() {
   );
 }
 
-function SocialButton({
-  icon,
-  label,
-  iconClass,
-}: {
-  icon: ReactNode;
-  label: string;
-  iconClass?: string;
-}) {
+function GoogleSignupButton({ onSuccess, onError, disabled }: { onSuccess: (token: string) => void; onError: () => void; disabled: boolean }) {
+  const googleSignup = useGoogleLogin({
+    onSuccess: (tokenResponse) => onSuccess(tokenResponse.access_token),
+    onError: () => onError(),
+  });
+
   return (
-    <button className="group flex w-full items-center gap-3 rounded-xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-all">
-      <div className={`size-5 grid place-items-center transition-transform group-hover:scale-110 ${iconClass ?? "text-white/70"}`}>{icon}</div>
-      <span className="font-medium">{label}</span>
+    <button
+      type="button"
+      onClick={() => googleSignup()}
+      disabled={disabled}
+      className="group flex w-full items-center gap-3 rounded-xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-all"
+    >
+      <div className="size-5 grid place-items-center transition-transform group-hover:scale-110 text-xl"><FcGoogle /></div>
+      <span className="font-medium">Sign up with Google</span>
     </button>
   );
 }
@@ -289,9 +292,25 @@ function OtpVerification({
 }
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, googleLogin } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  const handleGoogleSuccess = async (accessToken: string) => {
+    setError("");
+    setStatus("loading");
+    try {
+      await googleLogin(accessToken);
+      showToast("Account created successfully!");
+      navigate("/dashboard");
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err.message || "Google signup failed.";
+      showToast(msg, "error");
+      setError(msg);
+    } finally {
+      setStatus("idle");
+    }
+  };
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -481,7 +500,11 @@ export default function Signup() {
                     <div className="text-xs text-white/50 mt-1">Quick access with your existing accounts</div>
                   </div>
                   <div className="space-y-3">
-                    <SocialButton icon={<FcGoogle />} label="Sign up with Google" iconClass="text-xl" />
+                    <GoogleSignupButton
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError("Google signup failed")}
+                      disabled={status === "loading"}
+                    />
                   </div>
                   <div className="text-xs text-white/30 text-center px-4 leading-relaxed">
                     By clicking continue, you agree to our <Link to="/terms" className="underline hover:text-white/50">Terms of Service</Link> and <a href="#" className="underline hover:text-white/50">Privacy Policy</a>.

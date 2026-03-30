@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactNode, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
+import { useGoogleLogin } from "@react-oauth/google";
 import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,15 +31,6 @@ function DividerLabel({ children }: { children: ReactNode }) {
   );
 }
 
-function SocialButton({ icon, label, iconClass }: { icon: ReactNode; label: string; iconClass?: string }) {
-  return (
-    <button className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)]">
-      <span className={`text-base ${iconClass ?? ""}`}>{icon}</span>
-      <span className="text-sm">{label}</span>
-    </button>
-  );
-}
-
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,8 +39,25 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
 
-  const { login, refreshUser } = useAuth();
+  const { login, googleLogin, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError("");
+      setStatus("loading");
+      try {
+        await googleLogin(tokenResponse.access_token);
+        const firstShown = localStorage.getItem("firstLoginShown");
+        navigate(firstShown ? "/dashboard" : "/onboarding");
+      } catch (err: any) {
+        setError(err.message || "Google login failed");
+      } finally {
+        setStatus("idle");
+      }
+    },
+    onError: () => setError("Google login failed"),
+  });
 
   const validateEmailField = (value: string) => {
     if (!value.trim()) return "Email is required.";
@@ -174,7 +183,15 @@ export default function LoginScreen() {
               <DividerLabel>Or continue with</DividerLabel>
 
               <div className="grid grid-cols-1 gap-3">
-                <SocialButton icon={<FcGoogle />} label="Sign in with Google" iconClass="text-xl" />
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin()}
+                  disabled={status === "loading"}
+                  className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)]"
+                >
+                  <span className="text-xl"><FcGoogle /></span>
+                  <span className="text-sm">Sign in with Google</span>
+                </button>
               </div>
 
               <div className="mt-5 text-center text-xs text-white/60">
