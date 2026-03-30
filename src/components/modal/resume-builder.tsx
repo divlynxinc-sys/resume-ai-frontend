@@ -135,7 +135,7 @@ function mapContentToLocal(content: ResumeContent): ResumeData {
           const bullets = Array.isArray(p?.bullets) ? p.bullets : typeof p?.bullets === "string" ? [p.bullets] : [];
           return {
             title: typeof p?.title === "string" ? p.title : "Project",
-            content: bullets.map((b) => String(b)).join("\n"),
+            content: bullets.map((b: unknown) => String(b)).join("\n"),
           };
         })
       : [];
@@ -850,7 +850,7 @@ export default function ResumeBuilderScreen() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
-  const [templateSlug, setTemplateSlug] = useState(initialTemplate);
+  const [templateSlug, _setTemplateSlug] = useState(initialTemplate);
 
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(emptyResume);
