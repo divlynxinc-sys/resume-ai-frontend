@@ -75,6 +75,10 @@ interface AtsOptimizeSummary {
   keywords_found?: string[];
   keywords_missing?: string[];
   iterations_needed?: number;
+  /** Pre-optimization score on the user's raw resume (the honest "before"). */
+  initial_ats_score?: number | null;
+  initial_keywords_found?: string[];
+  initial_keywords_missing?: string[];
 }
 
 interface ResumeData {
@@ -302,45 +306,107 @@ function Label({ children }: { children: ReactNode }) {
   return <div className="text-xs text-white/60 mb-2">{children}</div>;
 }
 
-function TextInput({ placeholder = "", value, onChange, type = "text" }: { placeholder?: string; value?: string; onChange?: (v: string) => void; type?: string }) {
+function TextInput({ placeholder = "", value, onChange, type = "text", error = false }: { placeholder?: string; value?: string; onChange?: (v: string) => void; type?: string; error?: boolean }) {
   return (
     <input
       value={value ?? ""}
       onChange={(e) => onChange?.(e.target.value)}
       type={type}
       placeholder={placeholder}
-      className="w-full rounded-lg border border-white/15 bg-[#0C1426] px-4 py-3 text-sm outline-none ring-0 placeholder:text-white/40 focus:border-white/25"
+      aria-invalid={error || undefined}
+      className={`w-full rounded-lg border bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 transition-colors ${
+        error
+          ? "border-red-500/70 ring-1 ring-red-500/40 focus:border-red-500"
+          : "border-white/15 ring-0 focus:border-white/25"
+      }`}
     />
   );
 }
 
-function TextArea({ placeholder = "", value, onChange, rows = 4 }: { placeholder?: string; value?: string; onChange?: (v: string) => void; rows?: number }) {
+function TextArea({ placeholder = "", value, onChange, rows = 4, error = false }: { placeholder?: string; value?: string; onChange?: (v: string) => void; rows?: number; error?: boolean }) {
   return (
     <textarea
       value={value ?? ""}
       onChange={(e) => onChange?.(e.target.value)}
       rows={rows}
       placeholder={placeholder}
-      className="w-full rounded-lg border border-white/15 bg-[#0C1426] px-4 py-3 text-sm outline-none ring-0 placeholder:text-white/40 focus:border-white/25"
+      aria-invalid={error || undefined}
+      className={`w-full rounded-lg border bg-[#0C1426] px-4 py-3 text-sm outline-none placeholder:text-white/40 transition-colors ${
+        error
+          ? "border-red-500/70 ring-1 ring-red-500/40 focus:border-red-500"
+          : "border-white/15 ring-0 focus:border-white/25"
+      }`}
     />
   );
 }
 
-function PersonalInfoForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
+type PersonalErrors = { name?: boolean; email?: boolean; emailFormat?: boolean; phone?: boolean };
+type EducationItemErrors = { school?: boolean; degree?: boolean; startDate?: boolean; endDate?: boolean };
+type JobErrors = { title?: boolean; company?: boolean; description?: boolean };
+interface SectionErrors {
+  personal?: PersonalErrors;
+  education?: EducationItemErrors[];
+  job?: JobErrors;
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSection(tab: TabKey, resume: ResumeData): SectionErrors | null {
+  if (tab === "personal") {
+    const e: PersonalErrors = {};
+    if (!resume.name.trim()) e.name = true;
+    if (!resume.email.trim()) e.email = true;
+    else if (!EMAIL_REGEX.test(resume.email.trim())) e.emailFormat = true;
+    if (!resume.phone.trim()) e.phone = true;
+    return Object.keys(e).length ? { personal: e } : null;
+  }
+  if (tab === "education") {
+    const items = resume.education.map<EducationItemErrors>((ed) => ({
+      school: !ed.school?.trim(),
+      degree: !ed.degree?.trim(),
+      startDate: !ed.startDate?.trim(),
+      endDate: !ed.endDate?.trim(),
+    }));
+    const hasErr = items.some((e) => e.school || e.degree || e.startDate || e.endDate);
+    return hasErr ? { education: items } : null;
+  }
+  if (tab === "job") {
+    const e: JobErrors = {};
+    if (!resume.job.title.trim()) e.title = true;
+    if (!resume.job.company.trim()) e.company = true;
+    if (!resume.job.description.trim()) e.description = true;
+    return Object.keys(e).length ? { job: e } : null;
+  }
+  return null;
+}
+
+function sectionHasErrors(errs: SectionErrors): boolean {
+  return Boolean(
+    (errs.personal && Object.keys(errs.personal).length) ||
+      (errs.education && errs.education.some((e) => e.school || e.degree || e.startDate || e.endDate)) ||
+      (errs.job && Object.keys(errs.job).length)
+  );
+}
+
+function PersonalInfoForm({ resume, setResume, errors }: { resume: ResumeData; setResume: (r: ResumeData) => void; errors?: PersonalErrors }) {
   return (
     <div className="rounded-xl border border-white/10 p-4 bg-white/[0.04]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label>Full Name</Label>
-          <TextInput value={resume.name} onChange={(v) => setResume({ ...resume, name: v })} />
+          <TextInput value={resume.name} onChange={(v) => setResume({ ...resume, name: v })} error={errors?.name} />
+          {errors?.name && <div className="mt-1 text-xs text-red-400">Full name is required</div>}
         </div>
         <div>
           <Label>Email</Label>
-          <TextInput value={resume.email} onChange={(v) => setResume({ ...resume, email: v })} />
+          <TextInput value={resume.email} onChange={(v) => setResume({ ...resume, email: v })} error={errors?.email || errors?.emailFormat} />
+          {errors?.email && <div className="mt-1 text-xs text-red-400">Email is required</div>}
+          {!errors?.email && errors?.emailFormat && <div className="mt-1 text-xs text-red-400">Enter a valid email address</div>}
         </div>
         <div>
           <Label>Phone</Label>
-          <TextInput value={resume.phone} onChange={(v) => setResume({ ...resume, phone: v })} />
+          <TextInput value={resume.phone} onChange={(v) => setResume({ ...resume, phone: v })} error={errors?.phone} />
+          {errors?.phone && <div className="mt-1 text-xs text-red-400">Phone is required</div>}
         </div>
         <div>
           <Label>Location</Label>
@@ -421,7 +487,7 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
   );
 }
 
-function EducationForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
+function EducationForm({ resume, setResume, errors }: { resume: ResumeData; setResume: (r: ResumeData) => void; errors?: EducationItemErrors[] }) {
   const updateEd = (idx: number, patch: Partial<Education>) => {
     const list = [...resume.education];
     list[idx] = { ...list[idx], ...patch };
@@ -439,16 +505,20 @@ function EducationForm({ resume, setResume }: { resume: ResumeData; setResume: (
 
   return (
     <div className="space-y-6">
-      {resume.education.map((ed, idx) => (
+      {resume.education.map((ed, idx) => {
+        const itemErr = errors?.[idx];
+        return (
         <div key={idx} className="rounded-xl border border-white/10 p-4 bg-white/[0.04]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>School</Label>
-              <TextInput value={ed.school} onChange={(v) => updateEd(idx, { school: v })} />
+              <TextInput value={ed.school} onChange={(v) => updateEd(idx, { school: v })} error={itemErr?.school} />
+              {itemErr?.school && <div className="mt-1 text-xs text-red-400">School is required</div>}
             </div>
             <div>
               <Label>Degree</Label>
-              <TextInput value={ed.degree ?? ""} onChange={(v) => updateEd(idx, { degree: v })} />
+              <TextInput value={ed.degree ?? ""} onChange={(v) => updateEd(idx, { degree: v })} error={itemErr?.degree} />
+              {itemErr?.degree && <div className="mt-1 text-xs text-red-400">Degree is required</div>}
             </div>
             <div>
               <Label>Field of Study</Label>
@@ -461,11 +531,13 @@ function EducationForm({ resume, setResume }: { resume: ResumeData; setResume: (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Start Date</Label>
-                <TextInput value={ed.startDate ?? ""} onChange={(v) => updateEd(idx, { startDate: v })} placeholder="Aug 2019" />
+                <TextInput value={ed.startDate ?? ""} onChange={(v) => updateEd(idx, { startDate: v })} placeholder="Aug 2019" error={itemErr?.startDate} />
+                {itemErr?.startDate && <div className="mt-1 text-xs text-red-400">Start date is required</div>}
               </div>
               <div>
                 <Label>End Date</Label>
-                <TextInput value={ed.endDate ?? ""} onChange={(v) => updateEd(idx, { endDate: v })} placeholder="May 2023" />
+                <TextInput value={ed.endDate ?? ""} onChange={(v) => updateEd(idx, { endDate: v })} placeholder="May 2023" error={itemErr?.endDate} />
+                {itemErr?.endDate && <div className="mt-1 text-xs text-red-400">End date is required</div>}
               </div>
             </div>
           </div>
@@ -473,7 +545,8 @@ function EducationForm({ resume, setResume }: { resume: ResumeData; setResume: (
             <button className="text-sm rounded-md border border-white/20 px-3 py-1 hover:bg-white/[0.06]" onClick={() => removeEd(idx)}>Remove</button>
           </div>
         </div>
-      ))}
+        );
+      })}
       <button className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white" onClick={addEd}>Add Education</button>
     </div>
   );
@@ -522,7 +595,7 @@ function SummaryForm({ resume, setResume }: { resume: ResumeData; setResume: (r:
   );
 }
 
-function JobDescriptionForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
+function JobDescriptionForm({ resume, setResume, errors }: { resume: ResumeData; setResume: (r: ResumeData) => void; errors?: JobErrors }) {
   const updateJob = (patch: Partial<JobDetails>) => {
     setResume({ ...resume, job: { ...resume.job, ...patch } });
   };
@@ -530,11 +603,13 @@ function JobDescriptionForm({ resume, setResume }: { resume: ResumeData; setResu
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <Label>Job Title</Label>
-        <TextInput value={resume.job.title} onChange={(v) => updateJob({ title: v })} placeholder="e.g., Frontend Engineer" />
+        <TextInput value={resume.job.title} onChange={(v) => updateJob({ title: v })} placeholder="e.g., Frontend Engineer" error={errors?.title} />
+        {errors?.title && <div className="mt-1 text-xs text-red-400">Job title is required</div>}
       </div>
       <div>
         <Label>Company</Label>
-        <TextInput value={resume.job.company} onChange={(v) => updateJob({ company: v })} placeholder="e.g., Acme Corp" />
+        <TextInput value={resume.job.company} onChange={(v) => updateJob({ company: v })} placeholder="e.g., Acme Corp" error={errors?.company} />
+        {errors?.company && <div className="mt-1 text-xs text-red-400">Company is required</div>}
       </div>
       <div>
         <Label>Location</Label>
@@ -542,7 +617,8 @@ function JobDescriptionForm({ resume, setResume }: { resume: ResumeData; setResu
       </div>
       <div className="md:col-span-2">
         <Label>Job Description / Key Requirements</Label>
-        <TextArea value={resume.job.description} onChange={(v) => updateJob({ description: v })} rows={8} placeholder="Paste the job description here." />
+        <TextArea value={resume.job.description} onChange={(v) => updateJob({ description: v })} rows={8} placeholder="Paste the job description here." error={errors?.description} />
+        {errors?.description && <div className="mt-1 text-xs text-red-400">Job description is required</div>}
       </div>
     </div>
   );
@@ -659,11 +735,14 @@ function ResumePreview({
   templateSlug?: string;
 }) {
   const score = typeof ats?.final_ats_score === "number" ? ats.final_ats_score : null;
+  const initialScore = typeof ats?.initial_ats_score === "number" ? ats.initial_ats_score : null;
   const keywordsFound = Array.isArray(ats?.keywords_found) ? ats.keywords_found : [];
   const keywordsMissing = Array.isArray(ats?.keywords_missing) ? ats.keywords_missing : [];
+  const initialKeywordsMissing = Array.isArray(ats?.initial_keywords_missing) ? ats.initial_keywords_missing : [];
   const circumference = 2 * Math.PI * 42;
   const pct = score != null ? Math.min(100, Math.max(0, score)) : 0;
   const dashOffset = circumference - (pct / 100) * circumference;
+  const lift = score != null && initialScore != null ? score - initialScore : null;
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
@@ -799,9 +878,53 @@ function ResumePreview({
                   <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">{score}%</div>
                 </div>
               </div>
+              {initialScore != null && (
+                <div className="relative z-10 mb-5 grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-white/50">Your resume</div>
+                    <div className="mt-1 text-2xl font-bold text-white">{initialScore}<span className="text-sm text-white/40">/100</span></div>
+                    <div className="text-[10px] text-white/40 mt-0.5">Before optimization</div>
+                  </div>
+                  <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-blue-200/80">After AI optimize</div>
+                    <div className="mt-1 text-2xl font-bold text-white">{score}<span className="text-sm text-white/40">/100</span></div>
+                    <div className="text-[10px] text-blue-200/70 mt-0.5">Rewritten resume</div>
+                  </div>
+                  <div className={`rounded-lg border p-3 ${lift != null && lift > 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-white/10 bg-white/[0.03]"}`}>
+                    <div className="text-[10px] uppercase tracking-wide text-white/50">Lift</div>
+                    <div className={`mt-1 text-2xl font-bold ${lift != null && lift > 0 ? "text-emerald-300" : "text-white"}`}>
+                      {lift != null ? (lift > 0 ? `+${lift}` : `${lift}`) : "—"}
+                    </div>
+                    <div className="text-[10px] text-white/40 mt-0.5">Points gained</div>
+                  </div>
+                </div>
+              )}
+              {initialScore != null && initialKeywordsMissing.length > 0 && (
+                <div className="relative z-10 mb-4">
+                  <div className="text-xs font-semibold text-white/80 mb-2 flex items-center gap-2">
+                    <AlertCircle className="size-3.5 text-amber-400" />
+                    Originally missing from your resume
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {initialKeywordsMissing.slice(0, 24).map((k) => (
+                      <span key={`init-${k}`} className="rounded-md bg-amber-500/10 text-amber-100/80 text-[10px] px-2 py-0.5 border border-amber-500/20">
+                        {k}
+                      </span>
+                    ))}
+                    {initialKeywordsMissing.length > 24 && (
+                      <span className="text-[10px] text-white/40">+{initialKeywordsMissing.length - 24} more</span>
+                    )}
+                  </div>
+                  <div className="mt-1.5 text-[10px] text-white/40">
+                    These were absent before AI optimization. The optimized resume integrates them where appropriate.
+                  </div>
+                </div>
+              )}
               {keywordsFound.length > 0 && (
                 <div className="relative z-10 mb-4">
-                  <div className="text-xs font-semibold text-white/80 mb-2">Keywords found</div>
+                  <div className="text-xs font-semibold text-white/80 mb-2">
+                    Keywords matched {initialScore != null && <span className="text-white/40 font-normal">(in optimized resume)</span>}
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {keywordsFound.slice(0, 24).map((k) => (
                       <span key={k} className="rounded-md bg-emerald-500/20 text-emerald-200 text-[10px] px-2 py-0.5 border border-emerald-500/30">
@@ -818,7 +941,7 @@ function ResumePreview({
                 <div className="relative z-10 mb-4">
                   <div className="text-xs font-semibold text-white/80 mb-2 flex items-center gap-2">
                     <AlertCircle className="size-3.5 text-amber-400" />
-                    Gaps (missing keywords)
+                    Still missing after optimization
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {keywordsMissing.slice(0, 20).map((k) => (
@@ -858,6 +981,7 @@ export default function ResumeBuilderScreen() {
   const [resumeFileName, setResumeFileName] = useState("");
   const [saving, setSaving] = useState(false);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<SectionErrors>({});
   /** Last ATS summary from `ai/optimize` (drives ATS tab + real scores). */
   const [atsFromOptimize, setAtsFromOptimize] = useState<AtsOptimizeSummary | null>(null);
 
@@ -900,6 +1024,20 @@ export default function ResumeBuilderScreen() {
     }, 600);
     return () => clearTimeout(timer);
   }, [resumeFileName]);
+
+  // Clear validation errors whenever the user switches tabs.
+  useEffect(() => {
+    setErrors({});
+  }, [activeTab]);
+
+  // Once a Save & Next attempt has flagged errors, re-validate live so red borders
+  // disappear as the user fills the missing fields.
+  useEffect(() => {
+    if (!sectionHasErrors(errors)) return;
+    const next = validateSection(activeTab, resume);
+    setErrors(next ?? {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resume]);
 
   /** Start from scratch: create a new blank resume on the backend */
   const handleStartScratch = async () => {
@@ -953,6 +1091,16 @@ export default function ResumeBuilderScreen() {
   /** Save current section then advance */
   const goNext = async () => {
     const idx = order.indexOf(activeTab);
+
+    // Frontend validation — if required fields are missing, mark them red
+    // and don't bother the API.
+    const validation = validateSection(activeTab, resume);
+    if (validation) {
+      setErrors(validation);
+      showToast("Please fill in all required fields.", "error");
+      return;
+    }
+    setErrors({});
 
     if (resumeId !== null) {
       const mapped = localToApiSection(activeTab, resume);
@@ -1008,12 +1156,12 @@ export default function ResumeBuilderScreen() {
 
   const renderForm = () => {
     switch (activeTab) {
-      case 'personal':   return <PersonalInfoForm resume={resume} setResume={setResume} />;
+      case 'personal':   return <PersonalInfoForm resume={resume} setResume={setResume} errors={errors.personal} />;
       case 'experience': return <ExperienceForm resume={resume} setResume={setResume} />;
-      case 'education':  return <EducationForm resume={resume} setResume={setResume} />;
+      case 'education':  return <EducationForm resume={resume} setResume={setResume} errors={errors.education} />;
       case 'skills':     return <SkillsForm resume={resume} setResume={setResume} />;
       case 'summary':    return <SummaryForm resume={resume} setResume={setResume} />;
-      case 'job':        return <JobDescriptionForm resume={resume} setResume={setResume} />;
+      case 'job':        return <JobDescriptionForm resume={resume} setResume={setResume} errors={errors.job} />;
       case 'custom':     return <CustomSectionsForm resume={resume} setResume={setResume} />;
       default:           return null;
     }
