@@ -1,7 +1,7 @@
 import type { ReactNode, ChangeEvent } from "react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Download, ChevronDown } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, ChevronDown, X, Wand2 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 import SiteNavbar from "../layout/site-navbar";
@@ -736,6 +736,76 @@ function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r
 }
 
 
+function OptimizingModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+      <div
+        className="relative w-[420px] max-w-[90vw] rounded-2xl border border-blue-500/20 bg-[#080e1f] p-8 text-center"
+        style={{
+          boxShadow:
+            '0 0 0 1px rgba(99,102,241,0.2), 0 40px 100px rgba(0,0,0,0.9), 0 16px 48px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.06)',
+          transform: 'perspective(1200px) rotateX(4deg)',
+          transformOrigin: 'center 70%',
+        }}
+      >
+        {/* Top gradient edge */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute -inset-8 rounded-3xl bg-blue-600/10 blur-3xl" />
+
+        <button
+          onClick={onClose}
+          title="Close — optimization continues in background"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <X className="size-4" />
+        </button>
+
+        {/* 3-D floating icon */}
+        <div className="relative mx-auto mb-6 size-20">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-indigo-500/30 blur-2xl" />
+          <div
+            className="relative flex size-20 items-center justify-center rounded-full"
+            style={{
+              background: 'linear-gradient(145deg, #4f8ef7 0%, #6366f1 60%, #7c3aed 100%)',
+              boxShadow:
+                '0 12px 40px rgba(99,102,241,0.55), 0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25)',
+            }}
+          >
+            <Wand2
+              className="size-8 text-white"
+              style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }}
+            />
+          </div>
+        </div>
+
+        <div className="relative text-xl font-bold text-white">Optimizing your resume</div>
+        <div className="relative mt-2 text-sm leading-relaxed text-white/50">
+          AI is analyzing the job description and rewriting your resume to maximize ATS match…
+        </div>
+
+        {/* Bouncing dots */}
+        <div className="relative mt-8 flex h-8 items-end justify-center gap-2.5">
+          {[0, 0.15, 0.3, 0.45].map((delay, i) => (
+            <div
+              key={i}
+              className="size-3 animate-bounce rounded-full bg-indigo-500"
+              style={{
+                animationDelay: `${delay}s`,
+                boxShadow: '0 4px 14px rgba(99,102,241,0.7)',
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative mt-6 text-xs text-white/25">
+          Closing this won't stop the optimization
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function hasResumeContent(r: ResumeData): boolean {
   const hasExp = r.experiences.some(
     (e) => (e.role || e.company || (e.bullets && e.bullets.length > 0))
@@ -832,6 +902,7 @@ function ResumePreview({
   // Write template HTML into the iframe and scale to fit container
   const previewHtml = hasResumeContent(resume) ? buildResumeHtmlForPdf(resume, templateSlug) : '';
   useEffect(() => {
+    if (mode !== 'preview') return;
     const iframe = previewIframeRef.current;
     const container = previewContainerRef.current;
     if (!iframe || !previewHtml || !container) return;
@@ -843,7 +914,7 @@ function ResumePreview({
     }
     const scale = container.clientWidth / 794;
     iframe.style.transform = `scale(${scale})`;
-  }, [previewHtml]);
+  }, [previewHtml, mode]);
 
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
@@ -1061,6 +1132,7 @@ export default function ResumeBuilderScreen() {
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [resumeFileName, setResumeFileName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [errors, setErrors] = useState<SectionErrors>({});
   /** Last ATS summary from `ai/optimize` (drives ATS tab + real scores). */
@@ -1085,9 +1157,16 @@ export default function ResumeBuilderScreen() {
         if (r.content) setResume(mapContentToLocal(r.content));
       })
       .catch(() => {
-        // If load fails, fall back to new resume flow
         setStartModalOpen(true);
       });
+    // Load persisted ATS score independently — failure is expected when none exists yet
+    resumeService.getAtsScore(id)
+      .then((atsData) => {
+        if (atsData && typeof atsData === "object" && !Array.isArray(atsData)) {
+          setAtsFromOptimize(atsData as AtsOptimizeSummary);
+        }
+      })
+      .catch(() => {});
   }, [editId]);
 
   // Persist mid-session edits to localStorage (not on initial load)
@@ -1175,8 +1254,6 @@ export default function ResumeBuilderScreen() {
   const goNext = async () => {
     const idx = order.indexOf(activeTab);
 
-    // Frontend validation — if required fields are missing, mark them red
-    // and don't bother the API.
     const validation = validateSection(activeTab, resume);
     if (validation) {
       setErrors(validation);
@@ -1187,8 +1264,6 @@ export default function ResumeBuilderScreen() {
 
     if (resumeId !== null) {
       const mapped = localToApiSection(activeTab, resume);
-
-      // "Save & Next" on the final tab triggers AI optimization/generation.
       setSaving(true);
       setOptimizeError(null);
       try {
@@ -1205,26 +1280,48 @@ export default function ResumeBuilderScreen() {
             setSaving(false);
             return;
           }
-          const optimized = await resumeService.optimizeWithAi(resumeId);
-          if (optimized?.resume) {
-            setResume(mapContentToLocal(optimized.resume));
-            const rawAts = optimized.ats;
-            if (rawAts && typeof rawAts === "object" && !Array.isArray(rawAts)) {
-              setAtsFromOptimize(rawAts as AtsOptimizeSummary);
-            }
-            setPreviewMode("ats");
-            showToast("Resume optimized and generated successfully!");
-          }
+
+          setSaving(false);
+          setOptimizing(true);
+
+          // Capture fields the AI response may omit so we can restore them
+          const preOptSkillCategories = resume.skillCategories;
+          const preOptLinkedin = resume.linkedin;
+          const preOptPortfolio = resume.portfolio;
+
+          // Fire and forget — optimization continues even if the modal is closed
+          resumeService.optimizeWithAi(resumeId, { store_ats_score: true })
+            .then((optimized) => {
+              if (optimized?.resume) {
+                const mapped = mapContentToLocal(optimized.resume);
+                // Restore fields the AI response commonly drops
+                if (!mapped.skillCategories?.length && preOptSkillCategories?.length)
+                  mapped.skillCategories = preOptSkillCategories;
+                if (!mapped.linkedin && preOptLinkedin) mapped.linkedin = preOptLinkedin;
+                if (!mapped.portfolio && preOptPortfolio) mapped.portfolio = preOptPortfolio;
+                setResume(mapped);
+                const rawAts = optimized.ats;
+                if (rawAts && typeof rawAts === "object" && !Array.isArray(rawAts)) {
+                  setAtsFromOptimize(rawAts as AtsOptimizeSummary);
+                }
+                setPreviewMode("ats");
+                showToast("Resume optimized successfully!");
+              }
+            })
+            .catch((err) => {
+              const msg = (err as Error).message || "Failed to optimize resume. Please try again.";
+              setOptimizeError(msg);
+              showToast(msg, "error");
+            })
+            .finally(() => {
+              setOptimizing(false);
+            });
+
+          return; // stay on custom tab while optimization runs
         }
       } catch (err) {
         console.error(err);
-        if (activeTab === "custom") {
-          const msg = (err as Error).message || "Failed to optimize resume. Please try again.";
-          setOptimizeError(msg);
-          showToast(msg, "error");
-        } else {
-          showToast("Failed to save section.", "error");
-        }
+        showToast("Failed to save section.", "error");
       } finally {
         setSaving(false);
       }
@@ -1326,6 +1423,9 @@ export default function ResumeBuilderScreen() {
           </div>
         </div>
       )}
+
+      {/* AI Optimizing modal */}
+      {optimizing && <OptimizingModal onClose={() => setOptimizing(false)} />}
 
       {/* Upload modal */}
       {uploadModalOpen && (
