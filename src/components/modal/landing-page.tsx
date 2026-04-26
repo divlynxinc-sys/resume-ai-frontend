@@ -182,6 +182,9 @@ export default function LandingPageScreen() {
           <FeatureCard featured icon={<Wand2 className="size-5" />} title="AI‑Powered Generation" desc="Let our AI suggest improvements and tailor your resume to specific job descriptions." color="purple" />
           <FeatureCard icon={<LayoutGrid className="size-5" />} title="Customizable Templates" desc="Choose from a variety of professionally designed templates to match your style." color="blue" />
           <FeatureCard icon={<ShieldCheck className="size-5" />} title="ATS Score & Compatibility" desc="Analyze your resume against ATS criteria and get actionable fixes." color="emerald" />
+          <FeatureCard icon={<FileText className="size-5" />} title="JD Specific Tailoring" desc="Adapt your resume content to match the requirements and language of a target job description." color="violet" />
+          <FeatureCard icon={<BadgeCheck className="size-5" />} title="Resume Feedback" desc="Get clear, actionable feedback on structure, wording, impact, and missing details." color="cyan" />
+          <FeatureCard icon={<ListChecks className="size-5" />} title="Keywords Suggestion" desc="Identify relevant role-specific keywords and skills to strengthen your ATS match." color="amber" />
         </div>
       </section>
 
