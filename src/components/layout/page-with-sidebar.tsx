@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Sidebar } from "../modal/dashboard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -6,12 +6,34 @@ export default function PageWithSidebar({
   children,
   activeRoute,
   mainClassName,
+  defaultOpen = true,
 }: {
   children: ReactNode;
   activeRoute?: string;
   mainClassName?: string;
+  defaultOpen?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [hasActiveModal, setHasActiveModal] = useState(false);
+
+  useEffect(() => {
+    const updateModalState = () => {
+      setHasActiveModal(
+        Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'))
+      );
+    };
+
+    updateModalState();
+    const observer = new MutationObserver(updateModalState);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["role", "aria-modal"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex min-h-[calc(100vh-64px)]">
@@ -26,10 +48,15 @@ export default function PageWithSidebar({
 
       {/* Toggle button — anchored to sidebar edge */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!hasActiveModal) setIsOpen(!isOpen);
+        }}
+        disabled={hasActiveModal}
+        aria-disabled={hasActiveModal}
         className={`fixed z-50 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out
           flex items-center justify-center
-          size-6 rounded-full border border-white/10 bg-[#0f162a] text-white shadow-lg hover:bg-white/10
+          size-6 rounded-full border border-white/10 bg-[#0f162a] text-white shadow-lg
+          ${hasActiveModal ? "pointer-events-none opacity-40" : "hover:bg-white/10"}
           ${isOpen ? "left-[248px]" : "left-2"}
         `}
         title={isOpen ? "Hide sidebar" : "Show sidebar"}

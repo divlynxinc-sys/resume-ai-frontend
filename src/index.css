@@ -165,6 +165,23 @@ button,
   cursor: pointer;
 }
 
+.signup-password-input::-ms-reveal,
+.signup-password-input::-ms-clear,
+.login-password-input::-ms-reveal,
+.login-password-input::-ms-clear {
+  display: none;
+}
+
+.signup-password-input::-webkit-credentials-auto-fill-button,
+.signup-password-input::-webkit-contacts-auto-fill-button,
+.login-password-input::-webkit-credentials-auto-fill-button,
+.login-password-input::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
 /* Dark mode button hover glow */
 html.dark button:not(:disabled):hover,
 html.dark [role="button"]:not([aria-disabled="true"]):hover,

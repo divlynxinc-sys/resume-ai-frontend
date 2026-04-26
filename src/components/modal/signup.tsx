@@ -37,7 +37,7 @@ function GoogleSignupButton({ onSuccess, onError, disabled }: { onSuccess: (toke
       type="button"
       onClick={() => googleSignup()}
       disabled={disabled}
-      className="group flex w-full items-center gap-3 rounded-xl border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-all"
+      className="group flex w-full items-center justify-center gap-3 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-4 py-2.5 text-sm text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-all"
     >
       <div className="size-5 grid place-items-center transition-transform group-hover:scale-110 text-xl"><FcGoogle /></div>
       <span className="font-medium">Sign up with Google</span>
@@ -53,31 +53,52 @@ const passwordRules = [
   { key: "special", label: "One special character (!@#$...)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
+function getErrorMessage(err: unknown, fallback: string) {
+  if (typeof err !== "object" || err === null) return fallback;
+
+  const response = "response" in err
+    ? (err as { response?: { data?: { detail?: unknown } } }).response
+    : undefined;
+  if (typeof response?.data?.detail === "string") return response.data.detail;
+
+  const message = "message" in err ? (err as { message?: unknown }).message : undefined;
+  return typeof message === "string" ? message : fallback;
+}
+
 function PasswordInput({
   label,
   placeholder,
   value,
   onChange,
   disabled,
+  readOnly,
+  onFocus,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (val: string) => void;
   disabled: boolean;
+  readOnly?: boolean;
+  onFocus?: () => void;
 }) {
   const [show, setShow] = useState(false);
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <label className="text-xs font-medium text-white/70 ml-1">{label}</label>
       <div className="relative">
         <input
           type={show ? "text" : "password"}
+          name={`signup-${label.toLowerCase().replace(/\s+/g, "-")}`}
+          autoComplete="new-password"
+          spellCheck={false}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
+          readOnly={readOnly}
           disabled={disabled}
-          className="w-full rounded-xl bg-[var(--btn-secondary-bg)] px-4 py-3 pr-11 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+          className="signup-password-input w-full rounded-lg bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 pr-10 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
         />
         <button
           type="button"
@@ -95,7 +116,7 @@ function PasswordInput({
 function PasswordChecklist({ password }: { password: string }) {
   if (!password) return null;
   return (
-    <div className="space-y-1.5 pl-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 pl-1">
       {passwordRules.map((rule) => {
         const passed = rule.test(password);
         return (
@@ -184,8 +205,8 @@ function OtpVerification({
     try {
       await authService.signupVerifyOtp(email, code);
       onVerified();
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || "Verification failed.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Verification failed."));
     } finally {
       setStatus("idle");
     }
@@ -198,8 +219,8 @@ function OtpVerification({
     setOtp(["", "", "", "", "", ""]);
     try {
       await authService.signupSendOtp(email);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || "Failed to resend OTP.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to resend OTP."));
       setCanResend(true);
     }
   };
@@ -303,8 +324,8 @@ export default function Signup() {
       await googleLogin(accessToken);
       showToast("Account created successfully!");
       navigate("/dashboard");
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err.message || "Google signup failed.";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Google signup failed.");
       showToast(msg, "error");
       setError(msg);
     } finally {
@@ -320,6 +341,7 @@ export default function Signup() {
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "otp" | "completing">("form");
+  const [credentialFieldsUnlocked, setCredentialFieldsUnlocked] = useState(false);
 
   const allPasswordRulesPassed = passwordRules.every((r) => r.test(password));
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -338,8 +360,8 @@ export default function Signup() {
     try {
       await authService.signupSendOtp(email);
       setStep("otp");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || "Failed to send verification code.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to send verification code."));
     } finally {
       setStatus("idle");
     }
@@ -353,8 +375,8 @@ export default function Signup() {
       await signup(fullName, email, password);
       showToast("Account created successfully!");
       navigate("/dashboard");
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err.message || "Signup failed.";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Signup failed.");
       showToast(msg, "error");
       setError(msg);
       setStep("form");
@@ -394,55 +416,64 @@ export default function Signup() {
       <div className="relative z-10">
         <BrandBar />
 
-        <main className="max-w-5xl mx-auto px-6 pb-10 flex flex-col items-center justify-center min-h-[calc(100svh-4rem)]">
-          <div className="w-full max-w-4xl">
-            <div className="mb-8">
+        <main className="max-w-4xl mx-auto px-6 pb-8 flex flex-col items-center justify-center min-h-[calc(100svh-4rem)]">
+          <div className="w-full max-w-3xl">
+            <div className="mb-5">
               <div className="text-center space-y-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-white">
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
                   Create Your Account
                 </h1>
-                <p className="text-white/60 text-lg">Get started with our AI-powered resume builder.</p>
+                <p className="text-white/60 text-sm">Get started with our AI-powered resume builder.</p>
               </div>
             </div>
 
-            <section className="rounded-3xl border border-white/10 bg-[var(--app-surface)] backdrop-blur-xl p-8 md:p-10 shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_20rem] gap-10">
+            <section className="rounded-2xl border border-white/10 bg-[var(--app-surface)] backdrop-blur-xl p-6 md:p-7 shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_17rem] gap-7 lg:gap-8">
                 {/* Left: Form */}
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="space-y-2">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2.5">
                       <label className="text-xs font-medium text-white/70 ml-1">First Name</label>
                       <input
                         type="text"
+                        name="signup-first-name"
+                        autoComplete="given-name"
                         placeholder="Enter your first name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         disabled={status === "loading"}
-                        className="w-full rounded-xl bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                        className="w-full rounded-lg bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <label className="text-xs font-medium text-white/70 ml-1">Last Name</label>
                       <input
                         type="text"
+                        name="signup-last-name"
+                        autoComplete="family-name"
                         placeholder="Enter your last name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         disabled={status === "loading"}
-                        className="w-full rounded-xl bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                        className="w-full rounded-lg bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <label className="text-xs font-medium text-white/70 ml-1">Email address</label>
                     <input
                       type="email"
+                      name="signup-email-address"
+                      autoComplete="off"
+                      spellCheck={false}
                       placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setCredentialFieldsUnlocked(true)}
+                      readOnly={!credentialFieldsUnlocked}
                       disabled={status === "loading"}
-                      className="w-full rounded-xl bg-[var(--btn-secondary-bg)] px-4 py-3 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      className="w-full rounded-lg bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                   </div>
 
@@ -451,6 +482,8 @@ export default function Signup() {
                     placeholder="Create a password"
                     value={password}
                     onChange={setPassword}
+                    onFocus={() => setCredentialFieldsUnlocked(true)}
+                    readOnly={!credentialFieldsUnlocked}
                     disabled={status === "loading"}
                   />
 
@@ -461,6 +494,8 @@ export default function Signup() {
                     placeholder="Confirm your password"
                     value={confirmPassword}
                     onChange={setConfirmPassword}
+                    onFocus={() => setCredentialFieldsUnlocked(true)}
+                    readOnly={!credentialFieldsUnlocked}
                     disabled={status === "loading"}
                   />
 
@@ -473,9 +508,9 @@ export default function Signup() {
 
                   {error ? <div className="text-xs text-red-400">{error}</div> : null}
 
-                  <div className="pt-4 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="pt-2 flex items-center justify-between gap-4 flex-wrap">
                     <button
-                      className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-3 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+                      className="min-w-48 flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
                       onClick={handleSendOtp}
                       disabled={status === "loading"}
                     >
@@ -494,7 +529,7 @@ export default function Signup() {
                 <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-[var(--btn-secondary-border)] to-transparent" />
 
                 {/* Right: Social/SSO */}
-                <aside className="flex flex-col justify-center space-y-6">
+                <aside className="flex flex-col justify-start space-y-4 pt-1 lg:pt-6">
                   <div className="text-center lg:text-left">
                     <div className="text-sm font-medium text-white/90">Or sign up with</div>
                     <div className="text-xs text-white/50 mt-1">Quick access with your existing accounts</div>

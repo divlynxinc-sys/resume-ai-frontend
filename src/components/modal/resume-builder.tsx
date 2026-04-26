@@ -8,6 +8,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
 import type { ResumeContent } from "@/services/resume";
+import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
 
 
@@ -272,13 +273,13 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
 
 function Tabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
   const items: { key: TabKey; label: string }[] = [
+    { key: "job", label: "Job Description" },
     { key: "personal", label: "Personal Info" },
     { key: "experience", label: "Experience" },
     { key: "education", label: "Education" },
     { key: "skills", label: "Skills" },
     { key: "summary", label: "Summary" },
-    { key: "job", label: "Job Description" },
-    { key: "custom", label: "Custom" },
+    { key: "custom", label: "Projects" },
   ];
   return (
     <div className="mt-6">
@@ -624,7 +625,7 @@ function JobDescriptionForm({ resume, setResume, errors }: { resume: ResumeData;
   );
 }
 
-function CustomSectionsForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
+function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r: ResumeData) => void }) {
   const addSection = () => {
     setResume({ ...resume, customSections: [...resume.customSections, { title: "", content: "" }] });
   };
@@ -643,12 +644,12 @@ function CustomSectionsForm({ resume, setResume }: { resume: ResumeData; setResu
         <div key={idx} className="rounded-xl border border-white/10 p-4 bg-white/[0.04]">
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label>Section Title</Label>
-              <TextInput value={sec.title} onChange={(v) => updateSection(idx, { title: v })} />
+              <Label>Project Title</Label>
+              <TextInput value={sec.title} onChange={(v) => updateSection(idx, { title: v })} placeholder="e.g., Portfolio Website" />
             </div>
             <div>
-              <Label>Content</Label>
-              <TextArea value={sec.content} onChange={(v) => updateSection(idx, { content: v })} rows={6} />
+              <Label>Project Details</Label>
+              <TextArea value={sec.content} onChange={(v) => updateSection(idx, { content: v })} rows={6} placeholder="Describe your role, tools, and measurable outcomes." />
             </div>
           </div>
           <div className="mt-3 flex justify-end">
@@ -656,7 +657,7 @@ function CustomSectionsForm({ resume, setResume }: { resume: ResumeData; setResu
           </div>
         </div>
       ))}
-      <button className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white" onClick={addSection}>Add Section</button>
+      <button className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white" onClick={addSection}>Add Project</button>
     </div>
   );
 }
@@ -844,7 +845,7 @@ function ResumePreview({
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-blue-500/10 blur-[60px] rounded-full pointer-events-none" />
           {score == null ? (
             <div className="relative z-10 text-sm text-white/50 py-6">
-              Run <strong className="text-white/70">Save &amp; Next</strong> on the Custom tab to optimize with AI — your ATS score from the pipeline will appear here.
+              Run <strong className="text-white/70">Save &amp; Next</strong> on the Projects tab to optimize with AI — your ATS score from the pipeline will appear here.
             </div>
           ) : (
             <>
@@ -971,7 +972,7 @@ export default function ResumeBuilderScreen() {
   const initialTemplate = searchParams.get("template") || 'modern-minimal';
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<TabKey>('personal');
+  const [activeTab, setActiveTab] = useState<TabKey>('job');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
   const [templateSlug, _setTemplateSlug] = useState(initialTemplate);
 
@@ -1047,6 +1048,7 @@ export default function ResumeBuilderScreen() {
     try {
       const r = await resumeService.create({ title: "New Resume", template_id: null });
       setResumeId(r.id);
+      addResumeCreatedNotification("blank");
       showToast("Resume created successfully!");
     } catch {
       showToast("Failed to create resume on server.", "error");
@@ -1076,6 +1078,7 @@ export default function ResumeBuilderScreen() {
       setResume(mapContentToLocal(r.content));
       setUploadModalOpen(false);
       setSelectedFile(null);
+      addResumeCreatedNotification("complete");
       showToast("Resume uploaded and parsed successfully!");
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to parse resume. Try a different file.";
@@ -1086,7 +1089,7 @@ export default function ResumeBuilderScreen() {
     }
   };
 
-  const order: TabKey[] = ['personal', 'experience', 'education', 'skills', 'summary', 'job', 'custom'];
+  const order: TabKey[] = ['job', 'personal', 'experience', 'education', 'skills', 'summary', 'custom'];
 
   /** Save current section then advance */
   const goNext = async () => {
@@ -1162,7 +1165,7 @@ export default function ResumeBuilderScreen() {
       case 'skills':     return <SkillsForm resume={resume} setResume={setResume} />;
       case 'summary':    return <SummaryForm resume={resume} setResume={setResume} />;
       case 'job':        return <JobDescriptionForm resume={resume} setResume={setResume} errors={errors.job} />;
-      case 'custom':     return <CustomSectionsForm resume={resume} setResume={setResume} />;
+      case 'custom':     return <ProjectsForm resume={resume} setResume={setResume} />;
       default:           return null;
     }
   };
@@ -1170,7 +1173,11 @@ export default function ResumeBuilderScreen() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-white">
       <SiteNavbar />
-      <PageWithSidebar activeRoute="my-resumes" mainClassName="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8">
+      <PageWithSidebar
+        activeRoute="my-resumes"
+        defaultOpen={false}
+        mainClassName="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8"
+      >
         {/* Left (main form) */}
         <div>
           <PageHeader mode={previewMode} setMode={setPreviewMode} />
