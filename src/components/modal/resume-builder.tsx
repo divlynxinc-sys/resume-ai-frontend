@@ -91,24 +91,97 @@ interface ResumeData {
   experiences: Experience[];
   education: Education[];
   skills: string[];
+  skillCategories?: { category: string; skills: string[] }[];
   summary: string;
   job: JobDetails;
   customSections: CustomSection[];
 }
 
 const emptyResume: ResumeData = {
-  name: "",
-  email: "",
-  phone: "",
-  location: "",
-  linkedin: "",
-  portfolio: "",
-  experiences: [{ role: "", company: "", location: "", startDate: "", endDate: "", bullets: [] }],
-  education: [{ school: "", degree: "", field: "", startDate: "", endDate: "", location: "" }],
-  skills: [],
-  summary: "",
+  name: "Abdullah Tahir",
+  email: "ababdullah216@gmail.com",
+  phone: "+923187070410",
+  location: "Islamabad, Pakistan",
+  linkedin: "linkedin.com/in/ababdullah216",
+  portfolio: "github.com/ABAbdulah",
+  experiences: [
+    {
+      role: "Associate Software Engineer",
+      company: "Beaj",
+      location: "Remote",
+      startDate: "Dec 2025",
+      endDate: "Present",
+      bullets: [
+        "Shipped a full CMS (React/TypeScript) for managing 3,428 learning activities across 57 courses, including a detailed editor, completeness heatmap, and filtered export pipeline",
+        "Designed a unified Activity CRUD REST API handling 21 WhatsApp activity types (MCQ, speaking, conversational, media) with multi-file upload",
+        "Built a Google Drive to Azure Blob sync service using BullMQ background workers, automating media management at scale",
+        "Developed a bulk student enrollment tool (CSV preview + batch assignment) serving a 32,000+ user base",
+        "Implemented a Dropout Risk dashboard segmenting learners into Critical / At Risk / Watch / On Track, enabling data-driven retention actions",
+        "Refactored WhatsApp message delivery across 20+ flow files, centralizing queue pacing via BullMQ, improving reliability across 74,000+ messages",
+      ],
+    },
+    {
+      role: "Associate Software Engineer",
+      company: "MicroAgility APAC",
+      location: "Islamabad, Pakistan",
+      startDate: "Jun 2025",
+      endDate: "Dec 2025",
+      bullets: [
+        "Built and delivered client-facing portals using React/TypeScript, Tailwind CSS, and ShadCN, translating design specs into fully responsive, production-ready UIs across multiple client projects",
+        "Integrated RESTful APIs end-to-end with Zod validation schemas, enforcing data integrity across all data-entry flows",
+      ],
+    },
+    {
+      role: "Software Engineer Intern",
+      company: "FAIR (Football and AI Research)",
+      location: "London, UK",
+      startDate: "Nov 2024",
+      endDate: "Apr 2025",
+      bullets: [
+        "Migrated 2GB+ of player and match data across 5 major football leagues in MongoDB with zero downtime, including schema normalization and integrity validation",
+        "Scraped, cleaned, and mapped structured data for 10,000+ players from a third-party platform to internal API models, enabling downstream analytics features",
+      ],
+    },
+  ],
+  education: [
+    {
+      school: "National University of Computer and Emerging Sciences - FAST",
+      degree: "Bachelor's in Computer Science",
+      field: "Computer Science",
+      startDate: "2021",
+      endDate: "2025",
+      location: "Islamabad, Pakistan",
+    },
+  ],
+  skills: [
+    "JavaScript (ES6+)", "TypeScript", "Python", "SQL",
+    "Node.js", "Express.js", "FastAPI", "REST APIs", "BullMQ", "Sequelize", "Microservices",
+    "React.js", "Next.js", "Tailwind CSS", "ShadCN", "Webpack/Vite", "HTML5/CSS3",
+    "PostgreSQL", "MongoDB", "Redis", "MySQL", "Vector Databases", "Azure", "AWS (basic)", "Docker", "GitHub Actions", "Linux",
+    "RAG", "Prompt Engineering", "Fine-tuning (Llama 3)", "LangChain", "Pandas", "Agile/Scrum", "Jest/Unit Testing",
+  ],
+  skillCategories: [
+    { category: "Languages", skills: ["JavaScript (ES6+)", "TypeScript", "Python", "SQL"] },
+    { category: "Backend", skills: ["Node.js", "Express.js", "FastAPI", "REST APIs", "BullMQ", "Sequelize", "Microservices"] },
+    { category: "Frontend", skills: ["React.js", "Next.js", "Tailwind CSS", "ShadCN", "Webpack/Vite", "HTML5/CSS3"] },
+    { category: "Data & Cloud", skills: ["PostgreSQL", "MongoDB", "Redis", "MySQL", "Vector Databases", "Azure", "AWS (basic)", "Docker", "GitHub Actions", "Linux"] },
+    { category: "AI / ML", skills: ["RAG", "Prompt Engineering", "Fine-tuning (Llama 3)", "LangChain", "Pandas", "Agile/Scrum", "Jest/Unit Testing"] },
+  ],
+  summary:
+    "Software Engineer with production experience building and deploying AI systems, fine-tuned Llama 3 with RAG, vector databases, and FastAPI inference. Full-stack background in Node.js/Python, React/TypeScript, and Azure, with AI-integrated features delivered at scale to 32,000+ users. Open to remote AI SWE roles with Australian teams.",
   job: { title: "", company: "", location: "", description: "" },
-  customSections: [],
+  customSections: [
+    {
+      title: "SerenityBot - Chatbot",
+      content:
+        "Fine-tuned Llama 3 on a HuggingFace mental health dataset with a custom RAG pipeline, enabling domain-specific context-aware responses beyond the base model's capability\nBuilt full-stack platform: React, FastAPI inference server, vector database for semantic retrieval, and conversation analytics",
+    },
+    {
+      title: "ARCH360 – AR-powered Visualization Platform (Unity, C#, ARCore/ARKit)",
+      content:
+        "Built and shipped a cross-platform AR app in Unity (C#) for Android/iOS as a solo final year project at FAST NUCES\nIntegrated an AI-driven real-time customization engine, applying ML concepts to a production-style interactive system",
+    },
+  ],
 };
 
 /** Map API ResumeContent → local ResumeData */
@@ -699,7 +772,12 @@ function toTemplateInput(resume: ResumeData): TemplateInput {
           endDate: e.endDate,
           bullets: e.bullets,
         })),
-      projects: [],
+      projects: resume.customSections
+        .filter(s => s.title || s.content)
+        .map(s => ({
+          title: s.title,
+          bullets: s.content.split('\n').filter(Boolean),
+        })),
       education: resume.education
         .filter(e => e.school || e.degree)
         .map(e => ({
@@ -709,9 +787,11 @@ function toTemplateInput(resume: ResumeData): TemplateInput {
           location: e.location,
           endDate: e.endDate ?? '',
         })),
-      skills: resume.skills.length
-        ? [{ category: 'Skills', skills: resume.skills }]
-        : [],
+      skills: resume.skillCategories?.length
+        ? resume.skillCategories
+        : resume.skills.length
+          ? [{ category: 'Skills', skills: resume.skills }]
+          : [],
     },
   };
 }
