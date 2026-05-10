@@ -8,3 +8,7 @@ export * from "./settings";
 export * from "./help";
 export * from "./juno";
 export * from "./coverLetter";
+export { hrEmailDraftsService } from "./hrEmailDrafts";
+export type { HREmailDraftsRequest } from "./hrEmailDrafts";
+export { qaAnswersService } from "./qaAnswers";
+export type { QAAnswersRequest } from "./qaAnswers";
