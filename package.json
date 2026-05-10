@@ -8,6 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:template": "node scripts/render-template-preview.mjs",
+    "pipeline:test": "node scripts/test-full-pipeline.mjs",
+    "placeholder:test": "node scripts/test-placeholder.mjs",
+    "broken:test": "node scripts/test-broken-backend.mjs",
+    "templates:test": "node scripts/test-all-templates.mjs",
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/tw.css",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/tw.css --watch"
   },

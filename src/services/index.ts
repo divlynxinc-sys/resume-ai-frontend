@@ -7,3 +7,4 @@ export * from "./pricing";
 export * from "./settings";
 export * from "./help";
 export * from "./juno";
+export * from "./coverLetter";

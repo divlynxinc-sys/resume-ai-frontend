@@ -33,15 +33,18 @@ function EmptyState() {
     <div className="flex flex-col items-center text-center">
       <SleepingKoala />
       <div className="mt-2 flex flex-col items-center text-center gap-5">
-        <h2 className="text-xl font-semibold">No Resumes Created Yet!</h2>
-        <p className="text-white/70 max-w-md">
+        <h2 className="font-display text-2xl font-light tracking-tight text-[var(--app-fg)]">
+          No resumes <span className="italic">yet</span>
+        </h2>
+        <p className="text-[var(--app-fg-muted)] max-w-md">
           Kickstart your journey by building your first resume.
         </p>
         <button
           onClick={() => navigate("/resumes")}
-          className="px-5 py-2.5 rounded-xl bg-[oklch(0.488_0.243_264.376)] text-white shadow-md shadow-[oklch(0.488_0.243_264.376)/30] hover:brightness-110 transition-colors"
+          className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
         >
-          Create Your First Resume
+          Create your first resume
         </button>
       </div>
     </div>
@@ -121,7 +124,7 @@ function MiniResumePreview({ id }: { id: string }) {
   }, [id]);
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-white shadow-lg select-none pointer-events-none">
+    <div ref={containerRef} className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-white select-none pointer-events-none border border-[var(--app-border)]">
       {/* Skeleton shown while fetching */}
       {!ready && (
         <div className="absolute inset-0 flex flex-col p-3 gap-1.5 bg-white">
@@ -184,17 +187,17 @@ function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: 
     : null;
 
   return (
-    <div className="group/card rounded-xl border border-white/10 bg-white/[0.04] overflow-hidden flex flex-col hover:border-white/20 hover:bg-white/[0.06] transition-all">
+    <div className="group/card rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] overflow-hidden flex flex-col hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] transition-all duration-300">
       {/* Mini document preview — clickable to edit */}
       <div
-        className="px-4 pt-4 pb-2 cursor-pointer"
+        className="px-4 pt-4 pb-3 cursor-pointer"
         onClick={() => navigate(`/resumes?id=${item.id}`)}
       >
         <MiniResumePreview id={item.id} />
       </div>
 
       {/* Card footer */}
-      <div className="px-4 pb-4 flex flex-col gap-2">
+      <div className="px-4 pb-4 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {editing ? (
@@ -207,19 +210,24 @@ function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: 
                   if (e.key === "Enter") commit();
                   if (e.key === "Escape") { setEditValue(item.title); setEditing(false); }
                 }}
-                className="w-full rounded border border-white/20 bg-white/10 px-2 py-0.5 text-sm font-medium text-white outline-none focus:border-blue-500/50"
+                className="w-full rounded border px-2 py-0.5 text-sm font-medium outline-none"
+                style={{
+                  borderColor: "var(--app-border-strong)",
+                  backgroundColor: "var(--app-surface)",
+                  color: "var(--app-fg)",
+                }}
                 autoFocus
               />
             ) : (
               <h3
-                className="text-sm font-semibold truncate cursor-default"
+                className="text-sm font-medium truncate cursor-default text-[var(--app-fg)]"
                 title={item.title || "Untitled Resume"}
               >
                 {item.title || "Untitled Resume"}
               </h3>
             )}
             {formattedDate && (
-              <p className="text-xs text-white/50 mt-0.5">Updated {formattedDate}</p>
+              <p className="text-xs text-[var(--app-fg-soft)] mt-1">Updated {formattedDate}</p>
             )}
           </div>
 
@@ -227,21 +235,22 @@ function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: 
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded-md text-[var(--app-fg-soft)] hover:text-[var(--app-fg)] hover:bg-[var(--app-surface-2)] transition-colors"
             >
               <MoreVertical className="size-4" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-40 rounded-lg border border-white/10 bg-[#0f1629] shadow-xl py-1 text-sm">
+              <div className="absolute right-0 top-full mt-1 z-20 w-40 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-pop)] py-1 text-sm">
                 <button
                   onClick={() => { setMenuOpen(false); setEditValue(item.title); setEditing(true); setTimeout(() => inputRef.current?.select(), 0); }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-white/[0.05] text-white/80 hover:text-white"
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-[var(--app-surface-2)] text-[var(--app-fg-muted)] hover:text-[var(--app-fg)]"
                 >
                   <Pencil className="size-3.5" /> Rename
                 </button>
                 <button
                   onClick={() => { setMenuOpen(false); onDelete(item.id); }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-red-400 hover:text-red-300"
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-[var(--pastel-rose)]"
+                  style={{ color: "#B85273" }}
                 >
                   <Trash2 className="size-3.5" /> Delete
                 </button>
@@ -254,13 +263,14 @@ function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: 
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(`/resumes?id=${item.id}`)}
-            className="flex-1 py-1.5 text-sm rounded-md bg-white text-black hover:bg-white/90 font-medium transition-colors"
+            className="flex-1 py-2 text-sm rounded-lg font-medium transition-colors hover:opacity-90"
+            style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
           >
             Edit
           </button>
           <button
             title="Download"
-            className="p-1.5 rounded-md border border-white/20 hover:bg-white/[0.06] text-white/60 hover:text-white transition-colors"
+            className="p-2 rounded-lg border border-[var(--app-border-strong)] hover:bg-[var(--app-surface-2)] text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] transition-colors"
             onClick={() => alert("Download: wire this to the PDF export in the builder.")}
           >
             <Download className="size-4" />
@@ -324,28 +334,29 @@ export default function MyResumesScreen() {
   );
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
 
       {/* Delete confirmation modal */}
       {deleteConfirmId !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1629] p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white">Delete Resume?</h3>
-            <p className="mt-2 text-sm text-white/70">This action cannot be undone.</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-pop)]">
+            <h3 className="font-display text-xl font-light text-[var(--app-fg)] tracking-tight">Delete resume?</h3>
+            <p className="mt-2 text-sm text-[var(--app-fg-muted)]">This action cannot be undone.</p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmId)}
                 disabled={deleting}
-                className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                className="rounded-lg px-4 py-2 text-sm font-medium hover:opacity-80 disabled:opacity-50 transition-opacity"
+                style={{ backgroundColor: "var(--pastel-rose)", color: "#B85273" }}
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
@@ -355,66 +366,79 @@ export default function MyResumesScreen() {
       <PageWithSidebar activeRoute="my-resumes">
         <main className="px-6 py-4">
           <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h1 className="text-2xl font-black tracking-tight">My Resumes</h1>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <div className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">Library</div>
+                <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
+                  My <span className="italic">resumes</span>
+                </h1>
+              </div>
 
               <div className="flex items-center gap-3">
                 {/* Search Bar */}
                 <div className="relative w-full md:w-72 group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="size-4 text-white/40 group-focus-within:text-blue-400 transition-colors" />
+                    <Search className="size-4 text-[var(--app-fg-soft)] group-focus-within:text-[var(--accent)] transition-colors" />
                   </div>
                   <input
                     type="text"
-                    placeholder="Search resumes..."
+                    placeholder="Search resumes…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full rounded-xl border border-white/10 bg-white/[0.03] pl-10 pr-4 py-2 text-sm text-white placeholder-white/30 focus:border-blue-500/50 focus:bg-white/[0.05] focus:ring-1 focus:ring-blue-500/20 focus:outline-none transition-all"
+                    className="block w-full rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none transition-all"
+                    style={{
+                      backgroundColor: "var(--app-surface)",
+                      borderWidth: 1,
+                      borderStyle: "solid",
+                      borderColor: "var(--app-border-strong)",
+                      color: "var(--app-fg)",
+                    }}
                   />
                 </div>
                 <button
                   onClick={() => navigate("/resumes")}
-                  className="shrink-0 px-4 py-2 rounded-xl bg-[oklch(0.488_0.243_264.376)] text-white text-sm font-medium hover:brightness-110 transition-colors"
+                  className="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
                 >
-                  + New Resume
+                  + New resume
                 </button>
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-8">
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-xl border border-white/10 bg-white/[0.04] overflow-hidden animate-pulse">
-                      <div className="mx-4 mt-4 aspect-[3/4] rounded-lg bg-white/10" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] overflow-hidden animate-pulse">
+                      <div className="mx-4 mt-4 aspect-[3/4] rounded-lg bg-[var(--app-surface-2)]" />
                       <div className="px-4 pb-4 pt-3 flex flex-col gap-2">
-                        <div className="h-3 w-2/3 rounded bg-white/10" />
-                        <div className="h-2 w-1/3 rounded bg-white/[0.06]" />
-                        <div className="h-8 rounded-md bg-white/10 mt-1" />
+                        <div className="h-3 w-2/3 rounded bg-[var(--app-surface-2)]" />
+                        <div className="h-2 w-1/3 rounded bg-[var(--app-surface-2)] opacity-60" />
+                        <div className="h-8 rounded-md bg-[var(--app-surface-2)] mt-1" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !hasResumes ? (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 sm:p-6 grid justify-items-center items-start min-h-[320px]">
+                <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-6 grid justify-items-center items-start min-h-[320px]">
                   <EmptyState />
                 </div>
               ) : filteredResumes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-white/10 bg-white/[0.02]">
-                  <div className="p-4 rounded-full bg-white/5 mb-4">
-                    <Search className="size-8 text-white/20" />
+                <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
+                  <div className="p-4 rounded-full bg-[var(--app-surface-2)] mb-4">
+                    <Search className="size-7 text-[var(--app-fg-soft)]" />
                   </div>
-                  <h3 className="text-lg font-medium text-white/80">No matches found</h3>
-                  <p className="text-sm text-white/50 mt-1">Try searching for a different resume name.</p>
+                  <h3 className="font-display text-xl font-light text-[var(--app-fg)] tracking-tight">No matches found</h3>
+                  <p className="text-sm text-[var(--app-fg-muted)] mt-1">Try searching for a different resume name.</p>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="mt-6 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="mt-6 text-sm text-[var(--accent-text)] hover:text-[var(--accent-hover)] transition-colors"
                   >
                     Clear search
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                   {filteredResumes.map((item) => (
                     <ResumeCard key={item.id} item={item} onRename={handleRename} onDelete={(id) => setDeleteConfirmId(id)} />
                   ))}

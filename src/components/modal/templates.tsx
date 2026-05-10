@@ -1,170 +1,180 @@
-import { useState, useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { TEMPLATES, renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 
-/** Sample data used to render template previews */
+/**
+ * Sample data used to render template previews on this page.
+ * Lorem-style realistic content so users see what each template looks like
+ * without ever leaking real PII into the previews.
+ */
 const SAMPLE_DATA: TemplateInput = {
   candidate_info: {
-    name: "Mustafa Irfan",
-    email: "mustafa.irfan@example.com",
-    phone: "+44 7123 456789",
-    linkedin: "https://www.linkedin.com/in/mustafairfan",
-    portfolio: "https://mustafairfan.dev",
+    name: "Avery Lawson",
+    email: "avery.lawson@example.com",
+    phone: "+1 (555) 123-4567",
+    linkedin: "linkedin.com/in/averylawson",
+    portfolio: "averylawson.design",
   },
   resume: {
     summary:
-      "Experienced Machine Learning Engineer with a focus on designing, developing, and deploying scalable ML pipelines using Python, PyTorch, and TensorFlow. Skilled in working with large datasets and deploying models to cloud platforms.",
+      "Senior product designer with seven years crafting calm, accessible interfaces for fintech and healthcare. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eget mauris vitae quam tincidunt aliquam.",
     experiences: [
       {
-        role: "Machine Learning Intern",
-        company: "TechNova AI",
-        location: "London, UK",
-        startDate: "2024-06",
-        endDate: "2024-09",
+        role: "Senior Product Designer",
+        company: "Northwind Studio",
+        location: "Remote",
+        startDate: "2022-03",
         bullets: [
-          "Developed and deployed machine learning models using PyTorch for predictive analytics.",
-          "Worked with large datasets to train deep learning models for image recognition tasks.",
-          "Integrated AI solutions into production environments, improving system efficiency by 15%.",
+          "Led design of a consumer banking app used by 200k monthly users.",
+          "Reduced onboarding drop-off by 28% through a refreshed flow.",
+          "Established the design system adopted across four product squads.",
         ],
       },
       {
-        role: "AI Research Assistant",
-        company: "Edinburgh Data Lab",
-        location: "Edinburgh, UK",
-        startDate: "2023-09",
-        endDate: "2024-05",
+        role: "Product Designer",
+        company: "Lumen Health",
+        location: "Berlin",
+        startDate: "2019-06",
+        endDate: "2022-02",
         bullets: [
-          "Designed and implemented scalable ML pipelines for natural language processing tasks.",
-          "Trained deep learning models using TensorFlow to improve model accuracy by 10%.",
+          "Shipped a clinician dashboard now in 12 hospitals across the EU.",
+          "Ran weekly research sessions; converted insights into shipped features.",
         ],
       },
     ],
     projects: [
       {
-        title: "Resume Parser using NLP",
-        link: "https://github.com/mustafairfan/resume-parser",
+        title: "Open-source icon library",
+        link: "github.com/avery/icons",
         bullets: [
-          "Developed a resume parser using PyTorch for efficient data extraction.",
-          "Integrated the parser into an AI-driven application, improving speed by 20%.",
+          "Authored 320 hand-tuned outline icons in a unified grid.",
+          "1.2k stars, used by ~40 production design systems.",
         ],
       },
     ],
     education: [
       {
-        school: "University of Edinburgh",
-        degree: "MSc",
-        field: "Artificial Intelligence",
-        location: "Edinburgh, UK",
-        endDate: "2025",
+        school: "Royal College of Art",
+        degree: "MA",
+        field: "Visual Communication",
+        location: "London",
+        endDate: "2019",
       },
       {
-        school: "National University of Sciences and Technology",
-        degree: "BSc",
-        field: "Computer Science",
-        location: "Islamabad, Pakistan",
-        endDate: "2023",
+        school: "University of Toronto",
+        degree: "BFA",
+        field: "Design",
+        location: "Toronto",
+        endDate: "2017",
       },
     ],
     skills: [
-      { category: "Programming", skills: ["Python", "C++", "JavaScript"] },
-      { category: "AI/ML", skills: ["TensorFlow", "PyTorch", "Scikit-learn", "Deep Learning", "NLP"] },
-      { category: "Tools", skills: ["Docker", "Git", "AWS", "Linux"] },
+      { category: "Design", skills: ["Figma", "Prototyping", "Design Systems", "Accessibility"] },
+      { category: "Research", skills: ["User Interviews", "Usability Testing", "Surveys"] },
+      { category: "Collaboration", skills: ["Agile", "Cross-functional", "Workshops"] },
     ],
   },
 };
 
-const BG_PALETTE = [
-  "bg-[#2a3b36]", "bg-[#3a3327]", "bg-[#2f3138]", "bg-[#2a4141]", "bg-[#3a3a3a]",
+/* Subtle pastel tint per card so the grid doesn't feel monotone */
+const TINTS = [
+  "var(--pastel-lavender)",
+  "var(--pastel-peach)",
+  "var(--pastel-mint)",
+  "var(--pastel-sky)",
+  "var(--pastel-butter)",
+  "var(--pastel-rose)",
 ];
-
-/** Renders a live miniature HTML preview of the template inside a scaled iframe */
-function TemplatePreview({ slug }: { slug: string }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const html = renderTemplate(slug, SAMPLE_DATA);
-    const doc = iframe.contentDocument;
-    if (doc) {
-      doc.open();
-      doc.write(html);
-      doc.close();
-    }
-  }, [slug]);
-
-  return (
-    <iframe
-      ref={iframeRef}
-      title={`${slug} preview`}
-      className="absolute left-1/2 top-1/2 origin-top-left rounded-lg bg-white shadow-xl pointer-events-none"
-      style={{
-        width: 794,
-        height: 1123,
-        transform: "translate(-50%, -50%) scale(0.32)",
-        border: "none",
-      }}
-    />
-  );
-}
 
 function TemplateCard({
   title,
   slug,
-  bg,
+  html,
+  tint,
 }: {
   title: string;
   slug: string;
-  bg: string;
+  html: string;
+  tint: string;
 }) {
   const navigate = useNavigate();
   return (
     <div className="w-full">
       <div
-        className={`relative group w-full aspect-[3/4] rounded-2xl ${bg} border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.35)] overflow-hidden transition-transform duration-200 ease-out hover:scale-[1.03] cursor-pointer`}
+        className="relative group w-full aspect-[3/4] rounded-2xl border border-[var(--app-border)] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-pop)] hover:border-[var(--app-border-strong)]"
+        style={{ backgroundColor: tint, boxShadow: "var(--shadow-soft)" }}
+        onClick={() => navigate(`/resumes?template=${slug}`)}
       >
-        <div className="absolute inset-0 opacity-30 bg-gradient-to-br from-white/10 to-black/10" />
-        <TemplatePreview slug={slug} />
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        {/* Resume preview — actual rendered template, scaled */}
+        <iframe
+          srcDoc={html}
+          title={`${title} preview`}
+          aria-hidden
+          tabIndex={-1}
+          loading="lazy"
+          sandbox=""
+          className="absolute top-0 left-0 origin-top-left pointer-events-none border-0 bg-white"
+          style={{
+            width: "300%",
+            height: "300%",
+            transform: "scale(0.3333)",
+          }}
+        />
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 z-20 flex items-end justify-center pb-5 bg-gradient-to-t from-[rgba(26,26,26,0.55)] via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
           <button
-            onClick={() => navigate(`/resumes?template=${slug}`)}
-            className="px-4 py-2 rounded-full bg-white text-black text-sm font-medium shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:bg-gray-100 cursor-pointer transition"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/resumes?template=${slug}`);
+            }}
+            className="px-4 py-2 rounded-full text-xs font-medium shadow-md cursor-pointer transition-colors"
+            style={{ backgroundColor: "#ffffff", color: "var(--app-fg)" }}
           >
-            Use Template
+            Use this template
           </button>
         </div>
-        <div className="absolute left-4 top-4 h-24 w-24 rounded-full bg-black/10 blur-2xl" />
       </div>
-      <div className="mt-3 text-sm text-white/80">{title}</div>
+      <div className="mt-3 text-sm font-medium text-[var(--app-fg)]">{title}</div>
     </div>
   );
 }
 
 export default function TemplatesScreen() {
-  const templateEntries = Object.values(TEMPLATES);
+  // Render each template's HTML once with the sample data.
+  const cards = useMemo(() => {
+    return Object.values(TEMPLATES).map((tpl) => ({
+      slug: tpl.slug,
+      name: tpl.name,
+      html: renderTemplate(tpl.slug, SAMPLE_DATA),
+    }));
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] text-white">
+    <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="templates" mainClassName="mx-auto max-w-7xl pb-24">
-        <div className="flex items-start justify-between pt-10">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Choose Your Template</h1>
-            <p className="mt-2 text-sm text-white/60">
-              Explore our range of expertly crafted, ATS-friendly resume templates.
-            </p>
-          </div>
+        <div className="pt-10">
+          <div className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">Templates</div>
+          <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
+            Choose your <span className="italic">template</span>
+          </h1>
+          <p className="mt-3 text-sm text-[var(--app-fg-muted)] max-w-xl leading-relaxed">
+            Expertly crafted, ATS-friendly resume templates. Pick one to start — you can switch any time.
+          </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {templateEntries.map((t, i) => (
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {cards.map((c, i) => (
             <TemplateCard
-              key={t.slug}
-              title={t.name}
-              slug={t.slug}
-              bg={BG_PALETTE[i % BG_PALETTE.length]}
+              key={c.slug}
+              title={c.name}
+              slug={c.slug}
+              html={c.html}
+              tint={TINTS[i % TINTS.length]}
             />
           ))}
         </div>

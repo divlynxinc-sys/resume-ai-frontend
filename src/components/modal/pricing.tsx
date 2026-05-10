@@ -10,8 +10,10 @@ import { pricingService } from "@/services";
 
 type PlanProps = {
   title: string;
+  slug: string;
   price: string;
   subtitle?: string;
+  blurb?: string;
   button: string;
   features: string[];
   highlight?: boolean;
@@ -21,61 +23,93 @@ type PlanProps = {
   popMode?: "hover" | "always";
 };
 
-function PlanCard({ title, price, subtitle, button, features, highlight, label, labelClassName, pop, popMode }: PlanProps) {
+function PlanCard({ title, slug, price, subtitle, blurb, button, features, highlight, label }: PlanProps & { blurb?: string }) {
   const navigate = useNavigate();
-  const isAlways = pop && popMode === "always";
   return (
-    <div
-      className={`relative group transition-transform duration-200 ${
-        highlight ? "rounded-[26px] p-1 bg-gradient-to-b from-sky-500/40 to-cyan-500/40" : ""
-      } ${pop ? (isAlways ? "-translate-y-0.5 scale-[1.02]" : "hover:-translate-y-0.5 hover:scale-[1.02]") : ""}`}
-    >
-      {pop ? (
-        <div className={`pointer-events-none absolute -inset-3 rounded-[28px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.18),transparent_60%)] blur-2xl ${isAlways ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`} />
-      ) : null}
+    <div className="relative group transition-all duration-300">
       <div
-        className={`relative rounded-2xl bg-[#0f1629] border border-white/10 px-8 py-8 h-full flex flex-col ${
-          highlight ? "shadow-[0_0_50px_0_rgba(56,189,248,0.6)] border-sky-500/30" : ""
-        } ${pop ? (isAlways ? "ring-1 ring-cyan-400/40 shadow-[0_18px_50px_rgba(56,189,248,0.35)]" : "ring-1 ring-white/10 group-hover:ring-cyan-400/40 group-hover:shadow-[0_18px_50px_rgba(56,189,248,0.35)]") : ""}`}
+        className="relative rounded-2xl px-7 py-8 h-full flex flex-col text-left transition-all duration-300 bg-[var(--app-surface)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+        style={{
+          color: "var(--app-fg)",
+          border: highlight
+            ? "2px solid var(--accent)"
+            : "1px solid var(--app-border)",
+        }}
       >
         {label ? (
-          <div className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full text-xs px-3 py-1 ${labelClassName ?? "bg-sky-500 text-white shadow"}`}>
+          <div
+            className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1 bg-[var(--accent)]"
+            style={{ color: "#ffffff" }}
+          >
             {label}
           </div>
         ) : null}
-        <div className="min-h-[140px]">
-          <div className="text-white text-lg font-semibold">{title}</div>
-          <div className="mt-3 flex items-end gap-1">
-            <span className="text-4xl font-bold text-white">{price}</span>
-            {subtitle ? <span className="text-sm text-white/70">{subtitle}</span> : null}
+        <div>
+          <div
+            className="font-display text-2xl font-medium tracking-tight"
+            style={{ color: "var(--app-fg)" }}
+          >
+            {title}
           </div>
-          <p className="mt-2 text-sm text-white/60">
-            {title === "Free" && "Perfect for getting started."}
-            {title === "Starter" && "Ideal for first-time job seekers."}
-            {title === "Premium" && "For professionals aiming high."}
-            {title === "Pro" && "For serious career builders."}
-            {title === "Enterprise" && "For teams and organizations."}
-          </p>
+          {blurb ? (
+            <p
+              className="mt-2 text-sm leading-relaxed"
+              style={{ color: "var(--app-fg-muted)" }}
+            >
+              {blurb}
+            </p>
+          ) : null}
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span
+              className="font-display text-5xl font-light tracking-tight"
+              style={{ color: "var(--app-fg)" }}
+            >
+              {price}
+            </span>
+            {subtitle ? (
+              <span
+                className="text-sm"
+                style={{ color: "var(--app-fg-muted)" }}
+              >
+                {subtitle}
+              </span>
+            ) : null}
+          </div>
         </div>
-        <button
-          onClick={() => {
-            try {
-              sessionStorage.setItem("selectedPlan", JSON.stringify({ title, price, subtitle }));
-            } catch {}
-            navigate("/subscribe");
-          }}
-          className={`mt-6 w-full rounded-lg px-5 py-3.5 text-base font-medium cursor-pointer bg-[#0e1526] text-white hover:bg-[#131d35] border border-white/12`}
-        >
-          {button}
-        </button>
-        <ul className="mt-6 space-y-3 text-base">
+
+        <ul className="mt-7 space-y-3 text-sm flex-1">
           {features.map((f) => (
-            <li key={f} className="flex items-center gap-2 text-white/85">
-              <FiCheck className="text-sky-400" />
+            <li
+              key={f}
+              className="flex items-start gap-2.5"
+              style={{ color: "var(--app-fg-muted)" }}
+            >
+              <FiCheck
+                className="mt-0.5 shrink-0"
+                style={{ color: "var(--accent)" }}
+              />
               <span>{f}</span>
             </li>
           ))}
         </ul>
+
+        <button
+          onClick={() => {
+            try {
+              sessionStorage.setItem("selectedPlan", JSON.stringify({ title, slug, price, subtitle }));
+            } catch {}
+            const isAuthed = !!localStorage.getItem("accessToken");
+            navigate(isAuthed ? "/subscribe" : "/login?next=/subscribe");
+          }}
+          className="mt-7 w-full rounded-lg px-5 py-3 text-sm font-medium cursor-pointer transition-colors"
+          style={
+            highlight
+              ? { backgroundColor: "var(--accent)", color: "#ffffff" }
+              : { backgroundColor: "var(--app-surface)", color: "var(--app-fg)", border: "1px solid var(--app-border-strong)" }
+          }
+        >
+          {button}
+        </button>
       </div>
     </div>
   );
@@ -83,82 +117,100 @@ function PlanCard({ title, price, subtitle, button, features, highlight, label, 
 
 type PlanData = {
   title: string;
+  slug: string;
   price: string;
   subtitle?: string;
+  blurb?: string;
   button: string;
   features: string[];
   highlight?: boolean;
   label?: string;
 };
 
+const FEATURE_LIST = [
+  "AI-tailored resumes",
+  "AI-tailored cover letters",
+  "HR email drafts",
+  "Q&A answers",
+  "PDF & DOCX downloads",
+];
+
 const defaultPlans: PlanData[] = [
   {
-    title: "Free",
-    price: "$0",
-    subtitle: "/ forever",
-    button: "Get Started",
-    features: ["5 AI Credits", "Basic Templates", "Standard Support"],
+    title: "Weekly",
+    slug: "weekly",
+    price: "$14.99",
+    subtitle: "/ week",
+    blurb: "Try the full toolkit on a short-term sprint.",
+    button: "Get Weekly",
+    features: FEATURE_LIST,
   },
   {
-    title: "Starter",
-    price: "$9.99",
-    subtitle: "/ 50 credits",
-    button: "Get Starter",
-    features: ["50 AI Credits", "All Templates", "Priority Support"],
-  },
-  {
-    title: "Premium",
-    price: "$29.99",
-    subtitle: "/ 200 credits",
-    button: "Get Premium",
-    features: ["200 AI Credits", "AI Cover Letters", "Premium Support"],
+    title: "Monthly",
+    slug: "monthly",
+    price: "$35.99",
+    subtitle: "/ month",
+    blurb: "Best for an active job search across many roles.",
+    button: "Get Monthly",
+    features: FEATURE_LIST,
     highlight: true,
     label: "Most Popular",
   },
   {
-    title: "Pro",
-    price: "$49.99",
-    subtitle: "/ 500 credits",
-    button: "Get Pro",
-    features: ["500 AI Credits", "Interview Prep", "24/7 VIP Support"],
+    title: "3 months",
+    slug: "three_months",
+    price: "$79.99",
+    subtitle: "/ 3 months",
+    blurb: "Best value for a longer search — save vs monthly.",
+    button: "Get 3 months",
+    features: FEATURE_LIST,
   },
 ];
 
 export function PricingSection() {
   const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
 
+  // Backend-driven plans use a different schema (credit-based). Until the
+  // backend matches the new time-based plan structure, keep the static
+  // defaults so the landing/pricing pages stay consistent.
   useEffect(() => {
-    pricingService.listPlans().then((data) => {
-      if (data && data.length > 0) {
-        setPlans(data.map((p) => ({
-          id: p.id,
-          title: p.name,
-          price: p.price === 0 ? "Free" : `$${p.price}`,
-          subtitle: `/ ${p.credits} credits`,
-          button: `Get ${p.name}`,
-          features: p.features,
-          highlight: p.is_popular,
-          label: p.is_popular ? "Most Popular" : undefined,
-        })));
-      }
-    }).catch(() => {});
+    if (false as boolean) {
+      pricingService.listPlans().then((data) => {
+        if (data && data.length > 0) {
+          setPlans(data.map((p) => ({
+            title: p.name,
+            slug: p.slug,
+            price: p.price === 0 ? "Free" : `$${p.price}`,
+            subtitle: `/ ${p.credits} credits`,
+            button: `Get ${p.name}`,
+            features: p.features,
+            highlight: p.is_popular,
+            label: p.is_popular ? "Most Popular" : undefined,
+          })));
+        }
+      }).catch(() => {});
+    }
   }, []);
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pt-4 pb-20 text-center">
-      <h1 className="mt-2 text-2xl md:text-3xl font-extrabold tracking-tight">Intelligent Pricing for Your Success</h1>
-      <div className="h-[3px] w-28 bg-blue-500/80 mx-auto mt-4 rounded-full" />
-      <p className="mt-4 max-w-3xl mx-auto text-white/70">
-        Our AI-powered platform operates on a credit-based system, ensuring you pay as you grow and only pay for the features you actually use. Start for free and scale up as your career grows.
+    <section className="mx-auto max-w-6xl px-6 pt-4 pb-20 text-center">
+      <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">Pricing</div>
+      <h1 className="font-display text-3xl md:text-5xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
+        Pick a plan, <span className="italic">land the role.</span>
+      </h1>
+      <p className="mt-5 max-w-2xl mx-auto text-[var(--app-fg-muted)] leading-relaxed">
+        Pick a plan to add AI-generated resumes, cover letters, emails, and Q&amp;A answers to each application.
       </p>
 
-      <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto">
         {plans.map((plan) => (
           <PlanCard
             key={plan.title}
             title={plan.title}
+            slug={plan.slug}
             price={plan.price}
             subtitle={plan.subtitle}
+            blurb={plan.blurb}
             button={plan.button}
             features={plan.features}
             highlight={plan.highlight}

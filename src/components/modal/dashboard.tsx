@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Plus,
   Search,
+  Mail,
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -65,16 +66,16 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   };
 
   return (
-    <aside className="w-64 shrink-0 border-r border-white/10 bg-[var(--app-bg)] text-white/90">
+    <aside className="w-64 shrink-0 border-r border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-fg)] flex flex-col h-full">
       {showLogoutModal && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#0f1629] p-6 shadow-2xl transform transition-all">
-            <h3 className="text-lg font-semibold text-white">Log out?</h3>
-            <p className="mt-2 text-sm text-white/70">Are you sure you want to log out of your account?</p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-pop)]">
+            <h3 className="font-display text-xl text-[var(--app-fg)]">Log out?</h3>
+            <p className="mt-2 text-sm text-[var(--app-fg-muted)]">Are you sure you want to log out of your account?</p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)] transition-colors"
               >
                 Cancel
               </button>
@@ -83,7 +84,7 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
                   doLogout();
                   setShowLogoutModal(false);
                 }}
-                className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-colors"
+                className="rounded-lg bg-[var(--pastel-rose)] px-4 py-2 text-sm font-medium text-[#B85273] hover:opacity-80 transition-opacity"
               >
                 Log out
               </button>
@@ -92,52 +93,48 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
         </div>,
         document.body
       )}
-      <nav className="px-3 py-4 flex flex-col gap-2">
-        <NavItem icon={<Home className="size-4 text-sky-400" />} label="Dashboard" route="dashboard" active={current === "dashboard"} />
-        <NavItem icon={<FileText className="size-4 text-emerald-400" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} />
-        <NavItem icon={<LayoutGrid className="size-4 text-violet-400" />} label="Templates" route="templates" active={current === "templates"} />
-        {/* <NavItem icon={<Wand2 className="size-4 text-pink-400" />} label="Juno AI" route="tailoring" active={current === "tailoring"} /> */}
-        {/*<NavItem icon={<MessagesSquare className="size-4 text-orange-400" />} label=" AI Interviews" route="interview" active={current === "interview"} />*/}
-        <NavItem icon={<Crown className="size-4 text-yellow-400" />} label="Explore Pro Plans" route="pricing" active={current === "pricing"} />
-        <NavItem icon={<Settings className="size-4 text-slate-400" />} label="Settings" route="account" active={current === "account"} />
-        <NavItem icon={<HelpCircle className="size-4 text-teal-400" />} label="Help Center" route="help-center" active={current === "help-center"} />
-        <NavItem icon={<LogOut className="size-4 text-red-400" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} />
+      <nav className="px-3 py-5 flex flex-col gap-1">
+        <NavItem icon={<Home className="size-4" />} label="Dashboard" route="dashboard" active={current === "dashboard"} />
+        <NavItem icon={<FileText className="size-4" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} />
+        <NavItem icon={<Mail className="size-4" />} label="Cover Letter" route="cover-letter" active={current === "cover-letter"} />
+        <NavItem icon={<LayoutGrid className="size-4" />} label="Templates" route="templates" active={current === "templates"} />
+        <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} />
+        <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} />
+        <NavItem icon={<HelpCircle className="size-4" />} label="Help Center" route="help-center" active={current === "help-center"} />
+        <NavItem icon={<LogOut className="size-4" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} />
       </nav>
-      <div className="mt-2 h-px bg-white/10 mx-3" />
-      <div className="mt-auto px-3 py-4 space-y-3">
-        {/* Rotating tips box - Low Profile */}
-        <div className="mt-2">
-            <div className="mb-2 px-1 flex items-center justify-between">
-                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Quick Guide</span>
+      <div className="mt-auto px-3 py-4">
+        {/* Quick Guide */}
+        <div>
+          <div className="mb-2 px-1">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--app-fg-soft)]">Quick guide</span>
+          </div>
+
+          <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3.5 transition-colors hover:border-[var(--app-border-strong)]">
+            <div className="flex items-center gap-2 mb-2.5">
+              <div className="text-[var(--accent-text)]">{currentTip.icon}</div>
+              <div className="text-xs font-medium text-[var(--app-fg)]">{currentTip.title}</div>
             </div>
 
-            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-white/60 scale-75">{currentTip.icon}</div>
-                <div className="text-xs font-medium text-white/80">{currentTip.title}</div>
-              </div>
+            <ul className="space-y-1.5">
+              {currentTip.points.map((p) => (
+                <li key={p} className="text-[11px] text-[var(--app-fg-muted)] flex items-start gap-2 leading-snug">
+                  <span className="mt-[5px] size-1 rounded-full bg-[var(--accent)]/60 shrink-0" />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
 
-              <ul className="space-y-2 pl-1">
-                {currentTip.points.map((p) => (
-                  <li key={p} className="text-[11px] text-white/60 flex items-start gap-2">
-                    <span className="mt-[5px] size-1 rounded-full bg-sky-400/60 shrink-0 shadow-[0_0_4px_rgba(56,189,248,0.3)]" />
-                    <span className="leading-tight">{p}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-3 flex items-center justify-end">
-                <button
-                  onClick={nextTip}
-                  className="flex items-center gap-1 text-[10px] text-white/40 hover:text-white transition-colors"
-                >
-                  Next <ChevronRight className="size-2.5" />
-                </button>
-              </div>
+            <div className="mt-3 flex items-center justify-end">
+              <button
+                onClick={nextTip}
+                className="flex items-center gap-1 text-[10px] text-[var(--app-fg-soft)] hover:text-[var(--app-fg)] transition-colors"
+              >
+                Next <ChevronRight className="size-2.5" />
+              </button>
             </div>
+          </div>
         </div>
-
-
       </div>
     </aside>
   );
@@ -149,11 +146,13 @@ function NavItem({ icon, label, route, active = false, onClick }: { icon: ReactN
     <button
       onClick={onClick ? onClick : () => navigate(`/${route}`)}
       className={
-        "w-full text-left flex items-center gap-3 rounded-xl px-4 py-2 text-sm cursor-pointer transition-colors " +
-        (active ? "bg-white/5 text-white" : "text-white/70 hover:bg-white/5 hover:text-white")
+        "w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors " +
+        (active
+          ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-medium"
+          : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
       }
     >
-      {icon}
+      <span className={active ? "text-[var(--accent-text)]" : "text-[var(--app-fg-soft)]"}>{icon}</span>
       <span>{label}</span>
     </button>
   );
@@ -165,11 +164,17 @@ function HeroCard() {
   const { user } = useAuth();
   const displayName = user?.name ?? user?.email ?? "there";
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-white">
-      <div className="flex items-center justify-between">
+    <section className="relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-7 text-[var(--app-fg)]">
+      <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-60" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 size-48 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
+
+      <div className="relative flex items-center justify-between gap-6 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold">Welcome back, {displayName}!</h2>
-          <p className="text-white/60 mt-1">Ready to land your dream job? Let's get started.</p>
+          <p className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">Dashboard</p>
+          <h2 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight mt-1.5">
+            Welcome back, <span className="italic">{displayName}</span>.
+          </h2>
+          <p className="text-[var(--app-fg-muted)] mt-2 text-sm">Ready to land your dream job? Let's get started.</p>
         </div>
         <AppButton variant="primary" size="lg" onClick={() => navigate("/resumes")}>
           <Plus className="size-4" />
@@ -364,7 +369,7 @@ function RecentActivity() {
       )}
 
       <div className="px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+        <h3 className="font-display text-xl font-light text-[var(--app-fg)] tracking-tight">Recent activity</h3>
         <div className="relative w-full sm:w-64 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="size-3.5 text-white/40 group-focus-within:text-blue-400 transition-colors" />
@@ -481,7 +486,7 @@ export default function DashboardModal() {
   }, []);
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="dashboard" mainClassName="space-y-6">
           {showCreditsTip && (

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>@page { size: A4; margin: 0; }
+.resume-root, .resume-root * { box-sizing: border-box; margin: 0; padding: 0; }
+.resume-root {
+      width: 210mm; min-height: 297mm;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 10pt; line-height: 1.5; color: #1e293b;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+.resume-root .banner {
+      background: #0f172a; color: #f1f5f9; padding: 32px 44px 28px;
+    }
+.resume-root .banner h1 { font-size: 26pt; font-weight: 800; letter-spacing: -0.5px; color: #fff; margin-bottom: 6px; }
+.resume-root .banner .contact { font-size: 9pt; color: #94a3b8; display: flex; flex-wrap: wrap; gap: 14px; }
+.resume-root .banner .contact a { color: #2563eb; text-decoration: none; }
+.resume-root .body { padding: 28px 44px 36px; }
+.resume-root .section { margin-bottom: 18px; }
+.resume-root .section-title {
+      font-size: 11pt; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #2563eb;
+      padding-left: 12px; border-left: 4px solid #2563eb;
+      margin-bottom: 10px;
+    }
+.resume-root .summary-text { font-size: 10pt; color: #334155; }
+.resume-root .exp-block { page-break-inside: avoid; margin-bottom: 12px; }
+.resume-root .exp-header { display: flex; justify-content: space-between; align-items: baseline; }
+.resume-root .exp-role { font-weight: 700; font-size: 10.5pt; color: #0f172a; }
+.resume-root .exp-dates { font-size: 8.5pt; color: #64748b; background: #dbeafe; padding: 1px 8px; border-radius: 3px; }
+.resume-root .exp-company { font-size: 9.5pt; color: #475569; margin-bottom: 3px; }
+.resume-root ul { padding-left: 18px; margin: 3px 0 0; }
+.resume-root li { margin-bottom: 2px; font-size: 9.5pt; }
+.resume-root .proj-block {
+      page-break-inside: avoid; margin-bottom: 10px;
+      border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px;
+    }
+.resume-root .proj-title { font-weight: 700; font-size: 10pt; color: #0f172a; }
+.resume-root .proj-link { font-size: 8pt; color: #2563eb; text-decoration: none; margin-left: 6px; }
+.resume-root .edu-block { page-break-inside: avoid; margin-bottom: 8px; }
+.resume-root .edu-header { display: flex; justify-content: space-between; align-items: baseline; }
+.resume-root .edu-degree { font-weight: 700; font-size: 10pt; color: #0f172a; }
+.resume-root .edu-year { font-size: 8.5pt; color: #64748b; }
+.resume-root .edu-school { font-size: 9pt; color: #475569; }
+.resume-root .skill-group { margin-bottom: 8px; }
+.resume-root .skill-group-label { font-size: 9pt; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.resume-root .badge {
+      display: inline-block; background: #dbeafe; color: #2563eb;
+      font-size: 8.5pt; font-weight: 600; padding: 2px 10px; border-radius: 12px;
+      margin: 0 4px 4px 0;
+    }</style></head>
+<body><div class="resume-root">
+    <div class="banner">
+      <!-- candidate_info.name -->
+      <h1>Abdullah Tahir</h1>
+      <div class="contact">
+        <!-- candidate_info.email -->
+        <span>ababdullah216@gmail.com</span>
+        <!-- candidate_info.phone -->
+        <span>+923187070410</span>
+        <!-- candidate_info.linkedin (optional) -->
+        <a href="in/ababdullah216">in/ababdullah216</a>
+        <!-- candidate_info.portfolio (optional) -->
+        <a href="github.com/ABAbdulah">github.com/ABAbdulah</a>
+      </div>
+    </div>
+  <div class="body">
+    <div class="section">
+      <div class="section-title">Profile</div>
+      <p class="summary-text">Software Engineer with production experience building and deploying AI systems, fine-tuned Llama 3 with RAG, vector databases, and FastAPI inference. Full-stack background in Node.js/Python, React/TypeScript, and Azure, with AI-integrated features delivered at scale to 32,000+ users. Open to remote AI SWE roles with Australian teams.</p>
+    </div>
+  
+    <div class="section">
+      <div class="section-title">Experience</div>
+      
+        <div class="exp-block">
+          <div class="exp-header">
+            <!-- resume.experiences[].role -->
+            <span class="exp-role">Associate Software Engineer</span>
+            <!-- resume.experiences[].startDate, .endDate -->
+            <span class="exp-dates">Dec 2025 – Present</span>
+          </div>
+          <!-- resume.experiences[].company, .location -->
+          <div class="exp-company">Beaj · Remote</div>
+          <!-- resume.experiences[].bullets[] -->
+          <ul><li>Shipped a full CMS (React/TypeScript) for managing 3,428 learning activities across 57 courses, including a detailed editor, completeness heatmap, and filtered export pipeline</li><li>Designed a unified Activity CRUD REST API handling 21 WhatsApp activity types (MCQ, speaking, conversational, media) with multi-file upload</li><li>Built a Google Drive to Azure Blob sync service using BullMQ background workers, automating media management at scale</li><li>Developed a bulk student enrollment tool (CSV preview + batch assignment) serving a 32,000+ user base</li><li>Implemented a Dropout Risk dashboard segmenting learners into Critical / At Risk / Watch / On Track, enabling data-driven retention actions</li><li>Refactored WhatsApp message delivery across 20+ flow files, centralizing queue pacing via BullMQ, improving reliability across 74,000+ messages</li></ul>
+        </div>
+      
+        <div class="exp-block">
+          <div class="exp-header">
+            <!-- resume.experiences[].role -->
+            <span class="exp-role">Associate Software Engineer</span>
+            <!-- resume.experiences[].startDate, .endDate -->
+            <span class="exp-dates">Jun 2025 – Dec 2025</span>
+          </div>
+          <!-- resume.experiences[].company, .location -->
+          <div class="exp-company">MicroAgility APAC · Islamabad, Pakistan</div>
+          <!-- resume.experiences[].bullets[] -->
+          <ul><li>Built and delivered client-facing portals using React/TypeScript, Tailwind CSS, and ShadCN, translating design specs into fully responsive, production-ready UIs across multiple client projects</li><li>Integrated RESTful APIs end-to-end with Zod validation schemas, enforcing data integrity across all data-entry flows</li></ul>
+        </div>
+      
+        <div class="exp-block">
+          <div class="exp-header">
+            <!-- resume.experiences[].role -->
+            <span class="exp-role">Software Engineer Intern</span>
+            <!-- resume.experiences[].startDate, .endDate -->
+            <span class="exp-dates">Nov 2024 – Apr 2025</span>
+          </div>
+          <!-- resume.experiences[].company, .location -->
+          <div class="exp-company">FAIR (Football and AI Research) · London, UK</div>
+          <!-- resume.experiences[].bullets[] -->
+          <ul><li>Migrated 2GB+ of player and match data across 5 major football leagues in MongoDB with zero downtime, including schema normalization and integrity validation</li><li>Scraped, cleaned, and mapped structured data for 10,000+ players from a third-party platform to internal API models, enabling downstream analytics features</li></ul>
+        </div>
+      
+    </div>
+  
+    <div class="section">
+      <div class="section-title">Projects</div>
+      
+        <div class="proj-block">
+          <!-- resume.projects[].title, .link -->
+          <div>
+            <span class="proj-title">SerenityBot - Chatbot</span>
+            <a class="proj-link" href="github.com/ABAbdulah/mental-health-companion.git">github.com/ABAbdulah/mental-health-companion.git</a>
+          </div>
+          <!-- resume.projects[].bullets[] -->
+          <ul><li>Fine-tuned Llama 3 on a HuggingFace mental health dataset with a custom RAG pipeline, enabling domain-specific context-aware responses beyond the base model&#39;s capability</li><li>Built full-stack platform: React, FastAPI inference server, vector database for semantic retrieval, and conversation analytics</li></ul>
+        </div>
+      
+        <div class="proj-block">
+          <!-- resume.projects[].title, .link -->
+          <div>
+            <span class="proj-title">ARCH360 – AR-powered Visualization Platform (Unity, C#, ARCore/ARKit)</span>
+            <a class="proj-link" href="github.com/ABAbdulah/ARch360.git">github.com/ABAbdulah/ARch360.git</a>
+          </div>
+          <!-- resume.projects[].bullets[] -->
+          <ul><li>Built and shipped a cross-platform AR app in Unity (C#) for Android/iOS as a solo final year project at FAST NUCES</li><li>Integrated an AI-driven real-time customization engine, applying ML concepts to a production-style interactive system</li></ul>
+        </div>
+      
+    </div>
+  
+    <div class="section">
+      <div class="section-title">Education</div>
+      
+        <div class="edu-block">
+          <div class="edu-header">
+            <!-- resume.education[].degree, .field -->
+            <span class="edu-degree">Bachelor&#39;s in Computer Science</span>
+            <!-- resume.education[].endDate -->
+            <span class="edu-year">2025</span>
+          </div>
+          <!-- resume.education[].school, .location -->
+          <div class="edu-school">National University of Computer and Emerging Sciences - FAST, Islamabad, Pakistan</div>
+        </div>
+      
+    </div>
+  
+    <div class="section">
+      <div class="section-title">Skills</div>
+      
+        <div class="skill-group">
+          <!-- resume.skills[].category -->
+          <div class="skill-group-label">Languages</div>
+          <!-- resume.skills[].skills[] as badges -->
+          <span class="badge">JavaScript (ES6+)</span><span class="badge">TypeScript</span><span class="badge">Python</span><span class="badge">SQL</span>
+        </div>
+      
+        <div class="skill-group">
+          <!-- resume.skills[].category -->
+          <div class="skill-group-label">Backend</div>
+          <!-- resume.skills[].skills[] as badges -->
+          <span class="badge">Node.js</span><span class="badge">Express.js</span><span class="badge">FastAPI</span><span class="badge">REST APIs</span><span class="badge">BullMQ</span><span class="badge">Sequelize</span><span class="badge">Microservices</span>
+        </div>
+      
+        <div class="skill-group">
+          <!-- resume.skills[].category -->
+          <div class="skill-group-label">Frontend</div>
+          <!-- resume.skills[].skills[] as badges -->
+          <span class="badge">React.js</span><span class="badge">Next.js</span><span class="badge">Tailwind CSS</span><span class="badge">ShadCN</span><span class="badge">Webpack/Vite</span><span class="badge">HTML5/CSS3</span>
+        </div>
+      
+        <div class="skill-group">
+          <!-- resume.skills[].category -->
+          <div class="skill-group-label">Data &amp; Cloud</div>
+          <!-- resume.skills[].skills[] as badges -->
+          <span class="badge">PostgreSQL</span><span class="badge">MongoDB</span><span class="badge">Redis</span><span class="badge">MySQL</span><span class="badge">Vector Databases</span><span class="badge">Azure</span><span class="badge">AWS (basic)</span><span class="badge">Docker</span><span class="badge">GitHub Actions</span><span class="badge">Linux</span>
+        </div>
+      
+        <div class="skill-group">
+          <!-- resume.skills[].category -->
+          <div class="skill-group-label">AI / ML</div>
+          <!-- resume.skills[].skills[] as badges -->
+          <span class="badge">RAG</span><span class="badge">Prompt Engineering</span><span class="badge">Fine-tuning (Llama 3)</span><span class="badge">LangChain</span><span class="badge">Pandas</span><span class="badge">Agile/Scrum</span><span class="badge">Jest/Unit Testing</span>
+        </div>
+      
+    </div>
+  </div></div></body>
+</html>

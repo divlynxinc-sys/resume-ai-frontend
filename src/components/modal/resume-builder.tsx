@@ -3,13 +3,21 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Download, ChevronDown, X, Wand2 } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
+import { renderTemplate } from "@/lib/resume-templates";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
-import type { ResumeContent } from "@/services/resume";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
+import {
+  mapContentToLocal as mapContentToLocalImpl,
+  toTemplateInput,
+  type ResumeData,
+  type Experience,
+  type Education,
+  type JobDetails,
+  type CustomSection,
+} from "./resume-builder.helpers";
 
 
 function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: 'preview' | 'ats') => void }) {
@@ -43,32 +51,8 @@ function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: '
 
 type TabKey = "personal" | "experience" | "education" | "skills" | "summary" | "job" | "custom";
 
-interface Experience {
-  role: string;
-  company: string;
-  location?: string;
-  startDate?: string;
-  endDate?: string;
-  bullets: string[];
-}
-
-interface Education {
-  school: string;
-  degree?: string;
-  field?: string;
-  startDate?: string;
-  endDate?: string;
-  location?: string;
-}
-
-interface JobDetails {
-  title: string;
-  company: string;
-  location?: string;
-  description: string;
-}
-
-interface CustomSection { title: string; content: string; }
+// Re-export types for any other module importing from this file
+export type { Experience, Education, JobDetails, CustomSection, ResumeData };
 
 /** Shape returned from `POST /resumes/:id/ai/optimize` → `ats` */
 interface AtsOptimizeSummary {
@@ -82,181 +66,76 @@ interface AtsOptimizeSummary {
   initial_keywords_missing?: string[];
 }
 
-interface ResumeData {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin: string;
-  portfolio: string;
-  experiences: Experience[];
-  education: Education[];
-  skills: string[];
-  skillCategories?: { category: string; skills: string[] }[];
-  summary: string;
-  job: JobDetails;
-  customSections: CustomSection[];
-}
-
 const emptyResume: ResumeData = {
-  name: "Abdullah Tahir",
-  email: "ababdullah216@gmail.com",
-  phone: "+923187070410",
-  location: "Islamabad, Pakistan",
-  linkedin: "linkedin.com/in/ababdullah216",
-  portfolio: "github.com/ABAbdulah",
+  name: "John Doe",
+  email: "john.doe@example.com",
+  phone: "+1 (555) 123-4567",
+  location: "San Francisco, CA",
+  linkedin: "linkedin.com/in/johndoe",
+  portfolio: "github.com/johndoe",
   experiences: [
     {
-      role: "Associate Software Engineer",
-      company: "Beaj",
-      location: "Remote",
-      startDate: "Dec 2025",
-      endDate: "Present",
+      role: "Senior Software Engineer",
+      company: "Acme Corporation",
+      location: "San Francisco, CA",
+      startDate: "2023-01",
+      endDate: "",
       bullets: [
-        "Shipped a full CMS (React/TypeScript) for managing 3,428 learning activities across 57 courses, including a detailed editor, completeness heatmap, and filtered export pipeline",
-        "Designed a unified Activity CRUD REST API handling 21 WhatsApp activity types (MCQ, speaking, conversational, media) with multi-file upload",
-        "Built a Google Drive to Azure Blob sync service using BullMQ background workers, automating media management at scale",
-        "Developed a bulk student enrollment tool (CSV preview + batch assignment) serving a 32,000+ user base",
-        "Implemented a Dropout Risk dashboard segmenting learners into Critical / At Risk / Watch / On Track, enabling data-driven retention actions",
-        "Refactored WhatsApp message delivery across 20+ flow files, centralizing queue pacing via BullMQ, improving reliability across 74,000+ messages",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua",
+        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat",
+        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur",
       ],
     },
     {
-      role: "Associate Software Engineer",
-      company: "MicroAgility APAC",
-      location: "Islamabad, Pakistan",
-      startDate: "Jun 2025",
-      endDate: "Dec 2025",
+      role: "Software Engineer",
+      company: "Initech",
+      location: "Austin, TX",
+      startDate: "2020-06",
+      endDate: "2022-12",
       bullets: [
-        "Built and delivered client-facing portals using React/TypeScript, Tailwind CSS, and ShadCN, translating design specs into fully responsive, production-ready UIs across multiple client projects",
-        "Integrated RESTful APIs end-to-end with Zod validation schemas, enforcing data integrity across all data-entry flows",
-      ],
-    },
-    {
-      role: "Software Engineer Intern",
-      company: "FAIR (Football and AI Research)",
-      location: "London, UK",
-      startDate: "Nov 2024",
-      endDate: "Apr 2025",
-      bullets: [
-        "Migrated 2GB+ of player and match data across 5 major football leagues in MongoDB with zero downtime, including schema normalization and integrity validation",
-        "Scraped, cleaned, and mapped structured data for 10,000+ players from a third-party platform to internal API models, enabling downstream analytics features",
+        "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
+        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium",
       ],
     },
   ],
   education: [
     {
-      school: "National University of Computer and Emerging Sciences - FAST",
-      degree: "Bachelor's in Computer Science",
+      school: "University of Example",
+      degree: "Bachelor of Science",
       field: "Computer Science",
-      startDate: "2021",
-      endDate: "2025",
-      location: "Islamabad, Pakistan",
+      startDate: "2016",
+      endDate: "2020",
+      location: "Example City, CA",
     },
   ],
   skills: [
-    "JavaScript (ES6+)", "TypeScript", "Python", "SQL",
-    "Node.js", "Express.js", "FastAPI", "REST APIs", "BullMQ", "Sequelize", "Microservices",
-    "React.js", "Next.js", "Tailwind CSS", "ShadCN", "Webpack/Vite", "HTML5/CSS3",
-    "PostgreSQL", "MongoDB", "Redis", "MySQL", "Vector Databases", "Azure", "AWS (basic)", "Docker", "GitHub Actions", "Linux",
-    "RAG", "Prompt Engineering", "Fine-tuning (Llama 3)", "LangChain", "Pandas", "Agile/Scrum", "Jest/Unit Testing",
+    "JavaScript", "TypeScript", "Python", "Go",
+    "Node.js", "Express.js", "PostgreSQL", "Redis", "Docker",
+    "React", "Next.js", "Tailwind CSS", "GraphQL",
+    "AWS", "Kubernetes", "Terraform", "CI/CD",
   ],
   skillCategories: [
-    { category: "Languages", skills: ["JavaScript (ES6+)", "TypeScript", "Python", "SQL"] },
-    { category: "Backend", skills: ["Node.js", "Express.js", "FastAPI", "REST APIs", "BullMQ", "Sequelize", "Microservices"] },
-    { category: "Frontend", skills: ["React.js", "Next.js", "Tailwind CSS", "ShadCN", "Webpack/Vite", "HTML5/CSS3"] },
-    { category: "Data & Cloud", skills: ["PostgreSQL", "MongoDB", "Redis", "MySQL", "Vector Databases", "Azure", "AWS (basic)", "Docker", "GitHub Actions", "Linux"] },
-    { category: "AI / ML", skills: ["RAG", "Prompt Engineering", "Fine-tuning (Llama 3)", "LangChain", "Pandas", "Agile/Scrum", "Jest/Unit Testing"] },
+    { category: "Languages", skills: ["JavaScript", "TypeScript", "Python", "Go"] },
+    { category: "Backend", skills: ["Node.js", "Express.js", "PostgreSQL", "Redis", "Docker"] },
+    { category: "Frontend", skills: ["React", "Next.js", "Tailwind CSS", "GraphQL"] },
+    { category: "Cloud & DevOps", skills: ["AWS", "Kubernetes", "Terraform", "CI/CD"] },
   ],
   summary:
-    "Software Engineer with production experience building and deploying AI systems, fine-tuned Llama 3 with RAG, vector databases, and FastAPI inference. Full-stack background in Node.js/Python, React/TypeScript, and Azure, with AI-integrated features delivered at scale to 32,000+ users. Open to remote AI SWE roles with Australian teams.",
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
   job: { title: "", company: "", location: "", description: "" },
   customSections: [
     {
-      title: "SerenityBot - Chatbot",
+      title: "Sample Project",
       content:
-        "Fine-tuned Llama 3 on a HuggingFace mental health dataset with a custom RAG pipeline, enabling domain-specific context-aware responses beyond the base model's capability\nBuilt full-stack platform: React, FastAPI inference server, vector database for semantic retrieval, and conversation analytics",
-    },
-    {
-      title: "ARCH360 – AR-powered Visualization Platform (Unity, C#, ARCore/ARKit)",
-      content:
-        "Built and shipped a cross-platform AR app in Unity (C#) for Android/iOS as a solo final year project at FAST NUCES\nIntegrated an AI-driven real-time customization engine, applying ML concepts to a production-style interactive system",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat",
     },
   ],
 };
 
-/** Map API ResumeContent → local ResumeData */
-function mapContentToLocal(content: ResumeContent): ResumeData {
-  const info = (content.info ?? {}) as Record<string, string>;
-  const experiences = (content.experience ?? []) as Record<string, string>[];
-  const education = (content.education ?? []) as Record<string, string>[];
-  const skills = (content.skills ?? []) as string[];
-  const summary = typeof content.summary === "string" ? content.summary : "";
-  const job = (content.job_description ?? {}) as Record<string, string>;
-  const custom = (content.custom ?? {}) as Record<string, unknown>;
-
-  // Backend stores AI-relevant inputs under `custom.projects`, and we also store the raw UI structure under `custom.sections`.
-  const backendSections = custom.sections;
-  const backendProjects = (custom as any).projects;
-
-  const customSectionsFromBackend =
-    Array.isArray(backendSections)
-      ? (backendSections as any[]).map((s) => ({
-          title: typeof s?.title === "string" ? s.title : "",
-          content: typeof s?.content === "string" ? s.content : "",
-        }))
-      : [];
-
-  const customSectionsFromProjects =
-    Array.isArray(backendProjects) && customSectionsFromBackend.length === 0
-      ? (backendProjects as any[]).map((p) => {
-          const bullets = Array.isArray(p?.bullets) ? p.bullets : typeof p?.bullets === "string" ? [p.bullets] : [];
-          return {
-            title: typeof p?.title === "string" ? p.title : "Project",
-            content: bullets.map((b: unknown) => String(b)).join("\n"),
-          };
-        })
-      : [];
-
-  const customSections = customSectionsFromBackend.length > 0 ? customSectionsFromBackend : customSectionsFromProjects;
-
-  return {
-    name: info.full_name ?? "",
-    email: info.email ?? "",
-    phone: info.phone ?? "",
-    location: info.location ?? "",
-    linkedin: info.linkedin_url ?? "",
-    portfolio: info.portfolio_url ?? "",
-    experiences: experiences.length > 0
-      ? experiences.map((e) => ({
-          role: e.role ?? "",
-          company: e.company ?? "",
-          location: e.location ?? "",
-          startDate: e.start_date ?? "",
-          endDate: e.end_date ?? "",
-          bullets: e.description ? e.description.split("\n").filter(Boolean) : [],
-        }))
-      : emptyResume.experiences,
-    education: education.length > 0
-      ? education.map((e) => ({
-          school: e.school ?? "",
-          degree: e.degree ?? "",
-          field: e.field_of_study ?? "",
-          startDate: e.start_date ?? "",
-          endDate: e.end_date ?? "",
-          location: e.location ?? "",
-        }))
-      : emptyResume.education,
-    skills,
-    summary,
-    job: {
-      title: job.job_title ?? "",
-      company: job.company ?? "",
-      location: job.location ?? "",
-      description: job.description ?? "",
-    },
-    customSections,
-  };
+/** Map API ResumeContent → local ResumeData (delegates to helpers module so
+ * test scripts can reuse the same logic without bundling React). */
+function mapContentToLocal(content: import("@/services/resume").ResumeContent): ResumeData {
+  return mapContentToLocalImpl(content, emptyResume);
 }
 
 /** Map local ResumeData section → API payload */
@@ -336,6 +215,9 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
         body: {
           projects,
           sections, // keep the raw structure for later features
+          // Round-trip skill categories: the dedicated /skills endpoint only
+          // accepts a flat string[], so we persist categories alongside custom.
+          skillCategories: resume.skillCategories ?? [],
         },
       };
     }
@@ -738,67 +620,70 @@ function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r
 
 function OptimizingModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px] p-4">
       <div
-        className="relative w-[420px] max-w-[90vw] rounded-2xl border border-blue-500/20 bg-[#080e1f] p-8 text-center"
+        className="relative w-[420px] max-w-[90vw] rounded-2xl p-8 text-center overflow-hidden"
         style={{
-          boxShadow:
-            '0 0 0 1px rgba(99,102,241,0.2), 0 40px 100px rgba(0,0,0,0.9), 0 16px 48px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.06)',
-          transform: 'perspective(1200px) rotateX(4deg)',
-          transformOrigin: 'center 70%',
+          backgroundColor: "var(--app-surface)",
+          border: "1px solid var(--app-border)",
+          boxShadow: "var(--shadow-pop)",
+          color: "var(--app-fg)",
         }}
       >
-        {/* Top gradient edge */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-        {/* Ambient glow */}
-        <div className="pointer-events-none absolute -inset-8 rounded-3xl bg-blue-600/10 blur-3xl" />
+        {/* Soft pastel ambient blobs */}
+        <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-60" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 size-44 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
 
         <button
           onClick={onClose}
           title="Close — optimization continues in background"
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-white/30 transition-colors hover:bg-white/10 hover:text-white"
+          className="absolute right-4 top-4 rounded-lg p-1.5 transition-colors hover:bg-[var(--app-surface-2)]"
+          style={{ color: "var(--app-fg-soft)" }}
         >
           <X className="size-4" />
         </button>
 
-        {/* 3-D floating icon */}
-        <div className="relative mx-auto mb-6 size-20">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-indigo-500/30 blur-2xl" />
+        {/* Floating icon */}
+        <div className="relative mx-auto mb-6 size-16">
           <div
-            className="relative flex size-20 items-center justify-center rounded-full"
-            style={{
-              background: 'linear-gradient(145deg, #4f8ef7 0%, #6366f1 60%, #7c3aed 100%)',
-              boxShadow:
-                '0 12px 40px rgba(99,102,241,0.55), 0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25)',
-            }}
+            className="relative flex size-16 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: "var(--accent-soft)" }}
           >
-            <Wand2
-              className="size-8 text-white"
-              style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }}
-            />
+            <Wand2 className="size-7" style={{ color: "var(--accent-text)" }} />
           </div>
         </div>
 
-        <div className="relative text-xl font-bold text-white">Optimizing your resume</div>
-        <div className="relative mt-2 text-sm leading-relaxed text-white/50">
+        <div
+          className="relative font-display text-2xl font-light tracking-tight"
+          style={{ color: "var(--app-fg)" }}
+        >
+          Optimizing your <span className="italic">resume</span>
+        </div>
+        <div
+          className="relative mt-3 text-sm leading-relaxed"
+          style={{ color: "var(--app-fg-muted)" }}
+        >
           AI is analyzing the job description and rewriting your resume to maximize ATS match…
         </div>
 
         {/* Bouncing dots */}
-        <div className="relative mt-8 flex h-8 items-end justify-center gap-2.5">
+        <div className="relative mt-7 flex h-6 items-end justify-center gap-2">
           {[0, 0.15, 0.3, 0.45].map((delay, i) => (
             <div
               key={i}
-              className="size-3 animate-bounce rounded-full bg-indigo-500"
+              className="size-2 animate-bounce rounded-full"
               style={{
                 animationDelay: `${delay}s`,
-                boxShadow: '0 4px 14px rgba(99,102,241,0.7)',
+                backgroundColor: "var(--accent)",
               }}
             />
           ))}
         </div>
 
-        <div className="relative mt-6 text-xs text-white/25">
+        <div
+          className="relative mt-6 text-xs"
+          style={{ color: "var(--app-fg-soft)" }}
+        >
           Closing this won't stop the optimization
         </div>
       </div>
@@ -819,52 +704,6 @@ function hasResumeContent(r: ResumeData): boolean {
       hasExp ||
       hasEdu
   );
-}
-
-/** Convert the builder's flat ResumeData → TemplateInput shape for template rendering */
-function toTemplateInput(resume: ResumeData): TemplateInput {
-  return {
-    candidate_info: {
-      name: resume.name,
-      email: resume.email,
-      phone: resume.phone,
-      linkedin: resume.linkedin || undefined,
-      portfolio: resume.portfolio || undefined,
-    },
-    resume: {
-      summary: resume.summary,
-      experiences: resume.experiences
-        .filter(e => e.role || e.company || e.bullets.length)
-        .map(e => ({
-          role: e.role,
-          company: e.company,
-          location: e.location,
-          startDate: e.startDate ?? '',
-          endDate: e.endDate,
-          bullets: e.bullets,
-        })),
-      projects: resume.customSections
-        .filter(s => s.title || s.content)
-        .map(s => ({
-          title: s.title,
-          bullets: s.content.split('\n').filter(Boolean),
-        })),
-      education: resume.education
-        .filter(e => e.school || e.degree)
-        .map(e => ({
-          school: e.school,
-          degree: e.degree ?? '',
-          field: e.field ?? '',
-          location: e.location,
-          endDate: e.endDate ?? '',
-        })),
-      skills: resume.skillCategories?.length
-        ? resume.skillCategories
-        : resume.skills.length
-          ? [{ category: 'Skills', skills: resume.skills }]
-          : [],
-    },
-  };
 }
 
 /** Build resume HTML using the selected template */
@@ -919,20 +758,94 @@ function ResumePreview({
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
     setDownloading(true);
+
+    // Render inside a fully-isolated off-screen iframe. The iframe gives the
+    // template HTML its own document context — no `<style>` leak onto the
+    // host page, no host-page reflow during capture, and `html`/`body`
+    // selectors work as authored. We snapshot the .resume-root element
+    // inside the iframe and feed that to html2pdf.
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.cssText = [
+      "position:fixed",
+      "left:-10000px",
+      "top:0",
+      "width:794px",        // A4 width @ 96dpi
+      "height:1123px",      // A4 height @ 96dpi (initial; iframe content can grow taller)
+      "border:none",
+      "pointer-events:none",
+      "z-index:-1",
+    ].join(";");
+    document.body.appendChild(iframe);
+
     try {
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = buildResumeHtmlForPdf(resume, templateSlug);
+      const html = buildResumeHtmlForPdf(resume, templateSlug);
+      const doc = iframe.contentDocument;
+      if (!doc) throw new Error("iframe document unavailable");
+
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      // Wait for the iframe to lay out so the resume-root has real dimensions
+      await new Promise<void>((r) => {
+        if (doc.readyState === "complete") r();
+        else iframe.addEventListener("load", () => r(), { once: true });
+      });
+      // One extra rAF to give CSS a chance to fully apply
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+      const target =
+        doc.querySelector<HTMLElement>(".resume-root") ?? doc.body;
+
       const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `${resolvedName}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        })
-        .from(wrapper)
-        .save();
+      const html2pdfOpts: Record<string, unknown> = {
+        margin: 0,
+        filename: `${resolvedName}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, windowWidth: 794, useCORS: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] },
+      };
+      await html2pdf().set(html2pdfOpts).from(target).save();
+    } catch {
+      /* silently fail */
+    } finally {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadDocx = async () => {
+    setDownloadOpen(false);
+    setDownloading(true);
+    try {
+      const html = buildResumeHtmlForPdf(resume, templateSlug);
+      const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
+      // Word HTML format: any .doc with the right Office MIME headers opens
+      // natively in Word, Google Docs, and Pages. Zero new dependencies, and
+      // the styling carries through better than rasterized DOCX wrappers.
+      const wordHtml =
+        '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+        'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+        '<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
+        "<title>Resume</title>" +
+        "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>" +
+        "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
+        "</head><body>" +
+        // Strip the outer <html><head>...</head><body> so we don't double-nest
+        html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "") +
+        "</body></html>";
+
+      const blob = new Blob(["﻿", wordHtml], { type: "application/msword" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${resolvedName}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch {
       /* silently fail */
     } finally {
@@ -961,6 +874,9 @@ function ResumePreview({
                 <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-lg border border-white/10 bg-[#0C1426] shadow-xl overflow-hidden">
                   <button onClick={handleDownloadPdf} className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors">
                     Download as PDF
+                  </button>
+                  <button onClick={handleDownloadDocx} className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors border-t border-white/5">
+                    Download as DOCX
                   </button>
                 </div>
               </>
@@ -1273,6 +1189,14 @@ export default function ResumeBuilderScreen() {
             showToast("Section saved successfully!");
           }
         }
+        // The /skills endpoint accepts only a flat string[]. Mirror the
+        // categorized list into the `custom` payload so it survives reload.
+        if (activeTab === "skills" && resume.skillCategories?.length) {
+          const customMapped = localToApiSection("custom", resume);
+          if (customMapped) {
+            await resumeService.patchContent(resumeId, customMapped.section, customMapped.body);
+          }
+        }
 
         if (activeTab === "custom") {
           if (!resume.job.description.trim()) {
@@ -1429,35 +1353,76 @@ export default function ResumeBuilderScreen() {
 
       {/* Upload modal */}
       {uploadModalOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-          <div role="dialog" aria-modal="true" className="w-[560px] max-w-[92vw] rounded-2xl bg-[#0f162a] border border-white/12 p-6">
-            <div className="text-lg font-semibold">Upload your resume</div>
-            <p className="text-white/60 mt-1 text-sm">We support PDF and DOCX formats. Your data will be extracted automatically.</p>
-            <div className="mt-4 rounded-xl bg-white/[0.03] border border-white/10 p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-[560px] max-w-[92vw] rounded-2xl p-7"
+            style={{
+              backgroundColor: "var(--app-surface)",
+              border: "1px solid var(--app-border)",
+              boxShadow: "var(--shadow-pop)",
+              color: "var(--app-fg)",
+            }}
+          >
+            <div className="font-display text-2xl font-light tracking-tight" style={{ color: "var(--app-fg)" }}>
+              Upload your <span className="italic">resume</span>
+            </div>
+            <p className="mt-2 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+              We support PDF and DOCX formats. Your data will be extracted automatically.
+            </p>
+            <div
+              className="mt-5 rounded-xl p-4"
+              style={{
+                backgroundColor: "var(--app-surface-2)",
+                border: "1px dashed var(--app-border-strong)",
+              }}
+            >
               <input
                 type="file"
                 accept=".pdf,.docx"
                 onChange={onFileSelected}
-                className="w-full text-sm file:mr-3 file:rounded-md file:bg-white/10 file:text-white file:px-3 file:py-2 file:border file:border-white/20"
+                className="w-full text-sm file:mr-3 file:rounded-md file:px-3 file:py-2 file:border-0 file:cursor-pointer file:font-medium"
+                style={{ color: "var(--app-fg-muted)" }}
               />
-              {uploadError && <div className="mt-2 text-xs text-red-400">{uploadError}</div>}
-              {selectedFile && !uploadError && <div className="mt-2 text-xs text-white/70">Selected: {selectedFile.name}</div>}
+              <style>{`
+                input[type="file"]::file-selector-button {
+                  background-color: var(--accent-soft);
+                  color: var(--accent-text);
+                }
+              `}</style>
+              {uploadError && (
+                <div className="mt-2 text-xs" style={{ color: "#B85273" }}>
+                  {uploadError}
+                </div>
+              )}
+              {selectedFile && !uploadError && (
+                <div className="mt-2 text-xs" style={{ color: "var(--app-fg-muted)" }}>
+                  Selected: {selectedFile.name}
+                </div>
+              )}
             </div>
-            <div className="mt-4 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                className="rounded-lg px-4 py-2 text-sm bg-white/6 border border-white/12 text-white/80 hover:text-white"
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: "var(--app-surface)",
+                  color: "var(--app-fg-muted)",
+                  border: "1px solid var(--app-border-strong)",
+                }}
                 onClick={() => { setUploadModalOpen(false); setSelectedFile(null); setUploadError(null); handleStartScratch(); }}
               >
                 Cancel
               </button>
               <button
                 disabled={!selectedFile || !!uploadError || uploading}
-                className="rounded-lg px-4 py-2 text-sm bg-[oklch(0.488_0.243_264.376)] text-white disabled:opacity-50 min-w-[90px]"
+                className="rounded-lg px-5 py-2 text-sm font-medium disabled:opacity-50 min-w-[110px] transition-colors"
+                style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
                 onClick={handleUploadContinue}
               >
                 {uploading ? (
                   <span className="flex items-center gap-2 justify-center">
-                    <span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <span className="h-3.5 w-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "#ffffff", borderTopColor: "transparent" }} />
                     Parsing…
                   </span>
                 ) : "Continue"}

@@ -55,8 +55,8 @@ export default function PageWithSidebar({
         aria-disabled={hasActiveModal}
         className={`fixed z-50 top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out
           flex items-center justify-center
-          size-6 rounded-full border border-white/10 bg-[#0f162a] text-white shadow-lg
-          ${hasActiveModal ? "pointer-events-none opacity-40" : "hover:bg-white/10"}
+          size-6 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg-muted)] shadow-[var(--shadow-soft)]
+          ${hasActiveModal ? "pointer-events-none opacity-40" : "hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"}
           ${isOpen ? "left-[248px]" : "left-2"}
         `}
         title={isOpen ? "Hide sidebar" : "Show sidebar"}

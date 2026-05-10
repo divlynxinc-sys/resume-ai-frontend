@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Bell, User2, Coins, LogOut, FileText, CheckCircle, Building2, Crown, Moon, LayoutGrid, Sparkles } from "lucide-react";
+import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
 import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -36,11 +37,12 @@ function notificationTime(createdAt: string) {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export default function SiteNavbar() {
+export default function SiteNavbar({ marketingMode = false }: { marketingMode?: boolean }) {
   const { user, logout, isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const credits = user?.credits_remaining ?? 0;
   const planTitle = "Freemium"; // plan comes from settings API later
+  const showAuthControls = isAuthenticated && !marketingMode;
 
   // Profile dropdown state & refs
   const [profileOpen, setProfileOpen] = useState(false);
@@ -123,18 +125,30 @@ export default function SiteNavbar() {
       <div className="h-full px-6 flex items-center justify-between">
 
         {/* Brand */}
-        <div className="flex items-center gap-3 select-none" aria-label="Jobsynk AI">
-          <img src={resumeLogo} alt="ResumeCraft AI Logo" className="h-8 w-8 rounded-md" />
-          <span className="text-white text-xl font-black tracking-tight">
-            Jobsynk AI
+        <div className="flex items-center gap-2.5 select-none" aria-label="Jobsynk AI">
+          <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-8 w-8 rounded-lg" />
+          <span className="font-display text-xl text-[var(--app-fg)] tracking-tight">
+            Jobsynk <span className="italic font-light">AI</span>
           </span>
         </div>
 
 
 
         {/* Right: actions */}
-        {isAuthenticated && (
         <div className="flex items-center gap-4 ml-auto relative">
+
+          {/* Theme toggle — always visible */}
+          <button
+            onClick={toggleTheme}
+            className="size-8 rounded-full bg-white/10 border border-white/20 text-white/70 hover:text-white grid place-items-center transition"
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+          >
+            {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
+
+          {showAuthControls && (
+          <>
 
           {/* Notifications — before profile */}
           <div ref={notifRef} className="relative">
@@ -221,14 +235,6 @@ export default function SiteNavbar() {
                   <div className="text-sm text-white/90">Plan: <span className="font-semibold text-white">{planTitle}</span></div>
                 </div>
                 <div className="h-px bg-white/10" />
-                <div className="px-3 py-2.5 flex items-center gap-2">
-                  <div className="size-7 rounded-md bg-yellow-500/20 border border-yellow-400/40 grid place-items-center">
-                    <Coins className="size-4 text-yellow-400" />
-                  </div>
-                  <div className="text-sm text-white/90">Credits: <span className="font-semibold text-white">{credits}</span></div>
-                </div>
-
-                <div className="h-px bg-white/10" />
                 <button
                   onClick={() => { navigate("/enterprise"); }}
                   className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-sm text-white/80 hover:text-white hover:bg-white/5"
@@ -245,8 +251,9 @@ export default function SiteNavbar() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
-        )}
       </div>
     </header>
   );

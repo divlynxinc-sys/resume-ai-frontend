@@ -14,9 +14,11 @@ function isValidEmail(email: string) {
 function TopLogo() {
   return (
     <div className="flex flex-col items-center">
-      <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-4" />
-      <h1 className="text-2xl md:text-3xl font-semibold text-white">Log in to your account</h1>
-      <p className="mt-2 text-sm text-white/60">Welcome back to Jobsynk AI</p>
+      <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-5" />
+      <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
+        Welcome <span className="italic">back</span>
+      </h1>
+      <p className="mt-2 text-sm text-[var(--app-fg-muted)]">Sign in to continue to Jobsynk AI</p>
     </div>
   );
 }
@@ -113,8 +115,9 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-[var(--app-bg)] text-white flex items-center justify-center px-4 py-10 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.10),transparent_34rem)]" aria-hidden />
+    <div className="relative min-h-screen w-full bg-[var(--app-bg)] text-[var(--app-fg)] flex items-center justify-center px-4 py-10 overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute -top-32 -left-32 size-96 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-50" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-32 -right-32 size-96 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
 
       <div className="relative z-10 w-full max-w-md">
         <TopLogo />
@@ -191,7 +194,7 @@ export default function LoginScreen() {
               ) : null}
 
               <div className="mt-3 text-right">
-                <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">Forgot your password?</Link>
+                <Link to="/forgot-password" className="text-xs text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Forgot your password?</Link>
               </div>
 
               {error ? <div className="mt-2 text-xs text-red-400">{error}</div> : null}
@@ -203,9 +206,9 @@ export default function LoginScreen() {
                   !!validateEmailField(email) ||
                   !!validatePasswordField(password)
                 }
-                className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors"
+                className="mt-4 w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:hover:bg-[var(--accent)] transition-colors"
               >
-                {status === "loading" ? "Logging in…" : "Log in"}
+                {status === "loading" ? "Signing in…" : "Sign in"}
               </button>
 
               <DividerLabel>Or continue with</DividerLabel>
@@ -224,7 +227,7 @@ export default function LoginScreen() {
 
               <div className="mt-5 text-center text-xs text-white/60">
                 Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-400 hover:text-blue-300">Sign up</Link>
+                <Link to="/signup" className="text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Sign up</Link>
               </div>
             </form>
           </div>

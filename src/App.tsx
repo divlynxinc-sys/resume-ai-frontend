@@ -17,6 +17,7 @@ const Dashboard          = lazy(() => import("./components/modal/dashboard"));
 const ResumeBuilder      = lazy(() => import("./components/modal/resume-builder"));
 const TemplatesScreen    = lazy(() => import("./components/modal/templates"));
 const TailoringScreen    = lazy(() => import("./components/modal/tailoring"));
+const CoverLetterScreen  = lazy(() => import("./components/modal/cover-letter"));
 const PricingScreen      = lazy(() => import("./components/modal/pricing"));
 const SubscriptionScreen = lazy(() => import("./components/modal/subscription"));
 const PaymentSuccess     = lazy(() => import("./components/modal/payment-success"));
@@ -106,6 +107,7 @@ const router = createBrowserRouter([
       { path: "/resumes",           element: <Page><ResumeBuilder /></Page> },
       { path: "/templates",         element: <Page><TemplatesScreen /></Page> },
       { path: "/tailoring",         element: <Page><TailoringScreen /></Page> },
+      { path: "/cover-letter",      element: <Page><CoverLetterScreen /></Page> },
       { path: "/subscribe",         element: <Page><SubscriptionScreen /></Page> },
       { path: "/success",           element: <Page><PaymentSuccess /></Page> },
       { path: "/account",           element: <Page><AccountManagement /></Page> },

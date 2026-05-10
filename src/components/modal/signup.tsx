@@ -228,11 +228,10 @@ function OtpVerification({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white relative overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/10 via-[var(--app-bg)] to-[var(--app-bg)]" />
-        <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-500/5 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-purple-500/5 blur-[100px]" />
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)] relative overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute -top-32 -left-32 size-96 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-50" />
+        <div className="absolute -bottom-32 -right-32 size-96 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-40" />
       </div>
 
       <div className="relative z-10">
@@ -240,15 +239,15 @@ function OtpVerification({
 
         <main className="max-w-5xl mx-auto px-6 pb-10 flex flex-col items-center justify-center min-h-[calc(100svh-4rem)]">
           <div className="w-full max-w-md">
-            <section className="rounded-3xl border border-white/10 bg-[var(--app-surface)] backdrop-blur-xl p-8 md:p-10 shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
+            <section className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-8 md:p-10 shadow-[var(--shadow-pop)]">
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="size-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 grid place-items-center">
-                  <Mail className="size-8 text-blue-400" />
+                <div className="size-16 rounded-2xl bg-[var(--accent-soft)] grid place-items-center">
+                  <Mail className="size-8 text-[var(--accent-text)]" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">Check your email</h1>
-                <p className="text-white/60 text-sm leading-relaxed">
+                <h1 className="font-display text-2xl md:text-3xl font-light text-[var(--app-fg)] tracking-tight">Check your <span className="italic">email</span></h1>
+                <p className="text-[var(--app-fg-muted)] text-sm leading-relaxed">
                   We've sent a 6-digit verification code to<br />
-                  <span className="text-white font-medium">{email}</span>
+                  <span className="text-[var(--app-fg)] font-medium">{email}</span>
                 </p>
               </div>
 
@@ -284,7 +283,7 @@ function OtpVerification({
               <button
                 onClick={handleVerify}
                 disabled={status === "verifying" || otp.join("").length !== 6}
-                className="mt-6 w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-3 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+                className="mt-6 w-full rounded-xl bg-[var(--accent)] px-6 py-3 text-white text-sm font-medium hover:bg-[var(--accent-hover)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent)]"
               >
                 {status === "verifying" ? "Verifying…" : "Verify Email"}
               </button>
@@ -299,7 +298,7 @@ function OtpVerification({
                 <button
                   onClick={handleResend}
                   disabled={!canResend}
-                  className="text-blue-400 hover:text-blue-300 transition-colors disabled:text-white/30 disabled:cursor-not-allowed"
+                  className="text-[var(--accent-text)] hover:text-[var(--accent-hover)] transition-colors disabled:text-white/30 disabled:cursor-not-allowed"
                 >
                   Resend code
                 </button>
@@ -405,12 +404,12 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/10 via-[var(--app-bg)] to-[var(--app-bg)]" />
-         <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-500/5 blur-[120px]" />
-         <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-purple-500/5 blur-[100px]" />
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)] relative overflow-hidden">
+      {/* Soft pastel ambient */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+         <div className="absolute -top-32 -left-32 size-96 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-50" />
+         <div className="absolute -top-20 -right-32 size-96 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-40" />
+         <div className="absolute -bottom-32 left-1/3 size-96 rounded-full bg-[var(--pastel-mint)] blur-3xl opacity-40" />
       </div>
 
       <div className="relative z-10">
@@ -418,12 +417,12 @@ export default function Signup() {
 
         <main className="max-w-4xl mx-auto px-6 pb-8 flex flex-col items-center justify-center min-h-[calc(100svh-4rem)]">
           <div className="w-full max-w-3xl">
-            <div className="mb-5">
+            <div className="mb-6">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">
-                  Create Your Account
+                <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
+                  Create your <span className="italic">account</span>
                 </h1>
-                <p className="text-white/60 text-sm">Get started with our AI-powered resume builder.</p>
+                <p className="text-[var(--app-fg-muted)] text-sm">Get started with Jobsynk AI — free forever.</p>
               </div>
             </div>
 
@@ -510,7 +509,7 @@ export default function Signup() {
 
                   <div className="pt-2 flex items-center justify-between gap-4 flex-wrap">
                     <button
-                      className="min-w-48 flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+                      className="min-w-48 flex-1 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-white text-sm font-medium hover:bg-[var(--accent-hover)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent)]"
                       onClick={handleSendOtp}
                       disabled={status === "loading"}
                     >
