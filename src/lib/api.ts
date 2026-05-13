@@ -1,4 +1,7 @@
-const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "https://resumeai-api-0df7.onrender.com";
+// Deployed backend:
+// const DEPLOYED_API_URL = "https://resumeai-api-0df7.onrender.com";
+
+const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "/api";
 
 function getToken() {
   return localStorage.getItem("accessToken");
@@ -6,6 +9,26 @@ function getToken() {
 
 function getRefreshToken() {
   return localStorage.getItem("refreshToken");
+}
+
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/pricing",
+  "/terms",
+  "/privacy",
+  "/cookie-policy",
+  "/security",
+  "/contact-us",
+  "/enterprise",
+  "/faq",
+  "/forgot-password",
+  "/login",
+  "/signup",
+]);
+
+function shouldRedirectToLogin() {
+  if (typeof window === "undefined") return false;
+  return !PUBLIC_ROUTES.has(window.location.pathname);
 }
 
 async function attemptRefresh(): Promise<string | null> {
@@ -57,7 +80,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     } else {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      window.location.href = "/login";
+      if (shouldRedirectToLogin()) {
+        window.location.href = "/login";
+      }
       throw new Error("Session expired. Please log in again.");
     }
   }
