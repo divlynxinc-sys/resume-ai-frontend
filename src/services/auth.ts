@@ -4,6 +4,7 @@ export interface LoginResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
+  is_new_user?: boolean;
 }
 
 export interface SignupResponse {

@@ -15,7 +15,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  googleLogin: (credential: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<{ is_new_user: boolean }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -77,10 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const googleLogin = async (credential: string) => {
-    const { access_token, refresh_token } = await authService.googleAuth(credential);
+    const { access_token, refresh_token, is_new_user } = await authService.googleAuth(credential);
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
     await refreshUser();
+    return { is_new_user: !!is_new_user };
   };
 
   const logout = async () => {

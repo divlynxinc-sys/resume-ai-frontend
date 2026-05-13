@@ -64,13 +64,19 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   if (res.status === 204) return undefined as T;
 
-  const data = await res.json();
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    return undefined as T;
+  }
 
   if (!res.ok) {
     const msg =
-      typeof data.detail === "string"
+      typeof data?.detail === "string"
         ? data.detail
-        : Array.isArray(data.detail)
+        : Array.isArray(data?.detail)
         ? (data.detail[0] as any)?.msg ?? "Request failed"
         : "Request failed";
     throw new Error(msg);

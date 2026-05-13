@@ -320,8 +320,8 @@ export default function Signup() {
     setError("");
     setStatus("loading");
     try {
-      await googleLogin(accessToken);
-      showToast("Account created successfully!");
+      const { is_new_user } = await googleLogin(accessToken);
+      showToast(is_new_user ? "Account created successfully!" : "Logged in successfully!");
       navigate("/dashboard");
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Google signup failed.");
