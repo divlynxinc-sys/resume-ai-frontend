@@ -12,6 +12,7 @@ import {
   notificationEvents,
   type AppNotification,
 } from "@/services/notifications";
+import { settingsService } from "@/services/settings";
 
 function notificationIcon(type: AppNotification["type"]): JSX.Element {
   if (type === "resume-draft") {
@@ -37,12 +38,45 @@ function notificationTime(createdAt: string) {
   return `${Math.floor(hours / 24)}d`;
 }
 
+// Free-tier fallback shown when the user has no paid plan attached.
+const FREE_PLAN_LABEL = "Free";
+
 export default function SiteNavbar({ marketingMode = false }: { marketingMode?: boolean }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const planTitle = "Freemium"; // plan comes from settings API later
+  const [planTitle, setPlanTitle] = useState<string>(FREE_PLAN_LABEL);
   const showAuthControls = isAuthenticated && !marketingMode;
+
+  // Fetch the user's current plan from /settings/account/summary, with refetch
+  // on focus and on the `plan-updated` event (dispatched after a Polar sync).
+  useEffect(() => {
+    if (!isAuthenticated || marketingMode) return;
+
+    let cancelled = false;
+    const fetchPlan = () => {
+      settingsService
+        .getAccountSummary()
+        .then((res) => {
+          if (cancelled) return;
+          setPlanTitle(res.current_plan || FREE_PLAN_LABEL);
+        })
+        .catch(() => {
+          // Leave the existing label rather than flicker to "Free" on transient errors.
+        });
+    };
+
+    fetchPlan();
+    const onPlanUpdated = () => fetchPlan();
+    const onFocus = () => fetchPlan();
+    window.addEventListener("plan-updated", onPlanUpdated);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("plan-updated", onPlanUpdated);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [isAuthenticated, marketingMode]);
 
   // Profile dropdown state & refs
   const [profileOpen, setProfileOpen] = useState(false);
@@ -125,12 +159,17 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
       <div className="h-full px-6 flex items-center justify-between">
 
         {/* Brand */}
-        <div className="flex items-center gap-2.5 select-none" aria-label="Jobsynk AI">
+        <button
+          type="button"
+          onClick={() => navigate(isAuthenticated && !marketingMode ? "/dashboard" : "/")}
+          className="flex items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
+          aria-label="Jobsynk AI — go to home"
+        >
           <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-8 w-8 rounded-lg" />
           <span className="font-display text-xl text-[var(--app-fg)] tracking-tight">
             Jobsynk <span className="italic font-light">AI</span>
           </span>
-        </div>
+        </button>
 
 
 

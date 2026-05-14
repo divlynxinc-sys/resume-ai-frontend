@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark-mode variant so `dark:` utilities respond to <html class="dark">. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── Typography ────────────────────────────────────────────────────────────── */
 /* Geist (body/UI) and Fraunces (display) are loaded via <link> in index.html
    so Tailwind's expansion doesn't push our font @import past CSS @import rules. */

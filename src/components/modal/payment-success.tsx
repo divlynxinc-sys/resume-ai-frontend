@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
+import { pricingService } from "@/services";
 
 type Plan = {
   title: string;
@@ -28,7 +29,7 @@ function getFeaturesForPlan(title: string): string[] {
 
 function SuccessBadge() {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
+    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
       <span className="size-4 grid place-items-center rounded-full bg-emerald-500 text-white">
         ✓
       </span>
@@ -39,17 +40,161 @@ function SuccessBadge() {
 
 function ProBadge() {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
+    <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-indigo-700 dark:text-indigo-300 text-xs font-medium">
       <span className="size-4 grid place-items-center rounded-full bg-indigo-500 text-white">★</span>
       Pro
     </div>
   );
 }
 
+/**
+ * Self-contained canvas confetti burst — no external dep.
+ * Particles drop from the top of the viewport with a short, celebratory cadence.
+ */
+function useConfettiBurst() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const resize = () => {
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const colors = [
+      "#10B981", // emerald
+      "#34D399",
+      "#60A5FA", // sky
+      "#A78BFA", // violet
+      "#F472B6", // pink
+      "#FBBF24", // amber
+      "#5B6CDB", // indigo (matches app accent)
+    ];
+
+    type Particle = {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      rot: number;
+      vr: number;
+      size: number;
+      color: string;
+      shape: "rect" | "circle";
+      life: number;
+    };
+
+    const particles: Particle[] = [];
+
+    const spawnBurst = (count: number) => {
+      const w = window.innerWidth;
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: -20 - Math.random() * 80,
+          vx: (Math.random() - 0.5) * 2.2,
+          vy: 0.8 + Math.random() * 1.6,
+          rot: Math.random() * Math.PI * 2,
+          vr: (Math.random() - 0.5) * 0.18,
+          size: 6 + Math.random() * 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          shape: Math.random() > 0.5 ? "rect" : "circle",
+          life: 0,
+        });
+      }
+    };
+
+    // Initial burst, then two follow-up waves (spaced wider for a gentler cadence)
+    spawnBurst(90);
+    const t1 = window.setTimeout(() => spawnBurst(60), 700);
+    const t2 = window.setTimeout(() => spawnBurst(40), 1500);
+
+    const gravity = 0.045;
+    const drag = 0.998;
+    const maxLife = 720; // ~12s @ 60fps
+
+    let rafId = 0;
+    const tick = () => {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.vy += gravity;
+        p.vx *= drag;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.life += 1;
+
+        if (p.y > window.innerHeight + 40 || p.life > maxLife) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        const fadeStart = maxLife - 60;
+        const alpha = p.life > fadeStart ? 1 - (p.life - fadeStart) / 60 : 1;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, (p.size * 2) / 3);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (particles.length > 0) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+    };
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return canvasRef;
+}
+
+type SyncState =
+  | { status: "pending" }
+  | { status: "ok"; planName: string | null }
+  | { status: "error"; message: string };
+
 export default function PaymentSuccessScreen() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
+
+  const confettiRef = useConfettiBurst();
 
   const plan: Plan | null = useMemo(() => {
     try {
@@ -60,6 +205,32 @@ export default function PaymentSuccessScreen() {
     }
   }, []);
 
+  const [sync, setSync] = useState<SyncState>({ status: "pending" });
+
+  // Pull subscription state from Polar and reconcile the local DB.
+  // Polar webhooks can't reach localhost in dev, and even in prod they can lag
+  // a few seconds — this call closes that gap so the UI updates immediately.
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const res = await pricingService.syncPolarSubscription();
+        if (cancelled) return;
+        setSync({ status: "ok", planName: res.current_plan });
+        // Broadcast so the navbar / pricing page refetch their plan info.
+        window.dispatchEvent(new CustomEvent("plan-updated"));
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Failed to confirm subscription.";
+        setSync({ status: "error", message });
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const title = plan?.title ?? "Your Plan";
   const price = plan?.price ?? "$—";
   const subtitle = plan?.subtitle ?? "";
@@ -67,8 +238,18 @@ export default function PaymentSuccessScreen() {
   const isPro = title.toLowerCase() === "pro";
 
   return (
-    <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
+    <div
+      className="min-h-screen w-full"
+      style={{ backgroundColor: "var(--app-bg)", color: "var(--app-fg)" }}
+    >
       <SiteNavbar />
+
+      {/* Confetti overlay — fixed, non-interactive */}
+      <canvas
+        ref={confettiRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-50"
+      />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
         <div className="text-center">
@@ -76,54 +257,124 @@ export default function PaymentSuccessScreen() {
             <SuccessBadge />
             {isPro && <ProBadge />}
           </div>
-          <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">You're all set!</h1>
-          <p className="mt-2 text-white/70">Thank you for subscribing. Your {title} plan is now active.</p>
+          <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">
+            You're all set!
+          </h1>
+          <p className="mt-2" style={{ color: "var(--app-fg-muted)" }}>
+            Thank you for subscribing. Your {title} plan is now active.
+          </p>
           {isPro && (
-            <p className="mt-1 text-indigo-300 font-semibold">You're Pro now.</p>
+            <p className="mt-1 font-semibold text-indigo-600 dark:text-indigo-300">
+              You're Pro now.
+            </p>
           )}
         </div>
 
         {/* Summary card */}
-        <div className="mt-8 relative rounded-[20px] p-px bg-gradient-to-b from-emerald-400/20 via-sky-400/15 to-indigo-500/20">
-          <div className="rounded-[18px] bg-[#0F1629] border border-white/12 p-6 sm:p-8">
+        <div className="mt-8 relative rounded-[20px] p-px bg-gradient-to-b from-emerald-400/30 via-sky-400/20 to-indigo-500/30">
+          <div
+            className="rounded-[18px] p-6 sm:p-8"
+            style={{
+              backgroundColor: "var(--app-surface)",
+              border: "1px solid var(--app-border)",
+              color: "var(--app-fg)",
+              boxShadow: "var(--shadow-soft)",
+            }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
                 <div className="text-lg font-semibold">{title}</div>
                 <div className="mt-1 flex items-end gap-2">
                   <div className="text-3xl font-bold">{price}</div>
-                  {subtitle ? <div className="text-sm text-white/60">{subtitle}</div> : null}
+                  {subtitle ? (
+                    <div className="text-sm" style={{ color: "var(--app-fg-muted)" }}>
+                      {subtitle}
+                    </div>
+                  ) : null}
                 </div>
               </div>
-              <Link to="/dashboard" className="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/30">Go to Dashboard</Link>
+              <Link
+                to="/dashboard"
+                className="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/30"
+              >
+                Go to Dashboard
+              </Link>
             </div>
 
             <div className="mt-8">
               <h2 className="text-lg font-semibold">What's included</h2>
               <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-white/85">
-                    <FiCheck className="text-emerald-400" />
+                  <li
+                    key={f}
+                    className="flex items-center gap-2"
+                    style={{ color: "var(--app-fg)" }}
+                  >
+                    <FiCheck className="text-emerald-500" />
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="mt-8 rounded-lg bg-black/20 border border-white/10 px-4 py-3 text-xs text-white/60">
-              You will receive an email receipt shortly. Manage your subscription anytime from Account Settings.
+            <div
+              className="mt-8 rounded-lg px-4 py-3 text-xs"
+              style={{
+                backgroundColor: "var(--app-surface-2)",
+                border: "1px solid var(--app-border)",
+                color: "var(--app-fg-muted)",
+              }}
+            >
+              You will receive an email receipt shortly. Manage your subscription anytime from
+              Account Settings.
+            </div>
+
+            {/* Sync status — reflects whether the backend has caught up with Polar yet. */}
+            <div className="mt-3 text-xs">
+              {sync.status === "pending" && (
+                <span className="inline-flex items-center gap-2" style={{ color: "var(--app-fg-muted)" }}>
+                  <span className="inline-block size-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  Confirming your subscription…
+                </span>
+              )}
+              {sync.status === "ok" && sync.planName && (
+                <span className="text-emerald-700 dark:text-emerald-300">
+                  Your <strong>{sync.planName}</strong> plan is active on your account.
+                </span>
+              )}
+              {sync.status === "ok" && !sync.planName && (
+                <span style={{ color: "var(--app-fg-muted)" }}>
+                  Payment received — your plan should appear shortly. If it doesn't, try refreshing.
+                </span>
+              )}
+              {sync.status === "error" && (
+                <span className="text-rose-600 dark:text-rose-300">
+                  Couldn't confirm subscription automatically ({sync.message}). Refresh the page or visit your settings.
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="mt-8 text-center">
-          <Link to="/templates" className="rounded-full bg-[#0C1426] border border-white/12 hover:bg-[#0D172B] px-5 py-2.5 text-sm text-white">Explore Templates</Link>
+          <Link
+            to="/templates"
+            className="inline-block rounded-full px-5 py-2.5 text-sm transition-colors"
+            style={{
+              backgroundColor: "var(--btn-secondary-bg)",
+              border: "1px solid var(--btn-secondary-border)",
+              color: "var(--btn-secondary-text)",
+            }}
+          >
+            Explore Templates
+          </Link>
         </div>
       </main>
 
-      {/* Decorative glows */}
+      {/* Decorative glows — subtle in both themes */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -left-24 -top-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.08),transparent_70%)]" />
-        <div className="absolute -right-24 -bottom-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.08),transparent_70%)]" />
+        <div className="absolute -left-24 -top-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.10),transparent_70%)]" />
+        <div className="absolute -right-24 -bottom-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.10),transparent_70%)]" />
       </div>
     </div>
   );

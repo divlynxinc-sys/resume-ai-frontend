@@ -1,16 +1,21 @@
+import { Link } from "react-router-dom";
 import resumeLogo from "../../assets/resume-ai-logo.png";
 
 function Brand() {
   return (
     <div>
-      <div className="flex items-center gap-3">
+      <Link
+        to="/"
+        aria-label="Jobsynk AI — go to home"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-md w-fit"
+      >
         <img
           src={resumeLogo}
-          alt="ResumeCraft AI Logo"
+          alt="Jobsynk AI Logo"
           className="h-10 w-10 rounded-md"
         />
         <span className="text-white text-2xl font-black tracking-tight">Jobsynk AI</span>
-      </div>
+      </Link>
 
       <p className="text-white/60 text-sm mt-4 max-w-[280px] leading-relaxed">
         Create professional, ATS-friendly, and industry-accepted resumes in minutes

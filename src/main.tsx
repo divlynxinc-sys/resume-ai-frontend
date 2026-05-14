@@ -6,15 +6,18 @@ import App from './App.tsx'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { PlanProvider } from '@/contexts/PlanContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <ThemeProvider>
         <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          <PlanProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </PlanProvider>
         </AuthProvider>
       </ThemeProvider>
     </GoogleOAuthProvider>

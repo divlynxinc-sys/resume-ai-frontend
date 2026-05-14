@@ -25,6 +25,7 @@ import {
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlan } from "@/contexts/PlanContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
 import html2pdf from "html2pdf.js";
@@ -32,6 +33,7 @@ import html2pdf from "html2pdf.js";
 export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { isPaid, openUpgradeModal } = usePlan();
   const current = (activeRoute ?? (typeof window !== "undefined" ? window.location.pathname.replace(/^\//, "") : "dashboard")) || "dashboard";
   // Sidebar rotating tips
   const tips: { title: string; icon: ReactNode; points: string[]; link?: string }[] = [
@@ -96,8 +98,43 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
       <nav className="px-3 py-5 flex flex-col gap-1">
         <NavItem icon={<Home className="size-4" />} label="Dashboard" route="dashboard" active={current === "dashboard"} />
         <NavItem icon={<FileText className="size-4" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} />
-        <NavItem icon={<Mail className="size-4" />} label="Cover Letter" route="cover-letter" active={current === "cover-letter"} />
         <NavItem icon={<LayoutGrid className="size-4" />} label="Templates" route="templates" active={current === "templates"} />
+        <NavItem
+          icon={<Mail className="size-4" />}
+          label="Cover Letter"
+          route="cover-letter"
+          active={current === "cover-letter"}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("Cover letters are a Pro feature. Upgrade to generate tailored letters for every application.")}
+        />
+        <NavItem
+          icon={<Wand2 className="size-4" />}
+          label="AI Tailoring"
+          route="tailoring"
+          active={current === "tailoring"}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Tailoring rewrites your resume to match each job description. Upgrade to unlock it.")}
+        />
+        <NavItem
+          icon={<MessagesSquare className="size-4" />}
+          label="AI Chat"
+          route="ai-chat"
+          active={current === "ai-chat"}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Chat is a Pro feature. Upgrade to get an on-demand resume assistant.")}
+        />
+        <NavItem
+          icon={<MessagesSquare className="size-4" />}
+          label="AI Interviews"
+          route="interview"
+          active={current === "interview"}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Interview practice is a Pro feature. Upgrade to run mock interviews.")}
+        />
         <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} />
         <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} />
         <NavItem icon={<HelpCircle className="size-4" />} label="Help Center" route="help-center" active={current === "help-center"} />
@@ -140,20 +177,62 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   );
 }
 
-function NavItem({ icon, label, route, active = false, onClick }: { icon: ReactNode; label: string; route: string; active?: boolean; onClick?: () => void }) {
+function NavItem({
+  icon,
+  label,
+  route,
+  active = false,
+  onClick,
+  premium = false,
+  locked = false,
+  onLockedClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  route: string;
+  active?: boolean;
+  onClick?: () => void;
+  /** Show a "Pro" badge in the corner. */
+  premium?: boolean;
+  /** If true, clicking opens onLockedClick (upgrade modal) instead of navigating. */
+  locked?: boolean;
+  onLockedClick?: () => void;
+}) {
   const navigate = useNavigate();
+  const handleClick = () => {
+    if (locked) {
+      onLockedClick?.();
+      return;
+    }
+    if (onClick) onClick();
+    else navigate(`/${route}`);
+  };
+
   return (
     <button
-      onClick={onClick ? onClick : () => navigate(`/${route}`)}
+      onClick={handleClick}
+      aria-disabled={locked || undefined}
+      title={locked ? "Premium AI feature — upgrade to unlock" : undefined}
       className={
-        "w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors " +
+        "group relative w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors " +
         (active
           ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-medium"
-          : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
+          : locked
+            ? "text-[var(--app-fg-soft)] hover:bg-[var(--app-surface-2)]"
+            : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
       }
     >
       <span className={active ? "text-[var(--accent-text)]" : "text-[var(--app-fg-soft)]"}>{icon}</span>
-      <span>{label}</span>
+      <span className={locked ? "opacity-70" : undefined}>{label}</span>
+      {premium && (
+        <span
+          aria-label="Premium AI feature"
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-indigo-600 dark:text-indigo-300"
+        >
+          <Crown className="size-2.5" />
+          Pro
+        </span>
+      )}
     </button>
   );
 }
@@ -241,6 +320,7 @@ function buildResumePrintHtml(resume: any): string {
 
 function RecentActivity() {
   const navigate = useNavigate();
+  const { isPaid, openUpgradeModal } = usePlan();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -269,6 +349,10 @@ function RecentActivity() {
   }, []);
 
   const handleDownload = async (id: number) => {
+    if (!isPaid) {
+      openUpgradeModal("Resume downloads are a paid feature. Upgrade to export PDFs and DOCX files.");
+      return;
+    }
     setDownloadingId(id);
     try {
       const resume = await resumeService.get(id);

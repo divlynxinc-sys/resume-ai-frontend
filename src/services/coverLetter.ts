@@ -45,13 +45,30 @@ export const coverLetterService = {
 
     if (!res.ok || !res.body) {
       let detail = `Request failed (${res.status})`;
+      let requiresPlan = false;
       try {
         const data = await res.json();
-        detail = typeof data.detail === "string" ? data.detail : detail;
+        if (
+          res.status === 402 &&
+          data?.detail &&
+          typeof data.detail === "object" &&
+          data.detail.code === "requires_plan"
+        ) {
+          requiresPlan = true;
+          detail = data.detail.message || "Subscription required";
+          window.dispatchEvent(
+            new CustomEvent("upgrade-required", {
+              detail: { path: "/cover-letter/generate", message: detail },
+            }),
+          );
+        } else {
+          detail = typeof data.detail === "string" ? data.detail : detail;
+        }
       } catch {
         /* non-JSON error body */
       }
-      const err = new Error(detail);
+      const err = new Error(detail) as Error & { requiresPlan?: boolean };
+      if (requiresPlan) err.requiresPlan = true;
       handlers.onError?.(err);
       throw err;
     }

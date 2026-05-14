@@ -9,6 +9,7 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
+import { usePlan } from "@/contexts/PlanContext";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
@@ -724,6 +725,7 @@ function ResumePreview({
   fileName: string;
   templateSlug?: string;
 }) {
+  const { isPaid, openUpgradeModal } = usePlan();
   const score = typeof ats?.final_ats_score === "number" ? ats.final_ats_score : null;
   const initialScore = typeof ats?.initial_ats_score === "number" ? ats.initial_ats_score : null;
   const keywordsFound = Array.isArray(ats?.keywords_found) ? ats.keywords_found : [];
@@ -757,6 +759,10 @@ function ResumePreview({
 
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
+    if (!isPaid) {
+      openUpgradeModal("PDF downloads are a paid feature. Upgrade to export your tailored resume.");
+      return;
+    }
     setDownloading(true);
 
     // Render inside a fully-isolated off-screen iframe. The iframe gives the
@@ -818,6 +824,10 @@ function ResumePreview({
 
   const handleDownloadDocx = async () => {
     setDownloadOpen(false);
+    if (!isPaid) {
+      openUpgradeModal("DOCX downloads are a paid feature. Upgrade to export your tailored resume.");
+      return;
+    }
     setDownloading(true);
     try {
       const html = buildResumeHtmlForPdf(resume, templateSlug);
@@ -1038,6 +1048,7 @@ export default function ResumeBuilderScreen() {
   const editId = searchParams.get("id");
   const initialTemplate = searchParams.get("template") || 'modern-minimal';
   const { showToast } = useToast();
+  const { isPaid, openUpgradeModal } = usePlan();
 
   const [activeTab, setActiveTab] = useState<TabKey>('job');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
@@ -1202,6 +1213,12 @@ export default function ResumeBuilderScreen() {
           if (!resume.job.description.trim()) {
             setOptimizeError("Please fill in the Job Description before generating your optimized resume.");
             setSaving(false);
+            return;
+          }
+
+          if (!isPaid) {
+            setSaving(false);
+            openUpgradeModal("AI resume optimization is a paid feature. Upgrade to tailor your resume to any job description.");
             return;
           }
 

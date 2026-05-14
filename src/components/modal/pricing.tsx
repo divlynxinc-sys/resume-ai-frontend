@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { pricingService } from "@/services";
+import { settingsService } from "@/services/settings";
 
 
 
@@ -23,20 +25,48 @@ type PlanProps = {
   popMode?: "hover" | "always";
 };
 
-function PlanCard({ title, slug, price, subtitle, blurb, button, features, highlight, label }: PlanProps & { blurb?: string }) {
+function PlanCard({
+  title,
+  slug,
+  price,
+  subtitle,
+  blurb,
+  button,
+  features,
+  highlight,
+  label,
+  isCurrent,
+  hasActiveSubscription,
+  onSwitch,
+}: PlanProps & {
+  blurb?: string;
+  isCurrent?: boolean;
+  hasActiveSubscription?: boolean;
+  onSwitch?: (slug: string, title: string, price: string, subtitle?: string) => void;
+}) {
   const navigate = useNavigate();
+  const isSwitchTarget = !!hasActiveSubscription && !isCurrent;
   return (
     <div className="relative group transition-all duration-300">
       <div
         className="relative rounded-2xl px-7 py-8 h-full flex flex-col text-left transition-all duration-300 bg-[var(--app-surface)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
         style={{
           color: "var(--app-fg)",
-          border: highlight
+          border: isCurrent
+            ? "2px solid #10B981"
+            : highlight
             ? "2px solid var(--accent)"
             : "1px solid var(--app-border)",
         }}
       >
-        {label ? (
+        {isCurrent ? (
+          <div
+            className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1 bg-emerald-500"
+            style={{ color: "#ffffff" }}
+          >
+            Current plan
+          </div>
+        ) : label ? (
           <div
             className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1 bg-[var(--accent)]"
             style={{ color: "#ffffff" }}
@@ -95,20 +125,28 @@ function PlanCard({ title, slug, price, subtitle, blurb, button, features, highl
 
         <button
           onClick={() => {
+            if (isCurrent) return;
+            if (isSwitchTarget) {
+              onSwitch?.(slug, title, price, subtitle);
+              return;
+            }
             try {
               sessionStorage.setItem("selectedPlan", JSON.stringify({ title, slug, price, subtitle }));
             } catch {}
             const isAuthed = !!localStorage.getItem("accessToken");
             navigate(isAuthed ? "/subscribe" : "/login?next=/subscribe");
           }}
-          className="mt-7 w-full rounded-lg px-5 py-3 text-sm font-medium cursor-pointer transition-colors"
+          disabled={isCurrent}
+          className="mt-7 w-full rounded-lg px-5 py-3 text-sm font-medium transition-colors disabled:cursor-default"
           style={
-            highlight
-              ? { backgroundColor: "var(--accent)", color: "#ffffff" }
-              : { backgroundColor: "var(--app-surface)", color: "var(--app-fg)", border: "1px solid var(--app-border-strong)" }
+            isCurrent
+              ? { backgroundColor: "var(--app-surface-2)", color: "var(--app-fg-muted)", border: "1px solid var(--app-border)", cursor: "default" }
+              : highlight
+              ? { backgroundColor: "var(--accent)", color: "#ffffff", cursor: "pointer" }
+              : { backgroundColor: "var(--app-surface)", color: "var(--app-fg)", border: "1px solid var(--app-border-strong)", cursor: "pointer" }
           }
         >
-          {button}
+          {isCurrent ? "Current plan" : isSwitchTarget ? "Switch to this plan" : button}
         </button>
       </div>
     </div>
@@ -167,8 +205,21 @@ const defaultPlans: PlanData[] = [
   },
 ];
 
+type PendingSwitch = {
+  slug: string;
+  title: string;
+  price: string;
+  subtitle?: string;
+};
+
 export function PricingSection() {
   const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
+  const [currentPlanName, setCurrentPlanName] = useState<string | null>(null);
+
+  // Switch-confirmation modal state
+  const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch | null>(null);
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
 
   // Backend-driven plans use a different schema (credit-based). Until the
   // backend matches the new time-based plan structure, keep the static
@@ -191,6 +242,55 @@ export function PricingSection() {
       }).catch(() => {});
     }
   }, []);
+
+  // Fetch the user's current plan so we can mark the right card. Only when
+  // logged in — anonymous visitors see the regular CTA buttons.
+  useEffect(() => {
+    if (!localStorage.getItem("accessToken")) return;
+
+    let cancelled = false;
+    const fetchPlan = () => {
+      settingsService
+        .getAccountSummary()
+        .then((res) => {
+          if (cancelled) return;
+          setCurrentPlanName(res.current_plan);
+        })
+        .catch(() => {});
+    };
+
+    fetchPlan();
+    const onPlanUpdated = () => fetchPlan();
+    window.addEventListener("plan-updated", onPlanUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("plan-updated", onPlanUpdated);
+    };
+  }, []);
+
+  const normalizedCurrent = (currentPlanName || "").trim().toLowerCase();
+  const hasActiveSubscription = !!normalizedCurrent;
+
+  const handleSwitchRequest = (slug: string, title: string, price: string, subtitle?: string) => {
+    setSwitchError(null);
+    setPendingSwitch({ slug, title, price, subtitle });
+  };
+
+  const confirmSwitch = async () => {
+    if (!pendingSwitch) return;
+    setSwitching(true);
+    setSwitchError(null);
+    try {
+      const res = await pricingService.switchSubscription(pendingSwitch.slug);
+      setCurrentPlanName(res.current_plan);
+      window.dispatchEvent(new CustomEvent("plan-updated"));
+      setPendingSwitch(null);
+    } catch (err) {
+      setSwitchError(err instanceof Error ? err.message : "Failed to switch plan.");
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   return (
     <section className="mx-auto max-w-6xl px-6 pt-4 pb-20 text-center">
@@ -215,9 +315,63 @@ export function PricingSection() {
             features={plan.features}
             highlight={plan.highlight}
             label={plan.label}
+            isCurrent={!!normalizedCurrent && plan.title.trim().toLowerCase() === normalizedCurrent}
+            hasActiveSubscription={hasActiveSubscription}
+            onSwitch={handleSwitchRequest}
           />
         ))}
       </div>
+
+      {pendingSwitch && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+          <div
+            className="w-full max-w-md rounded-2xl p-6 text-left"
+            style={{
+              backgroundColor: "var(--app-surface)",
+              border: "1px solid var(--app-border)",
+              boxShadow: "var(--shadow-pop)",
+              color: "var(--app-fg)",
+            }}
+          >
+            <h3 className="text-lg font-semibold">Switch to {pendingSwitch.title}?</h3>
+            <p className="mt-2 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+              You're currently on the <strong>{currentPlanName}</strong> plan. Switching to{" "}
+              <strong>{pendingSwitch.title}</strong> ({pendingSwitch.price}
+              {pendingSwitch.subtitle ? ` ${pendingSwitch.subtitle}` : ""}) will update your existing
+              subscription. Polar will prorate the difference on your next invoice — no second
+              checkout, no double-charge.
+            </p>
+            {switchError && (
+              <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-300">
+                {switchError}
+              </div>
+            )}
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setPendingSwitch(null)}
+                disabled={switching}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                style={{
+                  backgroundColor: "var(--btn-secondary-bg)",
+                  border: "1px solid var(--btn-secondary-border)",
+                  color: "var(--btn-secondary-text)",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSwitch}
+                disabled={switching}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                {switching ? "Switching…" : `Switch to ${pendingSwitch.title}`}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   );
 }

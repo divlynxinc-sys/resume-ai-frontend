@@ -7,7 +7,7 @@ export interface UserPreferences {
 }
 
 export interface AccountSummary {
-  current_plan: string;
+  current_plan: string | null;
   credits_remaining: number;
 }
 

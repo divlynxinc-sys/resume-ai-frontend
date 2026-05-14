@@ -39,7 +39,31 @@
       "PowerShell(docker exec resumeai-db psql -U postgres -d resume_ai -c \"\\\\d users\" 2>&1)",
       "PowerShell($body = '{\"credential\":\"test-invalid-token-for-debug\"}'; $response = $null; try { $response = Invoke-WebRequest -Uri \"http://localhost:8010/auth/google\" -Method POST -Body $body -ContentType \"application/json\" -UseBasicParsing -TimeoutSec 10 } catch { $err = $_.Exception; if \\($err.Response\\) { $stream = $err.Response.GetResponseStream\\(\\); $reader = New-Object System.IO.StreamReader\\($stream\\); $reader.ReadToEnd\\(\\) } else { $err.Message } })",
       "PowerShell($body = '{\"credential\":\"test-invalid-token-for-debug\"}'; $wr = [System.Net.WebRequest]::Create\\(\"http://localhost:8010/auth/google\"\\); $wr.Method = \"POST\"; $wr.ContentType = \"application/json\"; $bytes = [System.Text.Encoding]::UTF8.GetBytes\\($body\\); $wr.ContentLength = $bytes.Length; $stream = $wr.GetRequestStream\\(\\); $stream.Write\\($bytes, 0, $bytes.Length\\); $stream.Close\\(\\); try { $resp = $wr.GetResponse\\(\\); $reader = New-Object System.IO.StreamReader\\($resp.GetResponseStream\\(\\)\\); $reader.ReadToEnd\\(\\) } catch [System.Net.WebException] { $reader = New-Object System.IO.StreamReader\\($_.Exception.Response.GetResponseStream\\(\\)\\); $reader.ReadToEnd\\(\\) })",
-      "PowerShell(docker restart resumeai-backend 2>&1)"
+      "PowerShell(docker restart resumeai-backend 2>&1)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Abdullah\\\\work\\\\Divlynx\\\\new divlynx repo\\\\resume-ai\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Read(//c/Abdullah/work/Divlynx/new divlynx repo/resumeai-backend/app/core/**)",
+      "Read(//c/Abdullah/work/Divlynx/new divlynx repo/resumeai-backend/venv/Lib/site-packages/polar_sdk/models/**)",
+      "Bash(findstr :8010)",
+      "Bash(tasklist /FI \"PID eq 2236\")",
+      "Bash(tasklist /FI \"PID eq 27044\")",
+      "PowerShell(Get-Process -Id 2236,27044 -ErrorAction SilentlyContinue)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:8010/\" -UseBasicParsing -TimeoutSec 5; \"Status: $\\($r.StatusCode\\)\"; $r.Content.Substring\\(0, [Math]::Min\\(200, $r.Content.Length\\)\\) } catch { \"ERROR: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(node scripts/test-full-pipeline.mjs 2>&1)",
+      "PowerShell(node scripts/test-broken-backend.mjs 2>&1)",
+      "PowerShell(\"---\")",
+      "PowerShell(docker exec resumeai-db psql -U postgres -d resume_ai -c \"SELECT id, email, full_name FROM users ORDER BY id;\" 2>&1)",
+      "PowerShell(docker exec resumeai-db psql -U postgres -d resume_ai -c \"SELECT id, user_id, title, updated_at FROM resumes ORDER BY user_id, id;\" 2>&1)",
+      "PowerShell(docker exec resumeai-db psql -U postgres -d resume_ai -c \"SELECT id, email, name, created_at FROM users ORDER BY id;\" 2>&1)",
+      "PowerShell(docker exec resumeai-db psql -U postgres -d resume_ai -c \"BEGIN; DELETE FROM resume_ats_scores; DELETE FROM resumes; DELETE FROM user_session_logs; DELETE FROM user_settings; DELETE FROM users; COMMIT;\" 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(cd \"c:/Abdullah/work/Divlynx/new divlynx repo/resumeai-backend\"; python -m compileall -q app 2>&1; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(cd \"c:/Abdullah/work/Divlynx/new divlynx repo/resumeai-AI\"; python -m compileall -q . 2>&1 | Select-Object -First 30; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(python -m compileall -q \"c:/Abdullah/work/Divlynx/new divlynx repo/resume-ai/resumeai-backend/app\" 2>&1; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(python -m compileall -q \"c:/Abdullah/work/Divlynx/new divlynx repo/resume-ai/resumeai-AI\" 2>&1 | Select-Object -First 30; \"EXIT=$LASTEXITCODE\")",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
