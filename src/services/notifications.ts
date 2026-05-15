@@ -89,6 +89,11 @@ export function markNotificationsRead() {
   notifyListeners();
 }
 
+export function clearNotifications() {
+  saveNotifications([]);
+  saveUnreadNotificationCount(0);
+}
+
 export function addNotification(notification: Omit<AppNotification, "id" | "createdAt">) {
   const next: AppNotification = {
     ...notification,

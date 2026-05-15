@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowRight, CheckCircle2, FileText } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { TEMPLATES, renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 
 /**
  * Sample data used to render template previews on this page.
- * Lorem-style realistic content so users see what each template looks like
- * without ever leaking real PII into the previews.
+ * Realistic placeholder content lets users inspect the layout without using PII.
  */
 const SAMPLE_DATA: TemplateInput = {
   candidate_info: {
@@ -78,44 +78,72 @@ const SAMPLE_DATA: TemplateInput = {
   },
 };
 
-/* Subtle pastel tint per card so the grid doesn't feel monotone */
-const TINTS = [
-  "var(--pastel-lavender)",
-  "var(--pastel-peach)",
-  "var(--pastel-mint)",
-  "var(--pastel-sky)",
-  "var(--pastel-butter)",
-  "var(--pastel-rose)",
-];
+const TEMPLATE_META: Record<string, { tone: string; bestFor: string }> = {
+  "modern-minimal": {
+    tone: "Clean and spacious",
+    bestFor: "Product, operations, and general roles",
+  },
+  "classic-professional": {
+    tone: "Formal and polished",
+    bestFor: "Corporate, finance, and consulting",
+  },
+  "left-sidebar": {
+    tone: "Structured profile",
+    bestFor: "Design, tech, and portfolio-forward roles",
+  },
+  "compact-single-column": {
+    tone: "Dense and ATS-first",
+    bestFor: "Experienced candidates with more detail",
+  },
+  "creative-bold": {
+    tone: "High-contrast and memorable",
+    bestFor: "Creative, brand, and modern teams",
+  },
+};
+
+function htmlForPreview(html: string) {
+  const previewStyles = `
+    <style>
+      html, body { overflow: hidden !important; scrollbar-width: none !important; }
+      body::-webkit-scrollbar, html::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+    </style>
+  `;
+
+  return html.includes("</head>")
+    ? html.replace("</head>", `${previewStyles}</head>`)
+    : `${previewStyles}${html}`;
+}
 
 function TemplateCard({
   title,
   slug,
   html,
-  tint,
+  tone,
+  bestFor,
 }: {
   title: string;
   slug: string;
   html: string;
-  tint: string;
+  tone: string;
+  bestFor: string;
 }) {
   const navigate = useNavigate();
+
   return (
-    <div className="w-full">
+    <article className="group w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-pop)]">
       <div
-        className="relative group w-full aspect-[3/4] rounded-2xl border border-[var(--app-border)] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-pop)] hover:border-[var(--app-border-strong)]"
-        style={{ backgroundColor: tint, boxShadow: "var(--shadow-soft)" }}
+        className="relative w-full aspect-[210/297] overflow-hidden rounded-xl bg-white cursor-pointer ring-1 ring-[var(--app-border)]"
         onClick={() => navigate(`/resumes?template=${slug}`)}
       >
-        {/* Resume preview — actual rendered template, scaled */}
         <iframe
-          srcDoc={html}
+          srcDoc={htmlForPreview(html)}
           title={`${title} preview`}
           aria-hidden
           tabIndex={-1}
           loading="lazy"
           sandbox=""
-          className="absolute top-0 left-0 origin-top-left pointer-events-none border-0 bg-white"
+          scrolling="no"
+          className="absolute left-0 top-0 origin-top-left pointer-events-none border-0 bg-white"
           style={{
             width: "300%",
             height: "300%",
@@ -123,33 +151,51 @@ function TemplateCard({
           }}
         />
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 z-20 flex items-end justify-center pb-5 bg-gradient-to-t from-[rgba(26,26,26,0.55)] via-transparent to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 z-20 flex items-end justify-center bg-gradient-to-t from-[rgba(26,26,26,0.58)] via-transparent to-transparent pb-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/resumes?template=${slug}`);
             }}
-            className="px-4 py-2 rounded-full text-xs font-medium shadow-md cursor-pointer transition-colors"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium shadow-md transition-colors"
             style={{ backgroundColor: "#ffffff", color: "var(--app-fg)" }}
           >
             Use this template
+            <ArrowRight className="size-3.5" />
           </button>
         </div>
       </div>
-      <div className="mt-3 text-sm font-medium text-[var(--app-fg)]">{title}</div>
-    </div>
+
+      <div className="px-1 pb-1 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--app-fg)]">{title}</h3>
+            <p className="mt-1 text-xs text-[var(--app-fg-muted)]">{tone}</p>
+          </div>
+          <span className="rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent-text)]">
+            ATS
+          </span>
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-xs text-[var(--app-fg-soft)]">
+          <CheckCircle2 className="size-3.5 shrink-0" />
+          <span className="truncate">{bestFor}</span>
+        </div>
+      </div>
+    </article>
   );
 }
 
 export default function TemplatesScreen() {
-  // Render each template's HTML once with the sample data.
   const cards = useMemo(() => {
     return Object.values(TEMPLATES).map((tpl) => ({
       slug: tpl.slug,
       name: tpl.name,
       html: renderTemplate(tpl.slug, SAMPLE_DATA),
+      meta: TEMPLATE_META[tpl.slug] ?? {
+        tone: "Balanced and professional",
+        bestFor: "Most job applications",
+      },
     }));
   }, []);
 
@@ -157,24 +203,47 @@ export default function TemplatesScreen() {
     <div className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="templates" mainClassName="mx-auto max-w-7xl pb-24">
-        <div className="pt-10">
-          <div className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">Templates</div>
-          <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
-            Choose your <span className="italic">template</span>
-          </h1>
-          <p className="mt-3 text-sm text-[var(--app-fg-muted)] max-w-xl leading-relaxed">
-            Expertly crafted, ATS-friendly resume templates. Pick one to start — you can switch any time.
-          </p>
-        </div>
+        <section className="pt-8">
+          <div className="flex flex-col gap-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--accent-text)]">
+                Templates
+              </div>
+              <h1 className="font-display mt-1.5 text-3xl font-light tracking-tight text-[var(--app-fg)] md:text-4xl">
+                Choose your <span className="italic">template</span>
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--app-fg-muted)]">
+                Expertly crafted, ATS-friendly resume templates. Preview the real layouts, choose a style, and start editing right away.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:flex sm:items-center">
+              <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] px-4 py-3">
+                <div className="flex items-center gap-2 text-[var(--app-fg)]">
+                  <FileText className="size-4 text-[var(--accent-text)]" />
+                  <span className="font-semibold">{cards.length}</span>
+                </div>
+                <div className="mt-1 text-xs text-[var(--app-fg-muted)]">Templates</div>
+              </div>
+              <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] px-4 py-3">
+                <div className="flex items-center gap-2 text-[var(--app-fg)]">
+                  <CheckCircle2 className="size-4 text-[var(--accent-text)]" />
+                  <span className="font-semibold">ATS</span>
+                </div>
+                <div className="mt-1 text-xs text-[var(--app-fg-muted)]">Friendly</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {cards.map((c, i) => (
+        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {cards.map((c) => (
             <TemplateCard
               key={c.slug}
               title={c.name}
               slug={c.slug}
               html={c.html}
-              tint={TINTS[i % TINTS.length]}
+              tone={c.meta.tone}
+              bestFor={c.meta.bestFor}
             />
           ))}
         </div>
