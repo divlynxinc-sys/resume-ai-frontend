@@ -111,8 +111,7 @@ export function usePlan() {
 
 /**
  * Convenience guard: runs `action` if the user is on a paid plan; otherwise opens
- * the upgrade modal with `reason`. Use this to wrap AI button click handlers and
- * download handlers.
+ * the upgrade modal with `reason`. Use this to wrap premium AI button click handlers.
  */
 export function useRequirePaid() {
   const { isPaid, openUpgradeModal } = usePlan();
@@ -176,7 +175,7 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-emerald-500">✓</span>
-            <span>PDF &amp; DOCX downloads, all templates, priority generation</span>
+            <span>AI resume optimization, all templates, priority generation</span>
           </li>
         </ul>
         <div className="mt-6 flex justify-end gap-3">

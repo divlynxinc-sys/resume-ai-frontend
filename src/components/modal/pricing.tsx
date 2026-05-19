@@ -170,7 +170,7 @@ const FEATURE_LIST = [
   "AI-tailored cover letters",
   "HR email drafts",
   "Q&A answers",
-  "PDF & DOCX downloads",
+  "ATS optimization insights",
 ];
 
 const defaultPlans: PlanData[] = [

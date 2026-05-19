@@ -29,7 +29,7 @@ import { usePlan } from "@/contexts/PlanContext";
 import { useToast } from "@/contexts/ToastContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
-import html2pdf from "html2pdf.js";
+import { downloadResumeHtmlAsPdf, resumeContentToHtml } from "@/lib/resume-export";
 
 export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: string; collapsed?: boolean }) {
   const navigate = useNavigate();
@@ -330,7 +330,6 @@ function buildResumePrintHtml(resume: any): string {
 
 function RecentActivity() {
   const navigate = useNavigate();
-  const { isPaid, openUpgradeModal } = usePlan();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
@@ -360,39 +359,12 @@ function RecentActivity() {
   }, []);
 
   const handleDownload = async (id: number) => {
-    if (!isPaid) {
-      openUpgradeModal("Resume downloads are a paid feature. Upgrade to export PDFs and DOCX files.");
-      return;
-    }
     setDownloadingId(id);
     try {
       const resume = await resumeService.get(id);
-      const html = buildResumePrintHtml(resume);
-      const container = document.createElement("div");
-      container.innerHTML = html;
-      // Extract just the body content and apply inline styles
-      const bodyContent = container.querySelector("body")?.innerHTML ?? html;
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = bodyContent;
-      wrapper.style.fontFamily = "Georgia, serif";
-      wrapper.style.color = "#1a1a1a";
-      wrapper.style.padding = "40px 50px";
-      wrapper.style.maxWidth = "800px";
-      wrapper.style.margin = "0 auto";
-      wrapper.style.fontSize = "11pt";
-      wrapper.style.lineHeight = "1.5";
-
+      const html = resumeContentToHtml(resume.content, resume.title);
       const fileName = resume.title?.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Resume";
-      await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `${fileName}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        })
-        .from(wrapper)
-        .save();
+      await downloadResumeHtmlAsPdf(html, `${fileName}.pdf`);
     } catch {
       /* silently fail */
     } finally {

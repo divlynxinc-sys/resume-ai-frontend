@@ -2,8 +2,8 @@ import type { ReactNode, ChangeEvent } from "react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Download, ChevronDown, X, Wand2 } from "lucide-react";
-import html2pdf from "html2pdf.js";
 import { renderTemplate } from "@/lib/resume-templates";
+import { downloadResumeHtmlAsPdf } from "@/lib/resume-export";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
@@ -725,7 +725,6 @@ function ResumePreview({
   fileName: string;
   templateSlug?: string;
 }) {
-  const { isPaid, openUpgradeModal } = usePlan();
   const score = typeof ats?.final_ats_score === "number" ? ats.final_ats_score : null;
   const initialScore = typeof ats?.initial_ats_score === "number" ? ats.initial_ats_score : null;
   const keywordsFound = Array.isArray(ats?.keywords_found) ? ats.keywords_found : [];
@@ -759,75 +758,22 @@ function ResumePreview({
 
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
-    if (!isPaid) {
-      openUpgradeModal("PDF downloads are a paid feature. Upgrade to export your tailored resume.");
-      return;
-    }
     setDownloading(true);
 
-    // Render inside a fully-isolated off-screen iframe. The iframe gives the
     // template HTML its own document context — no `<style>` leak onto the
-    // host page, no host-page reflow during capture, and `html`/`body`
-    // selectors work as authored. We snapshot the .resume-root element
-    // inside the iframe and feed that to html2pdf.
-    const iframe = document.createElement("iframe");
-    iframe.setAttribute("aria-hidden", "true");
-    iframe.style.cssText = [
-      "position:fixed",
-      "left:-10000px",
-      "top:0",
-      "width:794px",        // A4 width @ 96dpi
-      "height:1123px",      // A4 height @ 96dpi (initial; iframe content can grow taller)
-      "border:none",
-      "pointer-events:none",
-      "z-index:-1",
-    ].join(";");
-    document.body.appendChild(iframe);
-
     try {
       const html = buildResumeHtmlForPdf(resume, templateSlug);
-      const doc = iframe.contentDocument;
-      if (!doc) throw new Error("iframe document unavailable");
-
-      doc.open();
-      doc.write(html);
-      doc.close();
-
-      // Wait for the iframe to lay out so the resume-root has real dimensions
-      await new Promise<void>((r) => {
-        if (doc.readyState === "complete") r();
-        else iframe.addEventListener("load", () => r(), { once: true });
-      });
-      // One extra rAF to give CSS a chance to fully apply
-      await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-      const target =
-        doc.querySelector<HTMLElement>(".resume-root") ?? doc.body;
-
       const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      const html2pdfOpts: Record<string, unknown> = {
-        margin: 0,
-        filename: `${resolvedName}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, windowWidth: 794, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
-      };
-      await html2pdf().set(html2pdfOpts).from(target).save();
+      await downloadResumeHtmlAsPdf(html, `${resolvedName || "Resume"}.pdf`);
     } catch {
       /* silently fail */
     } finally {
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
       setDownloading(false);
     }
   };
 
   const handleDownloadDocx = async () => {
     setDownloadOpen(false);
-    if (!isPaid) {
-      openUpgradeModal("DOCX downloads are a paid feature. Upgrade to export your tailored resume.");
-      return;
-    }
     setDownloading(true);
     try {
       const html = buildResumeHtmlForPdf(resume, templateSlug);
