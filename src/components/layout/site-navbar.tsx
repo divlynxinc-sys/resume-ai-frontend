@@ -6,6 +6,7 @@ import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
+  clearNotifications,
   getNotifications,
   getUnreadNotificationCount,
   markNotificationsRead,
@@ -87,6 +88,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => getNotifications());
   const [notifCount, setNotifCount] = useState(() => getUnreadNotificationCount());
+  const hasClearableNotifications = notifications.some((n) => n.createdAt !== "always");
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -207,14 +209,25 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
               <div className="absolute right-0 top-10 w-80 rounded-xl bg-[#0f1629] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
                 <div className="px-3 py-2.5 flex items-center justify-between">
                   <div className="text-sm text-white/80">Notifications</div>
-                  <button
-                    className="text-xs text-white/70 hover:text-white"
-                    onClick={() => {
-                      markNotificationsRead();
-                    }}
-                  >
-                    Mark all read
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="text-xs text-white/70 hover:text-white"
+                      onClick={() => {
+                        markNotificationsRead();
+                      }}
+                    >
+                      Mark all read
+                    </button>
+                    <button
+                      className="text-xs text-white/70 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+                      disabled={!hasClearableNotifications}
+                      onClick={() => {
+                        clearNotifications();
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
                 <div className="h-px bg-white/10" />
                 <ul className="max-h-64 overflow-auto py-2">
