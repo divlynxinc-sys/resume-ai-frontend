@@ -85,56 +85,122 @@ export function resumeContentToHtml(content: ResumeContent, fallbackName = "Resu
   return renderTemplate(templateSlug, resumeContentToTemplateInput(content, fallbackName));
 }
 
-export async function downloadResumeHtmlAsPdf(html: string, filename: string): Promise<void> {
-  const parsed = new DOMParser().parseFromString(html, "text/html");
-  const styles = Array.from(parsed.head.querySelectorAll("style"))
-    .map((style) => style.outerHTML)
-    .join("\n");
-  const bodyHtml = parsed.body.innerHTML || html;
+const A4_WIDTH_PX = 794;
+const A4_HEIGHT_PX = 1123;
 
-  const host = document.createElement("div");
-  host.setAttribute("aria-hidden", "true");
-  host.style.cssText = [
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForImages(root: ParentNode): Promise<void> {
+  const images = Array.from(root.querySelectorAll("img"));
+  await Promise.all(
+    images.map(async (image) => {
+      if (image.complete && image.naturalWidth > 0) return;
+      await new Promise<void>((resolve) => {
+        image.addEventListener("load", () => resolve(), { once: true });
+        image.addEventListener("error", () => resolve(), { once: true });
+      });
+      await image.decode?.().catch(() => undefined);
+    }),
+  );
+}
+
+async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement> {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = [
     "position:fixed",
     "left:-10000px",
     "top:0",
-    "width:210mm",
-    "min-height:297mm",
+    `width:${A4_WIDTH_PX}px`,
+    `height:${A4_HEIGHT_PX}px`,
+    "border:0",
     "background:#fff",
-    "color:#000",
-    "overflow:visible",
     "pointer-events:none",
     "z-index:-1",
   ].join(";");
-  host.innerHTML = `${styles}${bodyHtml}`;
-  document.body.appendChild(host);
+
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument;
+  if (!doc) {
+    frame.remove();
+    throw new Error("Could not create resume PDF render frame.");
+  }
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  const exportReset = doc.createElement("style");
+  exportReset.textContent = "html,body{margin:0;padding:0;width:794px;min-height:1123px;background:#fff;}";
+  doc.head.appendChild(exportReset);
+
+  await nextFrame();
+  await nextFrame();
+  await doc.fonts?.ready.catch(() => undefined);
+  await waitForImages(doc);
+  await nextFrame();
+
+  return frame;
+}
+
+export async function downloadResumeHtmlAsPdf(html: string, filename: string): Promise<void> {
+  const frame = await createResumeRenderFrame(html);
 
   try {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error("Could not find resume document for PDF export.");
 
-    const target = host.querySelector<HTMLElement>(".resume-root") ?? host;
+    await nextFrame();
+    await waitForImages(doc);
+    await nextFrame();
+
+    const resumeRoot = doc.querySelector<HTMLElement>(".resume-root");
+    const renderedHeight = Math.max(
+      resumeRoot?.scrollHeight ?? 0,
+      resumeRoot?.offsetHeight ?? 0,
+      resumeRoot?.getBoundingClientRect().height ?? 0,
+      doc.body.scrollHeight,
+      doc.documentElement.scrollHeight,
+    );
+    const expectedPages = Math.max(1, Math.ceil((renderedHeight - 1) / A4_HEIGHT_PX));
+
     const options: Record<string, unknown> = {
       margin: 0,
       filename,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
-        windowWidth: 794,
+        windowWidth: A4_WIDTH_PX,
+        windowHeight: Math.max(A4_HEIGHT_PX, Math.ceil(renderedHeight)),
+        allowTaint: true,
         useCORS: true,
         backgroundColor: "#ffffff",
+        imageTimeout: 30000,
         scrollX: 0,
         scrollY: 0,
       },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"] },
+      pagebreak: { mode: ["css", "legacy"], avoid: [".exp-block", ".proj-block", ".edu-block"] },
     };
 
-    await html2pdf()
+    const worker = html2pdf()
       .set(options)
-      .from(target)
-      .save();
+      .from(doc.documentElement)
+      .toPdf();
+    const pdf = await worker.get("pdf");
+    const totalPages =
+      typeof pdf.getNumberOfPages === "function"
+        ? pdf.getNumberOfPages()
+        : pdf.internal?.getNumberOfPages?.() ?? expectedPages;
+
+    for (let page = totalPages; page > expectedPages; page -= 1) {
+      pdf.deletePage(page);
+    }
+
+    pdf.save(filename);
   } finally {
-    host.remove();
+    frame.remove();
   }
 }
