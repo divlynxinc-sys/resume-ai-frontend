@@ -751,25 +751,37 @@ function ResumePreview({
       doc.open();
       doc.write(previewHtml);
       doc.close();
+      // Suppress the iframe document's own scrollbars — the outer container
+      // is what crops to the A4 aspect ratio.
+      const noScroll = doc.createElement("style");
+      noScroll.textContent = "html,body{overflow:hidden!important;margin:0;padding:0;}";
+      doc.head.appendChild(noScroll);
     }
     const scale = container.clientWidth / 794;
     iframe.style.transform = `scale(${scale})`;
   }, [previewHtml, mode]);
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     setDownloadOpen(false);
-    setDownloading(true);
+    const html = buildResumeHtmlForPdf(resume, templateSlug);
 
-    // template HTML its own document context — no `<style>` leak onto the
-    try {
-      const html = buildResumeHtmlForPdf(resume, templateSlug);
-      const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      await downloadResumeHtmlAsPdf(html, `${resolvedName || "Resume"}.pdf`);
-    } catch {
-      /* silently fail */
-    } finally {
-      setDownloading(false);
-    }
+    // Render into a hidden off-screen iframe so the print dialog opens
+    // without leaving the builder page (no new tab).
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:0;visibility:hidden;";
+    document.body.appendChild(frame);
+
+    const doc = frame.contentDocument!;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    frame.onload = () => {
+      frame.contentWindow!.focus();
+      frame.contentWindow!.print();
+      // Remove after a short delay to let the print dialog grab the document
+      setTimeout(() => document.body.removeChild(frame), 1000);
+    };
   };
 
   const handleDownloadDocx = async () => {
@@ -857,6 +869,7 @@ function ResumePreview({
               <iframe
                 ref={previewIframeRef}
                 title="Resume preview"
+                scrolling="no"
                 className="absolute top-0 left-0 origin-top-left border-none"
                 style={{ width: 794, height: 1123 }}
               />

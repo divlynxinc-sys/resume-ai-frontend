@@ -15,64 +15,63 @@ export function leftSidebar(data: TemplateInput): string {
   const css = `
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 210mm; min-height: 297mm;
+    html, body { margin: 0; padding: 0; }
+    body {
+      width: 100%; min-height: 297mm;
+      /* Paint the two-column background at the body level so no div
+         alignment gap can ever show a white line on the left edge. */
+      background: linear-gradient(to right, #2d3748 30%, #ffffff 30%);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-size: 10pt; line-height: 1.5; color: #222;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
-    .wrapper { display: flex; min-height: 297mm; }
+    .wrapper { display: flex; width: 100%; min-height: 297mm; }
 
     /* ── Sidebar: 30% dark ── */
     .sidebar {
       width: 30%; background: #2d3748; color: #e2e8f0;
-      padding: 36px 20px; flex-shrink: 0;
+      padding: 16px 14px; flex-shrink: 0;
     }
-    .sidebar h1 { font-size: 18pt; font-weight: 700; color: #fff; margin-bottom: 4px; line-height: 1.2; }
-    .sidebar .tagline { font-size: 9pt; color: #a0aec0; margin-bottom: 20px; }
+    .sidebar h1 { font-size: 15pt; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.2; }
+    .sidebar .tagline { font-size: 8pt; color: #a0aec0; margin-bottom: 12px; }
     .sidebar .section-title {
-      font-size: 9pt; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.5px; color: #63b3ed; margin-bottom: 8px;
-      border-bottom: 1px solid #4a5568; padding-bottom: 4px;
+      font-size: 8pt; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #63b3ed; margin-bottom: 5px;
+      border-bottom: 1px solid #4a5568; padding-bottom: 3px;
     }
-    .sidebar .section { margin-bottom: 18px; }
-    /* candidate_info contact details */
-    .contact-item { font-size: 8.5pt; margin-bottom: 5px; color: #cbd5e0; word-break: break-all; }
+    .sidebar .section { margin-bottom: 12px; }
+    .contact-item { font-size: 8pt; margin-bottom: 3px; color: #cbd5e0; word-break: break-all; }
     .contact-item a { color: #90cdf4; text-decoration: none; }
-    /* resume.skills[] as pills */
-    .skill-group { margin-bottom: 10px; }
-    .skill-group-label { font-size: 8.5pt; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .skill-group { margin-bottom: 6px; }
+    .skill-group-label { font-size: 8pt; font-weight: 700; color: #e2e8f0; margin-bottom: 3px; }
     .pill {
       display: inline-block; background: #4a5568; color: #e2e8f0;
-      padding: 2px 8px; border-radius: 3px; font-size: 8pt; margin: 0 4px 4px 0;
+      padding: 1px 6px; border-radius: 3px; font-size: 7.5pt; margin: 0 3px 3px 0;
     }
-    /* resume.education[] in sidebar */
-    .edu-item { margin-bottom: 10px; }
-    .edu-degree { font-size: 9pt; font-weight: 700; color: #fff; }
-    .edu-school { font-size: 8.5pt; color: #a0aec0; }
-    .edu-year { font-size: 8pt; color: #718096; }
+    .edu-item { margin-bottom: 6px; }
+    .edu-degree { font-size: 8.5pt; font-weight: 700; color: #fff; }
+    .edu-school { font-size: 8pt; color: #a0aec0; }
+    .edu-year { font-size: 7.5pt; color: #718096; }
 
     /* ── Main: 70% white ── */
-    .main { width: 70%; padding: 36px 32px; }
-    .main .section { margin-bottom: 18px; }
+    .main { width: 70%; padding: 16px 22px; background: #ffffff; }
+    .main .section { margin-bottom: 10px; }
     .main .section-title {
-      font-size: 11pt; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.2px; color: #2d3748; margin-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0; padding-bottom: 4px;
+      font-size: 9.5pt; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: #2d3748; margin-bottom: 5px;
+      border-bottom: 2px solid #e2e8f0; padding-bottom: 3px;
     }
-    /* resume.experiences[] */
-    .exp-block { page-break-inside: avoid; margin-bottom: 12px; }
+    .exp-block { page-break-inside: avoid; margin-bottom: 8px; }
     .exp-header { display: flex; justify-content: space-between; align-items: baseline; }
-    .exp-role { font-weight: 700; font-size: 10.5pt; color: #2d3748; }
-    .exp-dates { font-size: 8.5pt; color: #718096; }
-    .exp-company { font-size: 9pt; color: #555; margin-bottom: 3px; }
-    ul { padding-left: 16px; margin: 3px 0 0; }
-    li { margin-bottom: 2px; font-size: 9.5pt; }
-    /* resume.projects[] */
-    .proj-block { page-break-inside: avoid; margin-bottom: 10px; }
-    .proj-title { font-weight: 700; font-size: 10pt; color: #2d3748; }
-    .proj-link { font-size: 8pt; color: #718096; text-decoration: none; margin-left: 6px; }
-    p { font-size: 9.5pt; }
+    .exp-role { font-weight: 700; font-size: 9.5pt; color: #2d3748; }
+    .exp-dates { font-size: 8pt; color: #718096; }
+    .exp-company { font-size: 8.5pt; color: #555; margin-bottom: 2px; }
+    ul { padding-left: 14px; margin: 2px 0 0; }
+    li { margin-bottom: 1px; font-size: 8.5pt; line-height: 1.35; }
+    .proj-block { page-break-inside: avoid; margin-bottom: 7px; }
+    .proj-title { font-weight: 700; font-size: 9pt; color: #2d3748; }
+    .proj-link { font-size: 7.5pt; color: #718096; text-decoration: none; margin-left: 6px; }
+    p { font-size: 8.5pt; line-height: 1.4; }
   `;
 
   /* ── Sidebar content ── */
@@ -178,8 +177,8 @@ export function leftSidebar(data: TemplateInput): string {
   `;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="margin:0;padding:0;background:#2d3748;">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head>
-<body><div class="wrapper">${sidebarHtml}${mainHtml}</div></body>
+<body style="margin:0;padding:0;background:#2d3748;"><div class="wrapper">${sidebarHtml}${mainHtml}</div></body>
 </html>`;
 }
