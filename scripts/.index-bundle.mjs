@@ -135,10 +135,11 @@ function modernMinimal(data) {
     const range = `${fmtFullDate(start)} - ${fmtFullDate(end)}`;
     return loc ? `${range}, ${loc}` : range;
   };
-  const emailIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${META}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>`;
-  const phoneIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="${META}" style="vertical-align:-1px;margin-right:4px"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.21a1 1 0 0 0 .24-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/></svg>`;
-  const linkedinIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="${META}" style="vertical-align:-1px;margin-right:4px"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.28V1.72C24 .77 23.2 0 22.22 0z"/></svg>`;
-  const githubIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="${META}" style="vertical-align:-1px;margin-right:4px"><path d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.41-4.04-1.41-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.31-.54-1.53.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5z"/></svg>`;
+  const svgIcon = (svg) => `<img class="ci-icon" alt="" src="data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}" />`;
+  const emailIcon = svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${META}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>`);
+  const phoneIcon = svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${META}"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.21a1 1 0 0 0 .24-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/></svg>`);
+  const linkedinIcon = svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${META}"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.28V1.72C24 .77 23.2 0 22.22 0z"/></svg>`);
+  const githubIcon = svgIcon(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${META}"><path d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.41-4.04-1.41-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.31-.54-1.53.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5z"/></svg>`);
   const contactItems = [];
   if (c.email)
     contactItems.push(`<span class="ci">${emailIcon}<a href="mailto:${esc(c.email)}">${esc(c.email)}</a></span>`);
@@ -173,19 +174,41 @@ function modernMinimal(data) {
       flex-wrap: wrap; gap: 12px;
       font-size: 8.5pt; color: ${META};
     }
-    .resume-root .ci { display: inline-flex; align-items: center; }
+    .resume-root .ci {
+      display: inline-grid;
+      grid-template-columns: 11px auto;
+      align-items: center;
+      column-gap: 4px;
+      line-height: 11px;
+      white-space: nowrap;
+    }
+    .resume-root .ci-icon {
+      display: block;
+      width: 11px;
+      height: 11px;
+      min-width: 11px;
+      min-height: 11px;
+      object-fit: contain;
+    }
     .resume-root .ci a { color: ${META}; text-decoration: none; }
 
-    /* \u2500\u2500 Sections \u2014 navy uppercase title, thin grey rule beneath \u2500\u2500 */
+    /* \u2500\u2500 Sections \u2014 navy uppercase title, rule below heading \u2500\u2500 */
     .resume-root .section { margin-top: 9px; }
     .resume-root .section-title {
+      display: block;
       font-size: 10.5pt; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.4px;
       color: ${NAVY};
-      border-bottom: 0.6pt solid ${RULE};
-      padding-bottom: 1.5px;
       margin-bottom: 4px;
+      line-height: 1;
+    }
+    .resume-root .section-title span { display: block; }
+    .resume-root .section-title i {
       display: block;
+      width: 100%;
+      height: 1px;
+      margin-top: 2px;
+      background: ${RULE};
     }
 
     .resume-root p.summary { font-size: 9pt; line-height: 1.35; color: #222; }
@@ -235,7 +258,7 @@ function modernMinimal(data) {
     .resume-root .skill-cat { font-weight: 700; font-size: 9pt; color: #111; min-width: 88px; margin-right: 10px; flex-shrink: 0; }
     .resume-root .skill-vals { font-size: 9pt; color: #222; flex: 1; }
   `;
-  const section = (title, content) => content.trim() ? `<div class="section"><span class="section-title">${title}</span>${content}</div>` : "";
+  const section = (title, content) => content.trim() ? `<div class="section"><div class="section-title"><span>${title}</span><i></i></div>${content}</div>` : "";
   const summaryHtml = r.summary ? `<p class="summary">${esc(r.summary)}</p>` : "";
   const experienceHtml = r.experiences.map(
     (exp) => `<div class="exp-block">
