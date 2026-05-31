@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
-import { settingsService, profileService } from "@/services";
+import { settingsService, profileService, pricingService } from "@/services";
 import type { AccountSummary } from "@/services/settings";
+import type { PolarSubscriptionDetails } from "@/services/pricing";
 
 function PageTitle({ children, subtitle }: { children: ReactNode; subtitle?: string }) {
   return (
@@ -113,6 +115,44 @@ export default function AccountManagementScreen() {
 
   // Subscription state
   const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [subDetails, setSubDetails] = useState<PolarSubscriptionDetails | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [subBusy, setSubBusy] = useState(false);
+  const [subError, setSubError] = useState<string | null>(null);
+
+  const refreshSubscriptionState = () => {
+    settingsService.getAccountSummary().then(setSummary).catch(() => {});
+    pricingService.getCurrentSubscription().then(setSubDetails).catch(() => setSubDetails(null));
+  };
+
+  const handleCancelSubscription = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      const updated = await pricingService.cancelSubscription();
+      setSubDetails(updated);
+      window.dispatchEvent(new CustomEvent("plan-updated"));
+      setShowCancelModal(false);
+      showToast("Subscription will end at the end of the current billing period.");
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : "Failed to cancel.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
+  const handleOpenPortal = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      const res = await pricingService.getPortalUrl();
+      window.open(res.portal_url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : "Failed to open billing portal.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
 
   // Preferences state
   const [twoFA, setTwoFA] = useState(false);
@@ -140,6 +180,17 @@ export default function AccountManagementScreen() {
       .then(setSummary)
       .catch(() => {});
 
+    // Load live subscription details from Polar (for renewal date / pending cancel)
+    pricingService.getCurrentSubscription()
+      .then(setSubDetails)
+      .catch(() => setSubDetails(null));
+
+    const onPlanUpdated = () => refreshSubscriptionState();
+    window.addEventListener("plan-updated", onPlanUpdated);
+    // Refetch when the user comes back from the Polar customer portal tab.
+    const onFocus = () => refreshSubscriptionState();
+    window.addEventListener("focus", onFocus);
+
     // Load preferences
     settingsService.getPreferences()
       .then((prefs) => {
@@ -148,6 +199,11 @@ export default function AccountManagementScreen() {
         setTwoFA(prefs.two_factor_enabled);
       })
       .catch(() => {});
+
+    return () => {
+      window.removeEventListener("plan-updated", onPlanUpdated);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   // ── Profile save ───────────────────────────────────────────────────────────
@@ -375,18 +431,116 @@ export default function AccountManagementScreen() {
                 <div className="mt-2 text-xs text-white/60">
                   AI credits: {summary?.credits_remaining != null ? summary.credits_remaining : "—"}
                 </div>
+                {subDetails?.has_subscription && subDetails.current_period_end && (
+                  <div className="mt-2 text-xs text-white/60">
+                    {subDetails.cancel_at_period_end
+                      ? `Ends on ${new Date(subDetails.current_period_end).toLocaleDateString()}`
+                      : `Renews on ${new Date(subDetails.current_period_end).toLocaleDateString()}`}
+                  </div>
+                )}
+                {subDetails?.cancel_at_period_end && (
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
+                    Cancellation scheduled
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-3 justify-start md:justify-end">
-                <Link to="/pricing" className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">
-                  Upgrade Plan
-                </Link>
-                <button className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm">
-                  Manage Billing
+                {!subDetails?.has_subscription && (
+                  <Link to="/pricing" className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 py-2 text-sm text-white">
+                    Upgrade Plan
+                  </Link>
+                )}
+                {subDetails?.has_subscription && !subDetails.cancel_at_period_end && (
+                  <>
+                    <Link to="/pricing" className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm">
+                      Change Plan
+                    </Link>
+                    <button
+                      onClick={() => { setSubError(null); setShowCancelModal(true); }}
+                      disabled={subBusy}
+                      className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-600 dark:text-rose-300 disabled:opacity-60"
+                    >
+                      Cancel Subscription
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleOpenPortal}
+                  disabled={subBusy}
+                  className="rounded-lg bg-white/8 border border-white/12 px-4 py-2 text-sm disabled:opacity-60"
+                  title="Manage payment method & invoices on Polar"
+                >
+                  Payment & Invoices
                 </button>
               </div>
             </div>
+            {subError && (
+              <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-300">
+                {subError}
+              </div>
+            )}
           </Card>
         </section>
+
+        {showCancelModal && createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">
+            <div
+              className="w-full max-w-md rounded-2xl p-6 text-left"
+              style={{
+                backgroundColor: "var(--app-surface)",
+                border: "1px solid var(--app-border)",
+                boxShadow: "var(--shadow-pop)",
+                color: "var(--app-fg)",
+              }}
+            >
+              <h3 className="text-lg font-semibold">Cancel your subscription?</h3>
+              <div className="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-300">
+                <strong>This cannot be undone.</strong> Once you cancel, you will not be able to
+                resume this subscription — you'd need to start a new one later.
+              </div>
+              <p className="mt-3 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+                You'll keep access until
+                {" "}
+                <strong>
+                  {subDetails?.current_period_end
+                    ? new Date(subDetails.current_period_end).toLocaleDateString()
+                    : "the end of this billing period"}
+                </strong>
+                . After that your plan ends, your AI credits are cleared, and we won't bill you again.
+                {" "}
+                <span className="text-white/80">No refund is issued for the remaining time.</span>
+              </p>
+              {subError && (
+                <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-300">
+                  {subError}
+                </div>
+              )}
+              <div className="mt-5 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={subBusy}
+                  className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                  style={{
+                    backgroundColor: "var(--btn-secondary-bg)",
+                    border: "1px solid var(--btn-secondary-border)",
+                    color: "var(--btn-secondary-text)",
+                  }}
+                >
+                  Keep subscription
+                </button>
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={subBusy}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                  style={{ backgroundColor: "#DC2626" }}
+                >
+                  {subBusy ? "Cancelling…" : "Confirm cancel"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
         {/* ── Theme & Appearance ── */}
         <section className="mt-8">

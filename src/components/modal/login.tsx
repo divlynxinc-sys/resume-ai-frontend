@@ -14,7 +14,13 @@ function isValidEmail(email: string) {
 function TopLogo() {
   return (
     <div className="flex flex-col items-center">
-      <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-5" />
+      <Link
+        to="/"
+        aria-label="Jobsynk AI — go to home"
+        className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
+      >
+        <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-5" />
+      </Link>
       <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
         Welcome <span className="italic">back</span>
       </h1>

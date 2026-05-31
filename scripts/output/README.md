@@ -6,11 +6,11 @@ Open these files locally to verify the resume template without logging into the 
 
 | File | What it is |
 |------|------------|
-| `pipeline-output.pdf` | The reference resume (Abdullah Tahir data) put through the **complete** pipeline used by the running app: backend `ResumeContent` → `mapContentToLocal` → `toTemplateInput` → `modernMinimal`. Open this side-by-side with `../../resume template.pdf` to verify a match. |
+| `pipeline-output.pdf` | The reference resume (dummy `Avery Lawson` data) put through the **complete** pipeline used by the running app: backend `ResumeContent` → `mapContentToLocal` → `toTemplateInput` → `modernMinimal`. Open this side-by-side with `../../resume template.pdf` to verify a match. |
 | `pipeline-output.html` | Same as above, raw HTML. |
 | `placeholder-output.pdf` | The empty-resume placeholder (John Doe / Lorem Ipsum) — what the preview pane shows when the user hasn't filled in any fields. |
 | `placeholder-output.html` | Raw HTML for the placeholder. |
-| `broken-backend-output.pdf` | Regression test — the **malformed** backend shape your AI optimizer produces (project content baked into FAIR's experience description, no customSections, no skillCategories). The sanitizer in `mapContentToLocal` should heal this and produce a clean resume. If this PDF looks broken, the sanitizer regressed. |
+| `broken-backend-output.pdf` | Regression test — the **malformed** backend shape the AI optimizer produces (project content baked into the last experience's description, no customSections, no skillCategories). The sanitizer in `mapContentToLocal` should heal this and produce a clean resume. If this PDF looks broken, the sanitizer regressed. |
 | `broken-backend-output.html` | Raw HTML for the broken-backend test. |
 | `templates/<slug>.pdf` | One PDF per registered template — proves they all render non-blank with the CSS scoper applied. Open all 5 to compare designs side-by-side. |
 

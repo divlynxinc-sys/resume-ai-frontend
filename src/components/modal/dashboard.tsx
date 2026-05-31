@@ -24,13 +24,16 @@ import {
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlan } from "@/contexts/PlanContext";
+import { useToast } from "@/contexts/ToastContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
-import html2pdf from "html2pdf.js";
+import { downloadResumeHtmlAsPdf, resumeContentToHtml } from "@/lib/resume-export";
 
-export function Sidebar({ activeRoute }: { activeRoute?: string }) {
+export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: string; collapsed?: boolean }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { isPaid, openUpgradeModal } = usePlan();
   const current = (activeRoute ?? (typeof window !== "undefined" ? window.location.pathname.replace(/^\//, "") : "dashboard")) || "dashboard";
   // Sidebar rotating tips
   const tips: { title: string; icon: ReactNode; points: string[]; link?: string }[] = [
@@ -65,7 +68,7 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
   };
 
   return (
-    <aside className="w-64 shrink-0 border-r border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-fg)] flex flex-col h-full">
+    <aside className={`${collapsed ? "w-16" : "w-64"} shrink-0 border-r border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-fg)] flex flex-col h-full transition-all duration-300 ease-in-out`}>
       {showLogoutModal && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px] p-4">
           <div className="w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-pop)]">
@@ -92,18 +95,56 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
         </div>,
         document.body
       )}
-      <nav className="px-3 py-5 flex flex-col gap-1">
-        <NavItem icon={<Home className="size-4" />} label="Dashboard" route="dashboard" active={current === "dashboard"} />
-        <NavItem icon={<FileText className="size-4" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} />
-        <NavItem icon={<Mail className="size-4" />} label="Cover Letter" route="cover-letter" active={current === "cover-letter"} />
-        <NavItem icon={<Edit2 className="size-4" />} label="HR Email Drafts" route="hr-email-drafts" active={current === "hr-email-drafts"} />
-        <NavItem icon={<MessagesSquare className="size-4" />} label="Q&A Answers" route="qa-answers" active={current === "qa-answers"} />
-        <NavItem icon={<LayoutGrid className="size-4" />} label="Templates" route="templates" active={current === "templates"} />
-        <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} />
-        <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} />
-        <NavItem icon={<HelpCircle className="size-4" />} label="Help Center" route="help-center" active={current === "help-center"} />
-        <NavItem icon={<LogOut className="size-4" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} />
+      <nav className={`${collapsed ? "px-2" : "px-3"} py-5 flex flex-col gap-1`}>
+        <NavItem icon={<Home className="size-4" />} label="Dashboard" route="dashboard" active={current === "dashboard"} collapsed={collapsed} />
+        <NavItem icon={<FileText className="size-4" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} collapsed={collapsed} />
+        <NavItem icon={<LayoutGrid className="size-4" />} label="Templates" route="templates" active={current === "templates"} collapsed={collapsed} />
+        <NavItem
+          icon={<Mail className="size-4" />}
+          label="Cover Letter"
+          route="cover-letter"
+          active={current === "cover-letter"}
+          collapsed={collapsed}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("Cover letters are a Pro feature. Upgrade to generate tailored letters for every application.")}
+        />
+        <NavItem
+          icon={<Wand2 className="size-4" />}
+          label="AI Tailoring"
+          route="tailoring"
+          active={current === "tailoring"}
+          collapsed={collapsed}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Tailoring rewrites your resume to match each job description. Upgrade to unlock it.")}
+        />
+        <NavItem
+          icon={<MessagesSquare className="size-4" />}
+          label="AI Chat"
+          route="ai-chat"
+          active={current === "ai-chat"}
+          collapsed={collapsed}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Chat is a Pro feature. Upgrade to get an on-demand resume assistant.")}
+        />
+        <NavItem
+          icon={<MessagesSquare className="size-4" />}
+          label="AI Interviews"
+          route="interview"
+          active={current === "interview"}
+          collapsed={collapsed}
+          premium
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("AI Interview practice is a Pro feature. Upgrade to run mock interviews.")}
+        />
+        <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} collapsed={collapsed} />
+        <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} collapsed={collapsed} />
+        <NavItem icon={<HelpCircle className="size-4" />} label="Help Center" route="help-center" active={current === "help-center"} collapsed={collapsed} />
+        <NavItem icon={<LogOut className="size-4" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} collapsed={collapsed} />
       </nav>
+      {!collapsed && (
       <div className="mt-auto px-3 py-4">
         {/* Quick Guide */}
         <div>
@@ -137,24 +178,70 @@ export function Sidebar({ activeRoute }: { activeRoute?: string }) {
           </div>
         </div>
       </div>
+      )}
     </aside>
   );
 }
 
-function NavItem({ icon, label, route, active = false, onClick }: { icon: ReactNode; label: string; route: string; active?: boolean; onClick?: () => void }) {
+function NavItem({
+  icon,
+  label,
+  route,
+  active = false,
+  onClick,
+  premium = false,
+  locked = false,
+  onLockedClick,
+  collapsed = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  route: string;
+  active?: boolean;
+  onClick?: () => void;
+  /** Show a "Pro" badge in the corner. */
+  premium?: boolean;
+  /** If true, clicking opens onLockedClick (upgrade modal) instead of navigating. */
+  locked?: boolean;
+  onLockedClick?: () => void;
+  collapsed?: boolean;
+}) {
   const navigate = useNavigate();
+  const handleClick = () => {
+    if (locked) {
+      onLockedClick?.();
+      return;
+    }
+    if (onClick) onClick();
+    else navigate(`/${route}`);
+  };
+
   return (
     <button
-      onClick={onClick ? onClick : () => navigate(`/${route}`)}
+      onClick={handleClick}
+      aria-disabled={locked || undefined}
+      aria-label={collapsed ? label : undefined}
+      title={locked ? "Premium AI feature — upgrade to unlock" : undefined}
       className={
-        "w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors " +
+        `group relative w-full text-left flex items-center ${collapsed ? "justify-center px-0" : "gap-3 px-3"} rounded-lg py-2 text-sm cursor-pointer transition-colors ` +
         (active
           ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-medium"
-          : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
+          : locked
+            ? "text-[var(--app-fg-soft)] hover:bg-[var(--app-surface-2)]"
+            : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
       }
     >
       <span className={active ? "text-[var(--accent-text)]" : "text-[var(--app-fg-soft)]"}>{icon}</span>
-      <span>{label}</span>
+      {!collapsed && <span className={locked ? "opacity-70" : undefined}>{label}</span>}
+      {premium && !collapsed && (
+        <span
+          aria-label="Premium AI feature"
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-indigo-600 dark:text-indigo-300"
+        >
+          <Crown className="size-2.5" />
+          Pro
+        </span>
+      )}
     </button>
   );
 }
@@ -242,6 +329,7 @@ function buildResumePrintHtml(resume: any): string {
 
 function RecentActivity() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -273,32 +361,9 @@ function RecentActivity() {
     setDownloadingId(id);
     try {
       const resume = await resumeService.get(id);
-      const html = buildResumePrintHtml(resume);
-      const container = document.createElement("div");
-      container.innerHTML = html;
-      // Extract just the body content and apply inline styles
-      const bodyContent = container.querySelector("body")?.innerHTML ?? html;
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = bodyContent;
-      wrapper.style.fontFamily = "Georgia, serif";
-      wrapper.style.color = "#1a1a1a";
-      wrapper.style.padding = "40px 50px";
-      wrapper.style.maxWidth = "800px";
-      wrapper.style.margin = "0 auto";
-      wrapper.style.fontSize = "11pt";
-      wrapper.style.lineHeight = "1.5";
-
+      const html = resumeContentToHtml(resume.content, resume.title);
       const fileName = resume.title?.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Resume";
-      await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `${fileName}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        })
-        .from(wrapper)
-        .save();
+      await downloadResumeHtmlAsPdf(html, `${fileName}.pdf`);
     } catch {
       /* silently fail */
     } finally {
@@ -312,6 +377,7 @@ function RecentActivity() {
       await resumeService.delete(id);
       setActivities((prev) => prev.filter((a) => a.id !== id));
       setDeletingId(null);
+      showToast("Resume deleted successfully!");
     } catch {
       /* silently fail */
     } finally {

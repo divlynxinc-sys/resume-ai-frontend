@@ -2,13 +2,14 @@ import type { ReactNode, ChangeEvent } from "react";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Download, ChevronDown, X, Wand2 } from "lucide-react";
-import html2pdf from "html2pdf.js";
 import { renderTemplate } from "@/lib/resume-templates";
+import { downloadResumeHtmlAsPdf } from "@/lib/resume-export";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
+import { usePlan } from "@/contexts/PlanContext";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
@@ -750,70 +751,37 @@ function ResumePreview({
       doc.open();
       doc.write(previewHtml);
       doc.close();
+      // Suppress the iframe document's own scrollbars — the outer container
+      // is what crops to the A4 aspect ratio.
+      const noScroll = doc.createElement("style");
+      noScroll.textContent = "html,body{overflow:hidden!important;margin:0;padding:0;}";
+      doc.head.appendChild(noScroll);
     }
     const scale = container.clientWidth / 794;
     iframe.style.transform = `scale(${scale})`;
   }, [previewHtml, mode]);
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = () => {
     setDownloadOpen(false);
-    setDownloading(true);
+    const html = buildResumeHtmlForPdf(resume, templateSlug);
 
-    // Render inside a fully-isolated off-screen iframe. The iframe gives the
-    // template HTML its own document context — no `<style>` leak onto the
-    // host page, no host-page reflow during capture, and `html`/`body`
-    // selectors work as authored. We snapshot the .resume-root element
-    // inside the iframe and feed that to html2pdf.
-    const iframe = document.createElement("iframe");
-    iframe.setAttribute("aria-hidden", "true");
-    iframe.style.cssText = [
-      "position:fixed",
-      "left:-10000px",
-      "top:0",
-      "width:794px",        // A4 width @ 96dpi
-      "height:1123px",      // A4 height @ 96dpi (initial; iframe content can grow taller)
-      "border:none",
-      "pointer-events:none",
-      "z-index:-1",
-    ].join(";");
-    document.body.appendChild(iframe);
+    // Render into a hidden off-screen iframe so the print dialog opens
+    // without leaving the builder page (no new tab).
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:0;visibility:hidden;";
+    document.body.appendChild(frame);
 
-    try {
-      const html = buildResumeHtmlForPdf(resume, templateSlug);
-      const doc = iframe.contentDocument;
-      if (!doc) throw new Error("iframe document unavailable");
+    const doc = frame.contentDocument!;
+    doc.open();
+    doc.write(html);
+    doc.close();
 
-      doc.open();
-      doc.write(html);
-      doc.close();
-
-      // Wait for the iframe to lay out so the resume-root has real dimensions
-      await new Promise<void>((r) => {
-        if (doc.readyState === "complete") r();
-        else iframe.addEventListener("load", () => r(), { once: true });
-      });
-      // One extra rAF to give CSS a chance to fully apply
-      await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-      const target =
-        doc.querySelector<HTMLElement>(".resume-root") ?? doc.body;
-
-      const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      const html2pdfOpts: Record<string, unknown> = {
-        margin: 0,
-        filename: `${resolvedName}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, windowWidth: 794, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
-      };
-      await html2pdf().set(html2pdfOpts).from(target).save();
-    } catch {
-      /* silently fail */
-    } finally {
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-      setDownloading(false);
-    }
+    frame.onload = () => {
+      frame.contentWindow!.focus();
+      frame.contentWindow!.print();
+      // Remove after a short delay to let the print dialog grab the document
+      setTimeout(() => document.body.removeChild(frame), 1000);
+    };
   };
 
   const handleDownloadDocx = async () => {
@@ -901,6 +869,7 @@ function ResumePreview({
               <iframe
                 ref={previewIframeRef}
                 title="Resume preview"
+                scrolling="no"
                 className="absolute top-0 left-0 origin-top-left border-none"
                 style={{ width: 794, height: 1123 }}
               />
@@ -1038,6 +1007,7 @@ export default function ResumeBuilderScreen() {
   const editId = searchParams.get("id");
   const initialTemplate = searchParams.get("template") || 'modern-minimal';
   const { showToast } = useToast();
+  const { isPaid, openUpgradeModal } = usePlan();
 
   const [activeTab, setActiveTab] = useState<TabKey>('job');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
@@ -1100,6 +1070,95 @@ export default function ResumeBuilderScreen() {
     }, 600);
     return () => clearTimeout(timer);
   }, [resumeFileName]);
+
+  const applyOptimizedResume = (optimized: Awaited<ReturnType<typeof resumeService.optimizeWithAi>>) => {
+    if (!optimized?.resume) return;
+
+    const preOptSkillCategories = resume.skillCategories;
+    const preOptLinkedin = resume.linkedin;
+    const preOptPortfolio = resume.portfolio;
+    const mapped = mapContentToLocal(optimized.resume);
+
+    // Restore fields the AI response commonly drops.
+    if (!mapped.skillCategories?.length && preOptSkillCategories?.length) {
+      mapped.skillCategories = preOptSkillCategories;
+    }
+    if (!mapped.linkedin && preOptLinkedin) mapped.linkedin = preOptLinkedin;
+    if (!mapped.portfolio && preOptPortfolio) mapped.portfolio = preOptPortfolio;
+
+    setResume(mapped);
+    const rawAts = optimized.ats;
+    if (rawAts && typeof rawAts === "object" && !Array.isArray(rawAts)) {
+      setAtsFromOptimize(rawAts as AtsOptimizeSummary);
+    }
+    setPreviewMode("ats");
+    showToast("Resume optimized successfully!");
+  };
+
+  const runResumeOptimization = async (id: number) => {
+    if (!resume.job.description.trim()) {
+      setOptimizeError("Please fill in the Job Description before optimizing your resume.");
+      setActiveTab("job");
+      return;
+    }
+
+    if (!isPaid) {
+      openUpgradeModal("AI resume optimization is a paid feature. Upgrade to tailor your resume to any job description.");
+      return;
+    }
+
+    setOptimizeError(null);
+    setOptimizing(true);
+    try {
+      const optimized = await resumeService.optimizeWithAi(id, { store_ats_score: true });
+      applyOptimizedResume(optimized);
+    } catch (err) {
+      const msg = (err as Error).message || "Failed to optimize resume. Please try again.";
+      setOptimizeError(msg);
+      showToast(msg, "error");
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const saveResumeBeforeOptimization = async (id: number) => {
+    const sections: TabKey[] = ["job", "personal", "experience", "education", "skills", "summary", "custom"];
+    for (const section of sections) {
+      const mapped = localToApiSection(section, resume);
+      if (mapped) {
+        await resumeService.patchContent(id, mapped.section, mapped.body);
+      }
+    }
+  };
+
+  const handleOptimizeResume = async () => {
+    if (optimizing || saving) return;
+
+    if (resumeId === null) {
+      showToast("Start or upload a resume before optimizing.", "error");
+      return;
+    }
+
+    const jobValidation = validateSection("job", resume);
+    if (jobValidation) {
+      setErrors(jobValidation);
+      setOptimizeError("Please fill in the Job Description before optimizing your resume.");
+      setActiveTab("job");
+      return;
+    }
+
+    setSaving(true);
+    setOptimizeError(null);
+    try {
+      await saveResumeBeforeOptimization(resumeId);
+      await runResumeOptimization(resumeId);
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to save resume before optimization.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Clear validation errors whenever the user switches tabs.
   useEffect(() => {
@@ -1206,41 +1265,7 @@ export default function ResumeBuilderScreen() {
           }
 
           setSaving(false);
-          setOptimizing(true);
-
-          // Capture fields the AI response may omit so we can restore them
-          const preOptSkillCategories = resume.skillCategories;
-          const preOptLinkedin = resume.linkedin;
-          const preOptPortfolio = resume.portfolio;
-
-          // Fire and forget — optimization continues even if the modal is closed
-          resumeService.optimizeWithAi(resumeId, { store_ats_score: true })
-            .then((optimized) => {
-              if (optimized?.resume) {
-                const mapped = mapContentToLocal(optimized.resume);
-                // Restore fields the AI response commonly drops
-                if (!mapped.skillCategories?.length && preOptSkillCategories?.length)
-                  mapped.skillCategories = preOptSkillCategories;
-                if (!mapped.linkedin && preOptLinkedin) mapped.linkedin = preOptLinkedin;
-                if (!mapped.portfolio && preOptPortfolio) mapped.portfolio = preOptPortfolio;
-                setResume(mapped);
-                const rawAts = optimized.ats;
-                if (rawAts && typeof rawAts === "object" && !Array.isArray(rawAts)) {
-                  setAtsFromOptimize(rawAts as AtsOptimizeSummary);
-                }
-                setPreviewMode("ats");
-                showToast("Resume optimized successfully!");
-              }
-            })
-            .catch((err) => {
-              const msg = (err as Error).message || "Failed to optimize resume. Please try again.";
-              setOptimizeError(msg);
-              showToast(msg, "error");
-            })
-            .finally(() => {
-              setOptimizing(false);
-            });
-
+          void runResumeOptimization(resumeId);
           return; // stay on custom tab while optimization runs
         }
       } catch (err) {
@@ -1305,15 +1330,25 @@ export default function ResumeBuilderScreen() {
             </div>
           )}
 
-          <div className="mt-6 flex justify-between items-center">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button className="rounded-lg border border-white/15 px-5 py-2 text-sm text-white/80 hover:bg-white/[0.06]" onClick={goPrev}>Back</button>
-            <button
-              className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white disabled:opacity-60"
-              onClick={goNext}
-              disabled={saving}
-            >
-              {saving ? "Saving…" : "Save & Next"}
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-blue-400/30 bg-blue-500/10 px-5 py-2 text-sm font-medium text-blue-100 transition-colors hover:bg-blue-500/20 disabled:opacity-60"
+                onClick={handleOptimizeResume}
+                disabled={saving || optimizing}
+              >
+                <Wand2 className="size-4" />
+                {optimizing ? "Optimizing…" : saving ? "Saving…" : "Optimize Resume"}
+              </button>
+              <button
+                className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white disabled:opacity-60"
+                onClick={goNext}
+                disabled={saving || optimizing}
+              >
+                {saving ? "Saving…" : "Save & Next"}
+              </button>
+            </div>
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { resumeService, coverLetterService } from "@/services";
+import { usePlan } from "@/contexts/PlanContext";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -363,6 +364,7 @@ function OutputPanel({
 }
 
 export default function CoverLetterScreen() {
+  const { isPaid, openUpgradeModal } = usePlan();
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
@@ -418,6 +420,10 @@ export default function CoverLetterScreen() {
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
+    if (!isPaid) {
+      openUpgradeModal("AI cover letters are a paid feature. Upgrade to generate a tailored letter for every application.");
+      return;
+    }
     setError(null);
     setLetter("");
     setCopied(false);
@@ -470,6 +476,10 @@ export default function CoverLetterScreen() {
 
   const handleDownload = (fmt: DownloadFormat) => {
     if (!letter) return;
+    if (!isPaid) {
+      openUpgradeModal("Cover-letter downloads are a paid feature. Upgrade to export your letter.");
+      return;
+    }
     const stamp = new Date().toISOString().slice(0, 10);
     const baseName = `cover-letter-${stamp}`;
 

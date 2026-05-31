@@ -89,13 +89,39 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   if (res.status === 204) return undefined as T;
 
-  const data = await res.json();
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    return undefined as T;
+  }
 
   if (!res.ok) {
+    // 402 with our structured requires_plan detail → dispatch a global event so
+    // the UpgradeModal can intercept it. We still throw so the caller can react.
+    if (
+      res.status === 402 &&
+      data?.detail &&
+      typeof data.detail === "object" &&
+      data.detail.code === "requires_plan"
+    ) {
+      window.dispatchEvent(
+        new CustomEvent("upgrade-required", {
+          detail: { path, message: data.detail.message },
+        }),
+      );
+      const err = new Error(data.detail.message || "Subscription required") as Error & {
+        requiresPlan?: boolean;
+      };
+      err.requiresPlan = true;
+      throw err;
+    }
+
     const msg =
-      typeof data.detail === "string"
+      typeof data?.detail === "string"
         ? data.detail
-        : Array.isArray(data.detail)
+        : Array.isArray(data?.detail)
         ? (data.detail[0] as any)?.msg ?? "Request failed"
         : "Request failed";
     throw new Error(msg);
