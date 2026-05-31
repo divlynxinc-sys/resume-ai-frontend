@@ -159,7 +159,7 @@ function TemplateCard({
               navigate(`/resumes?template=${slug}`);
             }}
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium shadow-md transition-colors"
-            style={{ backgroundColor: "#ffffff", color: "var(--app-fg)" }}
+            style={{ backgroundColor: "#ffffff", color: "#1a1a1a" }}
           >
             Use this template
             <ArrowRight className="size-3.5" />

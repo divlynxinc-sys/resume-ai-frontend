@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { usePlan } from "@/contexts/PlanContext";
 import { pricingService } from "@/services";
 import { settingsService } from "@/services/settings";
 
@@ -213,13 +214,18 @@ type PendingSwitch = {
 };
 
 export function PricingSection() {
+  const { currentPlan } = usePlan();
   const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
-  const [currentPlanName, setCurrentPlanName] = useState<string | null>(null);
+  const [currentPlanName, setCurrentPlanName] = useState<string | null>(currentPlan);
 
   // Switch-confirmation modal state
   const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentPlanName(currentPlan);
+  }, [currentPlan]);
 
   // Backend-driven plans use a different schema (credit-based). Until the
   // backend matches the new time-based plan structure, keep the static
