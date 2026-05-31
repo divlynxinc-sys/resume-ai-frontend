@@ -18,6 +18,8 @@ const ResumeBuilder      = lazy(() => import("./components/modal/resume-builder"
 const TemplatesScreen    = lazy(() => import("./components/modal/templates"));
 const TailoringScreen    = lazy(() => import("./components/modal/tailoring"));
 const CoverLetterScreen  = lazy(() => import("./components/modal/cover-letter"));
+const HREmailDraftsScreen= lazy(() => import("./components/modal/hr-email-drafts"));
+const QAAnswersScreen    = lazy(() => import("./components/modal/qa-answers"));
 const PricingScreen      = lazy(() => import("./components/modal/pricing"));
 const SubscriptionScreen = lazy(() => import("./components/modal/subscription"));
 const PaymentSuccess     = lazy(() => import("./components/modal/payment-success"));
@@ -108,6 +110,8 @@ const router = createBrowserRouter([
       { path: "/templates",         element: <Page><TemplatesScreen /></Page> },
       { path: "/tailoring",         element: <Page><TailoringScreen /></Page> },
       { path: "/cover-letter",      element: <Page><CoverLetterScreen /></Page> },
+      { path: "/hr-email-drafts",   element: <Page><HREmailDraftsScreen /></Page> },
+      { path: "/qa-answers",        element: <Page><QAAnswersScreen /></Page> },
       { path: "/subscribe",         element: <Page><SubscriptionScreen /></Page> },
       { path: "/success",           element: <Page><PaymentSuccess /></Page> },
       { path: "/account",           element: <Page><AccountManagement /></Page> },

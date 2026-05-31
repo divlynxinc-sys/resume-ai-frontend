@@ -14,7 +14,6 @@ import {
   Edit2,
   Download,
   Trash,
-  Coins,
   X,
   Crown,
   ChevronRight,
@@ -525,26 +524,7 @@ function RecentActivity() {
   );
 }
 
-function CreditsGuidelineNote({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="rounded-lg border border-white/12 bg-white/5 px-3 py-2.5 text-sm text-white/80 flex items-center gap-2">
-      <div className="size-6 rounded-md bg-yellow-500/20 border border-yellow-400/40 grid place-items-center">
-        <Coins className="size-4 text-yellow-400" />
-      </div>
-      <span>Tip: Tap your profile icon in the top bar to see your available credits.</span>
-      <button
-        onClick={onClose}
-        className="ml-auto size-7 rounded-md border border-white/10 text-white/70 hover:text-white hover:bg-white/10 grid place-items-center"
-        aria-label="Close tip"
-      >
-        <X className="size-4" />
-      </button>
-    </div>
-  );
-}
-
 export default function DashboardModal() {
-  const [showCreditsTip, setShowCreditsTip] = useState(true);
   const [_summary, setSummary] = useState<any>(null);
 
   useEffect(() => {
@@ -557,9 +537,6 @@ export default function DashboardModal() {
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="dashboard" mainClassName="space-y-6">
-          {showCreditsTip && (
-            <CreditsGuidelineNote onClose={() => setShowCreditsTip(false)} />
-          )}
           <HeroCard />
           <RecentActivity />
       </PageWithSidebar>
