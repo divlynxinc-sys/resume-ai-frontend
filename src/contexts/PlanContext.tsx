@@ -10,7 +10,12 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { settingsService } from "@/services/settings";
+import { pricingService } from "@/services";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Only attempt the Polar self-heal once per browser session, so we don't hit
+// Polar on every navigation for genuinely free users.
+const RECONCILE_FLAG = "polar-reconciled";
 
 interface PlanContextValue {
   currentPlan: string | null;
@@ -46,6 +51,28 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       .then((res) => {
         setCurrentPlan(res.current_plan);
         isPaidRef.current = !!res.current_plan;
+
+        // Self-heal: if the account looks unpaid, reconcile against Polar once
+        // per session. Polar webhooks can't reach localhost in dev, and even in
+        // prod the post-checkout redirect may land on a different environment —
+        // either way the local DB can lag behind an actually-active Polar sub.
+        // The sync endpoint is idempotent and only clears an already-null plan
+        // when there's genuinely no active subscription, so this is safe.
+        if (!res.current_plan && !sessionStorage.getItem(RECONCILE_FLAG)) {
+          sessionStorage.setItem(RECONCILE_FLAG, "1");
+          pricingService
+            .syncPolarSubscription()
+            .then((sync) => {
+              if (sync.synced && sync.current_plan) {
+                setCurrentPlan(sync.current_plan);
+                isPaidRef.current = true;
+                window.dispatchEvent(new CustomEvent("plan-updated"));
+              }
+            })
+            .catch(() => {
+              // Polar unreachable / no sub — leave the unpaid state as-is.
+            });
+        }
       })
       .catch(() => {
         // Keep prior value on transient errors.
