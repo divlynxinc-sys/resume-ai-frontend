@@ -53,7 +53,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
       title: "Resume Builder",
       icon: <Wand2 className="size-4" />,
       points: ["Start from a template", "Fill core sections", "Export or share"],
-      link: "/resumes",
+      link: "/templates",
     },
   ];
   const [tipIndex, setTipIndex] = useState(0);
@@ -106,18 +106,31 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
           active={current === "cover-letter"}
           collapsed={collapsed}
           premium
+          paidPlanActive={isPaid}
           locked={!isPaid}
           onLockedClick={() => openUpgradeModal("Cover letters are a Pro feature. Upgrade to generate tailored letters for every application.")}
         />
         <NavItem
-          icon={<Wand2 className="size-4" />}
-          label="AI Tailoring"
-          route="tailoring"
-          active={current === "tailoring"}
+          icon={<Edit2 className="size-4" />}
+          label="HR Email Drafts"
+          route="hr-email-drafts"
+          active={current === "hr-email-drafts"}
           collapsed={collapsed}
           premium
+          paidPlanActive={isPaid}
           locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("AI Tailoring rewrites your resume to match each job description. Upgrade to unlock it.")}
+          onLockedClick={() => openUpgradeModal("HR email drafts are a Pro feature. Upgrade to generate recruiter-ready emails for every application.")}
+        />
+        <NavItem
+          icon={<MessagesSquare className="size-4" />}
+          label="Q&A Answers"
+          route="qa-answers"
+          active={current === "qa-answers"}
+          collapsed={collapsed}
+          premium
+          paidPlanActive={isPaid}
+          locked={!isPaid}
+          onLockedClick={() => openUpgradeModal("Q&A answers are a Pro feature. Upgrade to generate tailored interview answers for your target roles.")}
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}
@@ -125,9 +138,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
           route="ai-chat"
           active={current === "ai-chat"}
           collapsed={collapsed}
-          premium
-          locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("AI Chat is a Pro feature. Upgrade to get an on-demand resume assistant.")}
+          comingSoon
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}
@@ -135,11 +146,9 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
           route="interview"
           active={current === "interview"}
           collapsed={collapsed}
-          premium
-          locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("AI Interview practice is a Pro feature. Upgrade to run mock interviews.")}
+          comingSoon
         />
-        <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} collapsed={collapsed} />
+        <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} collapsed={collapsed} paidPlanActive={isPaid} highlightPaidPlan />
         <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} collapsed={collapsed} />
         <NavItem icon={<HelpCircle className="size-4" />} label="Help Center" route="help-center" active={current === "help-center"} collapsed={collapsed} />
         <NavItem icon={<LogOut className="size-4" />} label="Logout" route="login" onClick={() => setShowLogoutModal(true)} collapsed={collapsed} />
@@ -193,6 +202,9 @@ function NavItem({
   locked = false,
   onLockedClick,
   collapsed = false,
+  comingSoon = false,
+  paidPlanActive = false,
+  highlightPaidPlan = false,
 }: {
   icon: ReactNode;
   label: string;
@@ -205,9 +217,16 @@ function NavItem({
   locked?: boolean;
   onLockedClick?: () => void;
   collapsed?: boolean;
+  /** If true, display the item as unavailable and do not navigate. */
+  comingSoon?: boolean;
+  /** If true, use the active subscription color for the item's icon and label. */
+  paidPlanActive?: boolean;
+  /** If true, color this item's icon and label when the paid plan is active. */
+  highlightPaidPlan?: boolean;
 }) {
   const navigate = useNavigate();
   const handleClick = () => {
+    if (comingSoon) return;
     if (locked) {
       onLockedClick?.();
       return;
@@ -219,24 +238,38 @@ function NavItem({
   return (
     <button
       onClick={handleClick}
-      aria-disabled={locked || undefined}
+      disabled={comingSoon}
+      aria-disabled={locked || comingSoon || undefined}
       aria-label={collapsed ? label : undefined}
-      title={locked ? "Premium AI feature — upgrade to unlock" : undefined}
+      title={comingSoon ? `${label} - coming soon` : locked ? "Premium AI feature — upgrade to unlock" : undefined}
       className={
-        `group relative w-full text-left flex items-center ${collapsed ? "justify-center px-0" : "gap-3 px-3"} rounded-lg py-2 text-sm cursor-pointer transition-colors ` +
-        (active
-          ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-medium"
-          : locked
+        `group relative w-full text-left flex items-center ${collapsed ? "justify-center px-0" : "gap-3 px-3"} rounded-lg py-2 text-sm transition-colors ` +
+        (paidPlanActive && highlightPaidPlan
+          ? "cursor-pointer text-emerald-500 hover:bg-emerald-500/10"
+          : comingSoon
+            ? "cursor-not-allowed text-[var(--app-fg-soft)]"
+            : active
+              ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-medium"
+            : locked
             ? "text-[var(--app-fg-soft)] hover:bg-[var(--app-surface-2)]"
-            : "text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
+            : "cursor-pointer text-[var(--app-fg-muted)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]")
       }
     >
-      <span className={active ? "text-[var(--accent-text)]" : "text-[var(--app-fg-soft)]"}>{icon}</span>
-      {!collapsed && <span className={locked ? "opacity-70" : undefined}>{label}</span>}
+      <span className={paidPlanActive && highlightPaidPlan ? "text-emerald-500" : active ? "text-[var(--accent-text)]" : "text-[var(--app-fg-soft)]"}>{icon}</span>
+      {!collapsed && <span className={`${locked || comingSoon ? "opacity-70 " : ""}min-w-0 whitespace-nowrap`}>{label}</span>}
+      {comingSoon && !collapsed && (
+        <span className="ml-auto shrink-0 whitespace-nowrap rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--app-fg-soft)]">
+          Coming soon
+        </span>
+      )}
       {premium && !collapsed && (
         <span
           aria-label="Premium AI feature"
-          className="ml-auto inline-flex items-center gap-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-indigo-600 dark:text-indigo-300"
+          className={`ml-auto inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] ${
+            paidPlanActive
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+              : "border-indigo-400/40 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
+          }`}
         >
           <Crown className="size-2.5" />
           Pro
@@ -264,7 +297,7 @@ function HeroCard() {
           </h2>
           <p className="text-[var(--app-fg-muted)] mt-2 text-sm">Ready to land your dream job? Let's get started.</p>
         </div>
-        <AppButton variant="primary" size="lg" onClick={() => navigate("/resumes")}>
+        <AppButton variant="primary" size="lg" onClick={() => navigate("/templates")}>
           <Plus className="size-4" />
           Create New Resume
         </AppButton>

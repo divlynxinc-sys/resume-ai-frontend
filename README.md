@@ -128,6 +128,62 @@ Note: Many more screens are exported. See `src/components/modal/index.ts` for th
    - `import { YourScreen } from "./components";`
 4. Render in `src/App.tsx` to preview.
 
+## Feature Recovery: HR Email Drafts and Q&A Answers
+
+The `new-features` branch contains two protected AI-assisted pages that can be
+restored together if they are removed while experimenting with the app:
+
+- `/hr-email-drafts` generates recruiter-ready application, follow-up,
+  thank-you, scheduling, referral, offer clarification, and negotiation emails.
+- `/qa-answers` generates interview Q&A grounded in a resume and job
+  description for screening, behavioral, technical, and manager interviews.
+
+The original frontend implementation is commit `6162ece` (`Initial
+implementation of new features`). To reapply both pages from another branch:
+
+```bash
+git cherry-pick 6162ece
+```
+
+If the work was stashed locally instead, inspect and reapply the matching stash:
+
+```bash
+git stash list
+git stash show --stat stash@{0}
+git stash apply stash@{0}
+```
+
+Files added or updated by the feature implementation:
+
+| File | Purpose |
+| --- | --- |
+| `src/components/modal/hr-email-drafts.tsx` | HR email drafts form, streamed output, copy action, and PDF/DOC/TXT downloads. |
+| `src/components/modal/qa-answers.tsx` | Interview Q&A form, streamed output, parsed answer cards, copy actions, and PDF/DOC/TXT downloads. |
+| `src/services/hrEmailDrafts.ts` | Streaming client for `POST /hr-email-drafts/generate`. |
+| `src/services/qaAnswers.ts` | Streaming client for `POST /qa-answers/generate`. |
+| `src/services/index.ts` | Exports both feature services and request types. |
+| `src/App.tsx` | Lazy-loads both pages and registers their protected routes. |
+| `src/components/modal/dashboard.tsx` | Adds both pages to the dashboard sidebar. |
+
+Both pages let the user select a saved resume or paste resume text. They load
+saved resumes through `resumeService.list({ limit: 50 })`, send the access token
+when available, append streamed text chunks into the output panel, allow the
+request to be stopped with `AbortController`, and surface generation errors.
+
+Manual restore checklist:
+
+1. Restore the two page components and service files listed above.
+2. Export `hrEmailDraftsService`, `HREmailDraftsRequest`, `qaAnswersService`,
+   and `QAAnswersRequest` from `src/services/index.ts`.
+3. Add lazy imports and protected routes for `/hr-email-drafts` and
+   `/qa-answers` in `src/App.tsx`.
+4. Add sidebar links for `HR Email Drafts` and `Q&A Answers` in
+   `src/components/modal/dashboard.tsx`.
+5. Confirm the API configured by `VITE_API_URL` provides
+   `POST /hr-email-drafts/generate` and `POST /qa-answers/generate` as streaming
+   responses.
+6. Run `npm run build`.
+
 ## Troubleshooting
 
 - If you see module errors for UI exports: `Button` is a named export.

@@ -40,7 +40,7 @@ function EmptyState() {
           Kickstart your journey by building your first resume.
         </p>
         <button
-          onClick={() => navigate("/resumes")}
+          onClick={() => navigate("/templates")}
           className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
           style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
         >
@@ -396,7 +396,7 @@ export default function MyResumesScreen() {
                   />
                 </div>
                 <button
-                  onClick={() => navigate("/resumes")}
+                  onClick={() => navigate("/templates")}
                   className="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                   style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
                 >
