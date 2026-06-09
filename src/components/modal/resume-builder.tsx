@@ -640,15 +640,18 @@ async function downloadResumePdf(resume: ResumeData, fileName: string, templateS
 
 function downloadResumeDocx(resume: ResumeData, fileName: string, templateSlug: string): void {
   const html = buildResumeHtmlForPdf(resume, templateSlug);
+  const headContent = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? "";
+  const bodyContent = html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "");
   const wordHtml =
     '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
     'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
     '<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
     "<title>Resume</title>" +
+    headContent +
     "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>" +
     "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
     "</head><body>" +
-    html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "") +
+    bodyContent +
     "</body></html>";
 
   const blob = new Blob(["\uFEFF", wordHtml], { type: "application/msword" });
@@ -656,10 +659,8 @@ function downloadResumeDocx(resume: ResumeData, fileName: string, templateSlug: 
   const a = document.createElement("a");
   a.href = url;
   a.download = `${resolvedResumeFileName(fileName, resume)}.doc`;
-  document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function CompletedResumeModal({
@@ -673,24 +674,12 @@ function CompletedResumeModal({
   templateSlug: string;
   onClose: () => void;
 }) {
-  const [downloading, setDownloading] = useState<"pdf" | "docx" | null>(null);
-
   const handlePdf = async () => {
-    setDownloading("pdf");
-    try {
-      await downloadResumePdf(resume, fileName, templateSlug);
-    } finally {
-      setDownloading(null);
-    }
+    await downloadResumePdf(resume, fileName, templateSlug);
   };
 
   const handleDocx = () => {
-    setDownloading("docx");
-    try {
-      downloadResumeDocx(resume, fileName, templateSlug);
-    } finally {
-      setDownloading(null);
-    }
+    downloadResumeDocx(resume, fileName, templateSlug);
   };
 
   return (
@@ -714,20 +703,18 @@ function CompletedResumeModal({
           <button
             type="button"
             onClick={handlePdf}
-            disabled={downloading !== null}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white transition-opacity disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white transition-opacity"
           >
             <Download className="size-4" />
-            {downloading === "pdf" ? "Downloading..." : "Download PDF"}
+            Download PDF
           </button>
           <button
             type="button"
             onClick={handleDocx}
-            disabled={downloading !== null}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] transition-colors hover:bg-[var(--app-surface-2)] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] transition-colors hover:bg-[var(--app-surface-2)]"
           >
             <Download className="size-4" />
-            {downloading === "docx" ? "Downloading..." : "Download DOCX"}
+            Download DOCX
           </button>
         </div>
       </div>
@@ -761,7 +748,6 @@ function ResumePreview({
   const dashOffset = circumference - (pct / 100) * circumference;
   const lift = score != null && initialScore != null ? score - initialScore : null;
   const [downloadOpen, setDownloadOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -789,49 +775,12 @@ function ResumePreview({
 
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
-    setDownloading(true);
-    try {
-      await downloadResumePdf(resume, fileName, templateSlug);
-    } finally {
-      setDownloading(false);
-    }
+    await downloadResumePdf(resume, fileName, templateSlug);
   };
 
   const handleDownloadDocx = async () => {
     setDownloadOpen(false);
-    setDownloading(true);
-    try {
-      const html = buildResumeHtmlForPdf(resume, templateSlug);
-      const resolvedName = (fileName.trim() || resume.name || "Untitled").replace(/[^a-zA-Z0-9 ]/g, "").trim();
-      // Word HTML format: any .doc with the right Office MIME headers opens
-      // natively in Word, Google Docs, and Pages. Zero new dependencies, and
-      // the styling carries through better than rasterized DOCX wrappers.
-      const wordHtml =
-        '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-        'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-        '<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
-        "<title>Resume</title>" +
-        "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>" +
-        "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
-        "</head><body>" +
-        // Strip the outer <html><head>...</head><body> so we don't double-nest
-        html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "") +
-        "</body></html>";
-
-      const blob = new Blob(["﻿", wordHtml], { type: "application/msword" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${resolvedName}.doc`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      /* silently fail */
-    } finally {
-      setDownloading(false);
-    }
+    downloadResumeDocx(resume, fileName, templateSlug);
   };
 
   return (
@@ -842,11 +791,10 @@ function ResumePreview({
           <div className="relative">
             <button
               onClick={() => setDownloadOpen((v) => !v)}
-              disabled={downloading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
             >
               <Download className="size-3.5" />
-              {downloading ? "Downloading…" : "Download"}
+              Download
               <ChevronDown className={`size-3 transition-transform ${downloadOpen ? "rotate-180" : ""}`} />
             </button>
             {downloadOpen && (
