@@ -56,12 +56,14 @@ function ResumePicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-fg)]">
-        <FileText className="size-4 text-[var(--accent-text)]" />
-        Resume
+        <span className="grid size-8 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+          <FileText className="size-4" />
+        </span>
+        Resume source
       </div>
 
       {/* Tab toggle */}
-      <div className="inline-flex items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-1 text-xs">
+      <div className="inline-flex items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-1 text-xs">
         <button
           onClick={() => setSource("saved")}
           className={
@@ -94,7 +96,7 @@ function ResumePicker({
               setSelectedId(e.target.value ? Number(e.target.value) : null)
             }
             disabled={loadingResumes}
-            className="w-full appearance-none rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 pr-10 text-sm text-[var(--app-fg)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] disabled:opacity-60"
+            className="w-full appearance-none rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 pr-10 text-sm text-[var(--app-fg)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 disabled:opacity-60"
           >
             <option value="">
               {loadingResumes
@@ -117,7 +119,7 @@ function ResumePicker({
           onChange={(e) => setResumeText(e.target.value)}
           placeholder="Paste your resume here — name, contact info, summary, experience, education, skills…"
           rows={8}
-          className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] resize-y"
+          className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
         />
       )}
     </div>
@@ -138,8 +140,8 @@ function ToneSelect({ tone, setTone }: { tone: Tone; setTone: (t: Tone) => void 
               className={
                 "rounded-lg border px-3 py-2.5 text-left transition-all " +
                 (active
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--app-border)] bg-[var(--app-surface)] hover:border-[var(--app-border-strong)]")
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow-soft)]"
+                  : "border-[var(--app-border)] bg-[var(--btn-secondary-bg)] hover:border-[var(--app-border-strong)] hover:bg-[var(--btn-secondary-hover)]")
               }
             >
               <div
@@ -288,13 +290,16 @@ function OutputPanel({
   copied: boolean;
 }) {
   const empty = !letter && !streaming && !error;
+  const waitingForFirstToken = streaming && !letter && !error;
 
   return (
-    <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] flex flex-col h-full min-h-[480px]">
+    <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-soft)] flex flex-col h-full min-h-[520px] overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-[var(--app-border)] flex items-center justify-between gap-3">
+      <div className="px-5 py-3.5 border-b border-[var(--app-border)] flex items-center justify-between gap-3 bg-[var(--app-surface)]">
         <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-fg)]">
-          <Sparkles className="size-4 text-[var(--accent-text)]" />
+          <span className="grid size-8 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+            <Sparkles className="size-4" />
+          </span>
           Cover letter
           {streaming && (
             <span className="ml-1 inline-flex items-center gap-1.5 text-xs font-normal text-[var(--app-fg-muted)]">
@@ -329,13 +334,26 @@ function OutputPanel({
       </div>
 
       {/* Body */}
-      <div className="flex-1 px-5 py-4 overflow-auto">
+      <div className="flex-1 px-5 py-4 overflow-auto bg-[var(--app-bg)]/20">
         {error ? (
           <div className="flex items-start gap-3 rounded-lg border border-[var(--pastel-rose)] bg-[var(--pastel-rose)]/30 px-4 py-3 text-sm" style={{ color: "#B85273" }}>
             <AlertCircle className="size-4 mt-0.5 shrink-0" />
             <div>
               <div className="font-medium">Couldn't generate</div>
               <div className="text-xs mt-1 opacity-90">{error}</div>
+            </div>
+          </div>
+        ) : waitingForFirstToken ? (
+          <div className="h-full min-h-[420px] flex flex-col items-center justify-center text-center px-6 py-10">
+            <div className="relative grid size-16 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+              <div className="size-8 rounded-full border-2 border-[var(--accent)]/25 border-t-[var(--accent)] animate-spin" />
+              <Sparkles className="absolute size-4" />
+            </div>
+            <div className="mt-5 text-sm font-medium text-[var(--app-fg)]">
+              Generating your cover letter
+            </div>
+            <div className="mt-1.5 max-w-xs text-xs leading-relaxed text-[var(--app-fg-muted)]">
+              We are reading the resume and job description. The draft will start appearing here in a moment.
             </div>
           </div>
         ) : empty ? (
@@ -351,12 +369,14 @@ function OutputPanel({
             </div>
           </div>
         ) : (
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
+          <div className="min-h-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-5 py-5">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
             {letter}
             {streaming && (
               <span className="inline-block w-1.5 h-4 ml-0.5 align-middle bg-[var(--accent)] animate-pulse" />
             )}
-          </pre>
+            </pre>
+          </div>
         )}
       </div>
     </div>
@@ -532,7 +552,7 @@ export default function CoverLetterScreen() {
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="cover-letter">
-        <main className="px-2">
+        <main className="px-2 pb-16">
           <div className="mx-auto max-w-6xl">
             {/* Header */}
             <div>
@@ -543,14 +563,14 @@ export default function CoverLetterScreen() {
                 Cover <span className="italic">letter</span>
               </h1>
               <p className="text-[var(--app-fg-muted)] mt-2 text-sm max-w-xl">
-                Pick a resume, paste the job description, choose a tone — your letter streams in as the model writes it.
+                Pick a resume, paste the job description, choose a tone, and generate a tailored draft for the role.
               </p>
             </div>
 
             {/* Two-column layout */}
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Inputs */}
-              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 space-y-6">
+              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 space-y-6 shadow-[var(--shadow-soft)]">
                 <ResumePicker
                   source={source}
                   setSource={setSource}
@@ -577,7 +597,7 @@ export default function CoverLetterScreen() {
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the full job description — responsibilities, qualifications, all of it."
                     rows={6}
-                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] resize-y"
+                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
                   />
                 </div>
 
@@ -591,7 +611,7 @@ export default function CoverLetterScreen() {
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                       placeholder="Acme Corp"
-                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
                     />
                   </div>
                   <div className="space-y-2">
@@ -602,7 +622,7 @@ export default function CoverLetterScreen() {
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                       placeholder="Senior Backend Engineer"
-                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
                     />
                   </div>
                 </div>

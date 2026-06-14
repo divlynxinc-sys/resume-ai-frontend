@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ArrowRight, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { AppButtonLink } from "@/components/ui/AppButton";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
@@ -177,6 +178,7 @@ function Testimonial({
 
 export default function LandingPageScreen() {
   const [showTop, setShowTop] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const hero = document.getElementById("landing-hero");
@@ -189,13 +191,23 @@ export default function LandingPageScreen() {
     return () => io.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = window.decodeURIComponent(location.hash.slice(1));
+    const target = document.getElementById(id);
+    if (!target) return;
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [location.hash]);
+
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
       <Hero />
 
       {/* Key Features */}
-      <section className="max-w-[1100px] mx-auto px-6 mt-20">
+      <section id="features" className="max-w-[1100px] mx-auto px-6 mt-20 scroll-mt-24">
         <SectionTitle
           eyebrow="Features"
           title="Everything you need, nothing you don't."

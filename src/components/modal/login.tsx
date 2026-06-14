@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { ReactNode, FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -58,6 +59,10 @@ export default function LoginScreen() {
 
   const { login, googleLogin, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = getSafeRedirectPath(searchParams.get("next"), "");
+  const defaultPath = () => (localStorage.getItem("firstLoginShown") ? "/dashboard" : "/onboarding");
+  const authSuccessPath = () => nextPath || defaultPath();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -65,8 +70,7 @@ export default function LoginScreen() {
       setStatus("loading");
       try {
         await googleLogin(tokenResponse.access_token);
-        const firstShown = localStorage.getItem("firstLoginShown");
-        navigate(firstShown ? "/dashboard" : "/onboarding");
+        navigate(authSuccessPath());
       } catch (err: unknown) {
         setError(getErrorMessage(err, "Google login failed"));
       } finally {
@@ -106,13 +110,11 @@ export default function LoginScreen() {
         localStorage.setItem("accessToken", "dev-bypass-token");
         localStorage.setItem("refreshToken", "dev-bypass-refresh");
         await refreshUser();
-        const firstShown = localStorage.getItem("firstLoginShown");
-        navigate(firstShown ? "/dashboard" : "/onboarding");
+        navigate(authSuccessPath());
         return;
       }
       await login(email, password);
-      const firstShown = localStorage.getItem("firstLoginShown");
-      navigate(firstShown ? "/dashboard" : "/onboarding");
+      navigate(authSuccessPath());
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed."));
     } finally {
@@ -233,7 +235,7 @@ export default function LoginScreen() {
 
               <div className="mt-5 text-center text-xs text-white/60">
                 Don't have an account?{' '}
-                <Link to="/signup" className="text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Sign up</Link>
+                <Link to={nextPath ? withNextParam("/signup", nextPath) : "/signup"} className="text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Sign up</Link>
               </div>
             </form>
           </div>
