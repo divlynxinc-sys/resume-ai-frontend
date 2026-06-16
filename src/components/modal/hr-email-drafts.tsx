@@ -19,6 +19,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { hrEmailDraftsService, resumeService } from "@/services";
+import GeneratingLoader from "./generating-loader";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -774,6 +775,8 @@ export default function HREmailDraftsScreen() {
                         Pick a resume, choose an email type, add a bit of context, and click Generate.
                       </div>
                     </div>
+                  ) : streaming && !output ? (
+                    <GeneratingLoader label="Drafting your emails…" className="p-4" />
                   ) : parsedDrafts.length > 0 && !streaming ? (
                     <div className="p-4 space-y-3">
                       {parsedDrafts.map((d) => (

@@ -243,6 +243,34 @@ export function mapContentToLocal(content: ResumeContent, emptyResume: ResumeDat
   };
 }
 
+// --- Per-resume local draft persistence ---------------------------------------
+// Shared by the builder (which writes drafts) and the My Resumes previews (which
+// read them) so the card preview reflects the latest local edits AND the chosen
+// template — keyed by resume id so one resume's edits never leak into another.
+const DRAFT_PREFIX = "resume-draft:";
+
+export interface ResumeDraft {
+  resume?: ResumeData;
+  templateSlug?: string;
+}
+
+export function readResumeDraft(id: number): ResumeDraft | null {
+  try {
+    const raw = localStorage.getItem(`${DRAFT_PREFIX}${id}`);
+    return raw ? (JSON.parse(raw) as ResumeDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeResumeDraft(id: number, data: { resume: ResumeData; templateSlug: string }) {
+  try {
+    localStorage.setItem(`${DRAFT_PREFIX}${id}`, JSON.stringify(data));
+  } catch {
+    /* quota / serialization errors are non-fatal */
+  }
+}
+
 /** Convert ResumeData (form shape) → TemplateInput (template shape) */
 export function toTemplateInput(resume: ResumeData): TemplateInput {
   return {

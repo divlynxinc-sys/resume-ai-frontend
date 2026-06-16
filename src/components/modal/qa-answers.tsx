@@ -16,6 +16,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { qaAnswersService, resumeService } from "@/services";
+import GeneratingLoader from "./generating-loader";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -486,7 +487,7 @@ export default function QAAnswersScreen() {
   const handleDownload = (fmt: DownloadFormat) => {
     if (!output) return;
     const stamp = new Date().toISOString().slice(0, 10);
-    const baseName = `qa-answers-${stamp}`;
+    const baseName = `qa-prep-${stamp}`;
 
     if (fmt === "txt") {
       saveBlob(new Blob([output], { type: "text/plain;charset=utf-8" }), `${baseName}.txt`);
@@ -494,12 +495,12 @@ export default function QAAnswersScreen() {
     }
 
     if (fmt === "docx") {
-      const html = buildTextHtml("Q&A Answers", output, { wordCompat: true });
+      const html = buildTextHtml("Q&A Prep", output, { wordCompat: true });
       saveBlob(new Blob(["﻿", html], { type: "application/msword" }), `${baseName}.doc`);
       return;
     }
 
-    const html = buildTextHtml("Q&A Answers", output, { wordCompat: false });
+    const html = buildTextHtml("Q&A Prep", output, { wordCompat: false });
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
     const body = wrapper.querySelector("body");
@@ -538,7 +539,7 @@ export default function QAAnswersScreen() {
                 AI Prep
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
-                Q&amp;A <span className="italic">answers</span>
+                Q&amp;A <span className="italic">Prep</span>
               </h1>
               <p className="text-[var(--app-fg-muted)] mt-2 text-sm max-w-xl">
                 Generate tailored interview answers grounded in your resume and the job description.
@@ -729,6 +730,8 @@ export default function QAAnswersScreen() {
                         Pick a resume, paste the job description, and click Generate.
                       </div>
                     </div>
+                  ) : streaming && !output ? (
+                    <GeneratingLoader label="Writing your answers…" className="p-4" />
                   ) : parsedItems.length > 0 && !streaming ? (
                     <div className="p-4 space-y-3">
                       {parsedItems.map((it) => (

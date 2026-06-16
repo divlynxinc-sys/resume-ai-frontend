@@ -12,6 +12,8 @@ import { useToast } from "@/contexts/ToastContext";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
+  readResumeDraft,
+  writeResumeDraft,
   type ResumeData,
   type Experience,
   type Education,
@@ -1016,7 +1018,7 @@ export default function ResumeBuilderScreen() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('job');
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
-  const [templateSlug, _setTemplateSlug] = useState(initialTemplate);
+  const [templateSlug, setTemplateSlug] = useState(initialTemplate);
 
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(blankResume);
@@ -1044,6 +1046,12 @@ export default function ResumeBuilderScreen() {
         setResumeId(r.id);
         if (r.title) setResumeFileName(r.title);
         if (r.content) setResume(mapContentToLocal(r.content));
+        // Restore any unsaved local edits + the chosen template for this resume so
+        // the user sees it "as they left it" (the server only has sections that were
+        // explicitly saved via "Save & Next").
+        const draft = readResumeDraft(r.id);
+        if (draft?.resume) setResume(draft.resume);
+        if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
       })
       .catch(() => {
         setStartModalOpen(true);
@@ -1052,12 +1060,13 @@ export default function ResumeBuilderScreen() {
     // The builder now presents the live ATS readiness score only.
   }, [editId]);
 
-  // Persist mid-session edits to localStorage (not on initial load)
+  // Persist mid-session edits (and the chosen template) per-resume so they survive
+  // navigation / refresh and are restored on the next visit.
   useEffect(() => {
     if (resumeId !== null) {
-      try { localStorage.setItem('resumeData', JSON.stringify(resume)); } catch {}
+      writeResumeDraft(resumeId, { resume, templateSlug });
     }
-  }, [resume, resumeId]);
+  }, [resume, templateSlug, resumeId]);
 
   // Sync title to backend when resumeFileName changes
   useEffect(() => {
