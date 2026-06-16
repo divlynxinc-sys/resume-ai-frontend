@@ -6,6 +6,12 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
 import { resumeService, type ResumeContent } from "@/services";
 import { renderTemplate } from "@/lib/resume-templates";
+import {
+  mapContentToLocal,
+  toTemplateInput,
+  readResumeDraft,
+  type ResumeData,
+} from "./resume-builder.helpers";
 
 interface ResumeItem {
   id: string;
@@ -51,44 +57,22 @@ function EmptyState() {
   );
 }
 
-function contentToHtml(content: ResumeContent): string {
-  const info = (content.info ?? {}) as Record<string, string>;
-  const experiences = (content.experience ?? []) as Record<string, string>[];
-  const education = (content.education ?? []) as Record<string, string>[];
-  const skills = (content.skills ?? []) as string[];
-  return renderTemplate("modern-minimal", {
-    candidate_info: {
-      name: info.full_name ?? "",
-      email: info.email ?? "",
-      phone: info.phone ?? "",
-      linkedin: info.linkedin_url || undefined,
-      portfolio: info.portfolio_url || undefined,
-    },
-    resume: {
-      summary: typeof content.summary === "string" ? content.summary : "",
-      experiences: experiences
-        .map((e) => ({
-          role: e.role ?? "",
-          company: e.company ?? "",
-          location: e.location ?? "",
-          startDate: e.start_date ?? "",
-          endDate: e.end_date ?? "",
-          bullets: e.description ? e.description.split("\n").filter(Boolean) : [],
-        }))
-        .filter((e) => e.role || e.company),
-      projects: [],
-      education: education
-        .map((e) => ({
-          school: e.school ?? "",
-          degree: e.degree ?? "",
-          field: e.field_of_study ?? "",
-          location: e.location ?? "",
-          endDate: e.end_date ?? "",
-        }))
-        .filter((e) => e.school || e.degree),
-      skills: skills.length ? [{ category: "Skills", skills }] : [],
-    },
-  });
+const EMPTY_RESUME: ResumeData = {
+  name: "", email: "", phone: "", location: "", linkedin: "", portfolio: "",
+  experiences: [], education: [], skills: [], summary: "",
+  job: { title: "", company: "", location: "", description: "" },
+  customSections: [],
+};
+
+// Render a resume card using the SAME mapping + template the builder uses, so the
+// preview matches the editor exactly (and respects the resume's chosen template
+// instead of always rendering modern-minimal).
+function renderResumeCardHtml(resume: ResumeData, templateSlug: string): string {
+  try {
+    return renderTemplate(templateSlug, toTemplateInput(resume));
+  } catch {
+    return renderTemplate("modern-minimal", toTemplateInput(resume));
+  }
 }
 
 function MiniResumePreview({ id }: { id: string }) {
@@ -98,15 +82,13 @@ function MiniResumePreview({ id }: { id: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    resumeService.get(Number(id)).then((resume: any) => {
-      if (cancelled) return;
-      const content = resume?.content as ResumeContent | undefined;
-      if (!content) return;
+
+    const renderInto = (resume: ResumeData, slug: string) => {
+      const iframe = iframeRef.current;
+      const container = containerRef.current;
+      if (!iframe || !container) return;
       try {
-        const html = contentToHtml(content);
-        const iframe = iframeRef.current;
-        const container = containerRef.current;
-        if (!iframe || !container) return;
+        const html = renderResumeCardHtml(resume, slug);
         const doc = iframe.contentDocument;
         if (doc) {
           doc.open();
@@ -119,7 +101,24 @@ function MiniResumePreview({ id }: { id: string }) {
       } catch {
         /* keep skeleton on render failure */
       }
+    };
+
+    // Prefer the local draft (latest edits + chosen template) so the card matches
+    // what the user last saw in the builder; otherwise use the saved server content.
+    const draft = readResumeDraft(Number(id));
+    const slug = draft?.templateSlug || "modern-minimal";
+    if (draft?.resume) {
+      renderInto(draft.resume, slug);
+      return () => { cancelled = true; };
+    }
+
+    resumeService.get(Number(id)).then((resume: any) => {
+      if (cancelled) return;
+      const content = resume?.content as ResumeContent | undefined;
+      if (!content) return;
+      renderInto(mapContentToLocal(content, EMPTY_RESUME), slug);
     }).catch(() => { /* keep skeleton on network failure */ });
+
     return () => { cancelled = true; };
   }, [id]);
 
