@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MoreVertical, Pencil, Trash2, Download } from "lucide-react";
+import { Search, MoreVertical, Pencil, Trash2, Download, FileText, X } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
 import { resumeService, type ResumeContent } from "@/services";
 import { renderTemplate } from "@/lib/resume-templates";
+
+import {
+  downloadResumeHtmlAsDocx,
+  downloadResumeHtmlAsPdf,
+  resumeContentToHtml,
+  safeFileName,
+} from "@/lib/resume-export";
 import {
   mapContentToLocal,
   toTemplateInput,
@@ -18,6 +25,8 @@ interface ResumeItem {
   title: string;
   updatedAt?: string;
 }
+
+type DownloadFormat = "pdf" | "docx";
 
 function SleepingKoala() {
   return (
@@ -157,7 +166,17 @@ function MiniResumePreview({ id }: { id: string }) {
   );
 }
 
-function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: (id: string, newTitle: string) => void; onDelete: (id: string) => void }) {
+function ResumeCard({
+  item,
+  onRename,
+  onDelete,
+  onDownload,
+}: {
+  item: ResumeItem;
+  onRename: (id: string, newTitle: string) => void;
+  onDelete: (id: string) => void;
+  onDownload: (item: ResumeItem) => void;
+}) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(item.title);
@@ -270,7 +289,7 @@ function ResumeCard({ item, onRename, onDelete }: { item: ResumeItem; onRename: 
           <button
             title="Download"
             className="p-2 rounded-lg border border-[var(--app-border-strong)] hover:bg-[var(--app-surface-2)] text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] transition-colors"
-            onClick={() => alert("Download: wire this to the PDF export in the builder.")}
+            onClick={() => onDownload(item)}
           >
             <Download className="size-4" />
           </button>
@@ -287,6 +306,9 @@ export default function MyResumesScreen() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [downloadTarget, setDownloadTarget] = useState<ResumeItem | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<DownloadFormat | null>(null);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -327,6 +349,33 @@ export default function MyResumesScreen() {
     }
   };
 
+  const handleDownload = async (format: DownloadFormat) => {
+    if (!downloadTarget) return;
+    setDownloadingFormat(format);
+    setDownloadError("");
+
+    try {
+      const resume = await resumeService.get(Number(downloadTarget.id));
+      if (!resume.content) throw new Error("This resume does not have any content to download.");
+
+      const baseName = safeFileName(resume.title || downloadTarget.title);
+      const html = resumeContentToHtml(resume.content, baseName);
+
+      if (format === "pdf") {
+        await downloadResumeHtmlAsPdf(html, `${baseName}.pdf`);
+      } else {
+        downloadResumeHtmlAsDocx(html, `${baseName}.docx`);
+      }
+
+      setDownloadTarget(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Download failed. Please try again.";
+      setDownloadError(message);
+    } finally {
+      setDownloadingFormat(null);
+    }
+  };
+
   const hasResumes = resumes.length > 0;
   const filteredResumes = resumes.filter((r) =>
     r.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -358,6 +407,75 @@ export default function MyResumesScreen() {
                 {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {downloadTarget !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(26,26,26,0.35)] backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-pop)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-display text-xl font-light text-[var(--app-fg)] tracking-tight">Download resume</h3>
+                <p className="mt-2 text-sm text-[var(--app-fg-muted)] truncate max-w-[16rem]" title={downloadTarget.title}>
+                  {downloadTarget.title || "Untitled Resume"}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (downloadingFormat) return;
+                  setDownloadTarget(null);
+                  setDownloadError("");
+                }}
+                className="rounded-lg p-1.5 text-[var(--app-fg-soft)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)] transition-colors disabled:opacity-50"
+                disabled={!!downloadingFormat}
+                aria-label="Close download options"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3">
+              <button
+                onClick={() => handleDownload("pdf")}
+                disabled={!!downloadingFormat}
+                className="flex items-center justify-between rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 text-left transition-colors hover:border-[var(--app-border-strong)] disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                    <Download className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-[var(--app-fg)]">Download as PDF</span>
+                    <span className="block text-xs text-[var(--app-fg-muted)]">Best for sharing and printing</span>
+                  </span>
+                </span>
+                <span className="text-xs text-[var(--app-fg-soft)]">{downloadingFormat === "pdf" ? "Preparing..." : ".pdf"}</span>
+              </button>
+
+              <button
+                onClick={() => handleDownload("docx")}
+                disabled={!!downloadingFormat}
+                className="flex items-center justify-between rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3 text-left transition-colors hover:border-[var(--app-border-strong)] disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-lg bg-[var(--pastel-sky)] text-[#2A6F97]">
+                    <FileText className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-[var(--app-fg)]">Download as DOCX</span>
+                    <span className="block text-xs text-[var(--app-fg-muted)]">Editable in Word or Docs</span>
+                  </span>
+                </span>
+                <span className="text-xs text-[var(--app-fg-soft)]">{downloadingFormat === "docx" ? "Preparing..." : ".docx"}</span>
+              </button>
+            </div>
+
+            {downloadError ? (
+              <p className="mt-4 rounded-lg bg-[var(--pastel-rose)] px-3 py-2 text-xs" style={{ color: "#B85273" }}>
+                {downloadError}
+              </p>
+            ) : null}
           </div>
         </div>
       )}
@@ -439,7 +557,16 @@ export default function MyResumesScreen() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                   {filteredResumes.map((item) => (
-                    <ResumeCard key={item.id} item={item} onRename={handleRename} onDelete={(id) => setDeleteConfirmId(id)} />
+                    <ResumeCard
+                      key={item.id}
+                      item={item}
+                      onRename={handleRename}
+                      onDelete={(id) => setDeleteConfirmId(id)}
+                      onDownload={(resume) => {
+                        setDownloadTarget(resume);
+                        setDownloadError("");
+                      }}
+                    />
                   ))}
                 </div>
               )}

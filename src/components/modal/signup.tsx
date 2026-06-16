@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -7,6 +7,7 @@ import resumeLogo from "../../assets/resume-ai-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { authService } from "@/services/auth";
+import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 
 function BrandBar() {
   return (
@@ -314,7 +315,10 @@ function OtpVerification({
 export default function Signup() {
   const { signup, googleLogin } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
+  const requestedNextPath = getSafeRedirectPath(searchParams.get("next"), "");
+  const authSuccessPath = requestedNextPath || "/dashboard";
 
   const handleGoogleSuccess = async (accessToken: string) => {
     setError("");
@@ -322,7 +326,7 @@ export default function Signup() {
     try {
       const { is_new_user } = await googleLogin(accessToken);
       showToast(is_new_user ? "Account created successfully!" : "Logged in successfully!");
-      navigate("/dashboard");
+      navigate(authSuccessPath);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Google signup failed.");
       showToast(msg, "error");
@@ -373,7 +377,7 @@ export default function Signup() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       await signup(fullName, email, password);
       showToast("Account created successfully!");
-      navigate("/dashboard");
+      navigate(authSuccessPath);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Signup failed.");
       showToast(msg, "error");
@@ -516,7 +520,7 @@ export default function Signup() {
                       {status === "loading" ? "Sending verification code…" : "Create Account"}
                     </button>
                     <Link
-                      to="/login"
+                      to={requestedNextPath ? withNextParam("/login", requestedNextPath) : "/login"}
                       className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
                     >
                       Already have an account?

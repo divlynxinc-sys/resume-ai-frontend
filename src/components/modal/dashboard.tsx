@@ -161,29 +161,49 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--app-fg-soft)]">Quick guide</span>
           </div>
 
-          <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3.5 transition-colors hover:border-[var(--app-border-strong)]">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="text-[var(--accent-text)]">{currentTip.icon}</div>
-              <div className="text-xs font-medium text-[var(--app-fg)]">{currentTip.title}</div>
-            </div>
+            <div className="group relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-2))] p-3.5 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-pop)]">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/50 to-transparent"
+              />
 
-            <ul className="space-y-1.5">
-              {currentTip.points.map((p) => (
-                <li key={p} className="text-[11px] text-[var(--app-fg-muted)] flex items-start gap-2 leading-snug">
-                  <span className="mt-[5px] size-1 rounded-full bg-[var(--accent)]/60 shrink-0" />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
+              <div className="mb-3 flex items-center gap-2">
+                <div className="grid size-8 shrink-0 place-items-center rounded-lg border border-[var(--accent)]/15 bg-[var(--accent-soft)] text-[var(--accent-text)] shadow-sm">
+                  {currentTip.icon}
+                </div>
+                <div className="min-w-0 text-xs font-medium text-[var(--app-fg)]">{currentTip.title}</div>
+              </div>
 
-            <div className="mt-3 flex items-center justify-end">
-              <button
-                onClick={nextTip}
-                className="flex items-center gap-1 text-[10px] text-[var(--app-fg-soft)] hover:text-[var(--app-fg)] transition-colors"
-              >
-                Next <ChevronRight className="size-2.5" />
-              </button>
-            </div>
+              <ul className="space-y-1.5">
+                {currentTip.points.map((p) => (
+                  <li
+                    key={p}
+                    className="flex items-start gap-2 rounded-lg border border-[var(--app-border)]/70 bg-[var(--app-bg)]/25 px-2.5 py-1.5 text-[11px] leading-snug text-[var(--app-fg-muted)]"
+                  >
+                    <span className="mt-[5px] size-1.5 shrink-0 rounded-full bg-[var(--accent)]/70 shadow-[0_0_0_3px_var(--accent-soft)]" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-3 flex items-center justify-between border-t border-[var(--app-border)] pt-2.5">
+                <div className="flex items-center gap-1" aria-hidden="true">
+                  {tips.map((tip, index) => (
+                    <span
+                      key={tip.title}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        index === tipIndex ? "w-4 bg-[var(--accent)]" : "w-1.5 bg-[var(--app-border-strong)]"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={nextTip}
+                  className="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] text-[var(--app-fg-soft)] transition-colors hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)]"
+                >
+                  Next <ChevronRight className="size-2.5" />
+                </button>
+              </div>
           </div>
         </div>
       </div>

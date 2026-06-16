@@ -30,7 +30,7 @@ function Column({
   links,
 }: {
   title: string;
-  links: { label: string; href?: string }[];
+  links: { label: string; to: string }[];
 }) {
   return (
     <div>
@@ -40,18 +40,12 @@ function Column({
       <ul className="mt-3 space-y-2">
         {links.map((l) => (
           <li key={l.label}>
-            <a
-              href={l.href ?? "#"}
-              onClick={() =>
-                window.scrollTo({
-                  top: 0,
-                  behavior: "auto",
-                })
-              }
+            <Link
+              to={l.to}
               className="text-white/70 hover:text-white text-sm"
             >
               {l.label}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
@@ -68,30 +62,30 @@ export default function SiteFooter() {
         <Column
           title="PRODUCT"
           links={[
-            { label: "Features", href: "#home" },
-            { label: "Pricing", href: "#pricing" },
-            { label: "Templates", href: "#templates" },
-            { label: "Dashboard", href: "#dashboard" },
+            { label: "Features", to: "/#features" },
+            { label: "Pricing", to: "/pricing" },
+            { label: "Templates", to: "/templates" },
+            { label: "Dashboard", to: "/dashboard" },
           ]}
         />
 
         <Column
           title="SUPPORT"
           links={[
-            { label: "Help Center", href: "#help-center" },
-            { label: "Contact Us", href: "#contact-us" },
-            { label: "Documentation", href: "#documentation" },
-            { label: "FAQ", href: "#faq" },
+            { label: "Help Center", to: "/help-center" },
+            { label: "Contact Us", to: "/contact-us" },
+            { label: "Documentation", to: "/documentation" },
+            { label: "FAQ", to: "/faq" },
           ]}
         />
 
         <Column
           title="LEGAL"
           links={[
-            { label: "Privacy Policy", href: "#privacy" },
-            { label: "Terms of Service", href: "#terms" },
-            { label: "Cookie Policy", href: "#cookie-policy" },
-            { label: "Security", href: "#security" },
+            { label: "Privacy Policy", to: "/privacy" },
+            { label: "Terms of Service", to: "/terms" },
+            { label: "Cookie Policy", to: "/cookie-policy" },
+            { label: "Security", to: "/security" },
           ]}
         />
       </div>

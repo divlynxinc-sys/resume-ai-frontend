@@ -22,7 +22,7 @@ import {
 } from "./resume-builder.helpers";
 
 
-function PageHeader({ mode, setMode, atsScore }: { mode: 'preview' | 'ats'; setMode: (m: 'preview' | 'ats') => void; atsScore: number }) {
+function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: 'preview' | 'ats') => void }) {
   const SwitchButton = ({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) => (
     <button
       onClick={onClick}
@@ -45,7 +45,7 @@ function PageHeader({ mode, setMode, atsScore }: { mode: 'preview' | 'ats'; setM
 
       <div className="flex items-center gap-2 bg-[#0f162a] p-1.5 rounded-xl border border-white/10 self-start md:self-center">
         <SwitchButton active={mode === 'preview'} onClick={() => setMode('preview')}>Resume Preview</SwitchButton>
-        <SwitchButton active={mode === 'ats'} onClick={() => setMode('ats')}>ATS Score {atsScore}%</SwitchButton>
+        <SwitchButton active={mode === 'ats'} onClick={() => setMode('ats')}>Score Analysis</SwitchButton>
       </div>
     </div>
   );
@@ -73,6 +73,64 @@ interface LiveAtsEstimate {
   completedChecks: number;
   totalChecks: number;
   suggestions: string[];
+}
+
+function AtsScoreProgress({ score }: { score: number }) {
+  const pct = Math.min(100, Math.max(0, score));
+  const segments = [
+    { label: "0", color: "bg-rose-400/70" },
+    { label: "20", color: "bg-orange-400/70" },
+    { label: "40", color: "bg-amber-300/70" },
+    { label: "60", color: "bg-sky-400/70" },
+    { label: "80", color: "bg-emerald-400/70" },
+  ];
+  const status = pct >= 80 ? "Strong" : pct >= 60 ? "Good" : pct >= 40 ? "Fair" : "Needs work";
+
+  return (
+    <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.035] p-3 shadow-sm">
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">ATS Score</div>
+          <div className="mt-0.5 text-xs text-white/55">Live resume readiness</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xl font-bold text-white/90">{pct}%</div>
+          <div className="text-[10px] text-white/45">{status}</div>
+        </div>
+      </div>
+
+      <div className="relative pt-2">
+        <div className="relative h-2 overflow-visible rounded-full bg-white/7">
+          <div className="absolute inset-0 overflow-hidden rounded-full">
+            <div className="flex h-full opacity-25">
+              {segments.map((segment) => (
+                <div key={segment.label} className={`h-full flex-1 ${segment.color}`} />
+              ))}
+            </div>
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-rose-400/80 via-amber-300/80 to-emerald-400/80"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div
+            className="absolute top-1/2 grid h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white bg-[var(--app-surface)] shadow-sm ring-2 ring-emerald-400/15"
+            style={{ left: `${pct}%` }}
+            aria-hidden="true"
+          >
+            <span className="size-1.5 rounded-full bg-emerald-400" />
+          </div>
+        </div>
+
+        <div className="mt-1.5 grid grid-cols-6 text-[10px] text-white/35">
+          {[0, 20, 40, 60, 80, 100].map((mark) => (
+            <div key={mark} className={mark === 100 ? "text-right" : mark === 0 ? "text-left" : "text-center"}>
+              {mark}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function calculateLiveAtsEstimate(resume: ResumeData): LiveAtsEstimate {
@@ -787,6 +845,8 @@ function ResumePreview({
 
   return (
     <div>
+      {mode === "preview" && <AtsScoreProgress score={displayedScore} />}
+
       <div className="flex items-center justify-between mb-4">
         <div className="font-semibold">{mode === "preview" ? "Resume Preview" : "ATS Score"}</div>
         {mode === "preview" && hasResumeContent(resume) && (
@@ -1221,7 +1281,7 @@ export default function ResumeBuilderScreen() {
       >
         {/* Left (main form) */}
         <div>
-          <PageHeader mode={previewMode} setMode={setPreviewMode} atsScore={liveAts.score} />
+          <PageHeader mode={previewMode} setMode={setPreviewMode} />
 
           <div className="mt-4 mb-2">
             <input
@@ -1254,7 +1314,7 @@ export default function ResumeBuilderScreen() {
         </div>
 
         {/* Right side — Preview */}
-        <div className="xl:sticky xl:top-[80px] xl:self-start">
+        <div className="xl:sticky xl:top-[80px] xl:self-start xl:pt-4">
           <ResumePreview mode={previewMode} resume={resume} ats={null} liveAts={liveAts} fileName={resumeFileName} templateSlug={templateSlug} />
         </div>
       </PageWithSidebar>

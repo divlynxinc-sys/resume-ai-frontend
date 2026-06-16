@@ -64,11 +64,13 @@ function ResumePicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-fg)]">
-        <FileText className="size-4 text-[var(--accent-text)]" />
-        Resume
+        <span className="grid size-8 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+          <FileText className="size-4" />
+        </span>
+        Resume source
       </div>
 
-      <div className="inline-flex items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-1 text-xs">
+      <div className="inline-flex items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] p-1 text-xs">
         <button
           onClick={() => setSource("saved")}
           className={
@@ -99,7 +101,7 @@ function ResumePicker({
             value={selectedId ?? ""}
             onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
             disabled={loadingResumes}
-            className="w-full appearance-none rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 pr-10 text-sm text-[var(--app-fg)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] disabled:opacity-60"
+            className="w-full appearance-none rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 pr-10 text-sm text-[var(--app-fg)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 disabled:opacity-60"
           >
             <option value="">
               {loadingResumes
@@ -122,7 +124,7 @@ function ResumePicker({
           onChange={(e) => setResumeText(e.target.value)}
           placeholder="Paste your resume here — name, contact info, summary, experience, education, skills…"
           rows={8}
-          className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] resize-y"
+          className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
         />
       )}
     </div>
@@ -143,8 +145,8 @@ function ToneSelect({ tone, setTone }: { tone: Tone; setTone: (t: Tone) => void 
               className={
                 "rounded-lg border px-3 py-2.5 text-left transition-all " +
                 (active
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--app-border)] bg-[var(--app-surface)] hover:border-[var(--app-border-strong)]")
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow-soft)]"
+                  : "border-[var(--app-border)] bg-[var(--btn-secondary-bg)] hover:border-[var(--app-border-strong)] hover:bg-[var(--btn-secondary-hover)]")
               }
             >
               <div
@@ -184,8 +186,8 @@ function InterviewTypeSelect({
               className={
                 "rounded-lg border px-3 py-2.5 text-left transition-all " +
                 (active
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--app-border)] bg-[var(--app-surface)] hover:border-[var(--app-border-strong)]")
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[var(--shadow-soft)]"
+                  : "border-[var(--app-border)] bg-[var(--btn-secondary-bg)] hover:border-[var(--app-border-strong)] hover:bg-[var(--btn-secondary-hover)]")
               }
             >
               <div
@@ -428,6 +430,7 @@ export default function QAAnswersScreen() {
     if (streaming) return [];
     return parseQa(output);
   }, [output, streaming]);
+  const waitingForFirstToken = streaming && !output && !error;
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
@@ -532,7 +535,7 @@ export default function QAAnswersScreen() {
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="qa-answers">
-        <main className="px-2">
+        <main className="px-2 pb-16">
           <div className="mx-auto max-w-6xl">
             <div>
               <div className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">
@@ -547,7 +550,7 @@ export default function QAAnswersScreen() {
             </div>
 
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 space-y-6">
+              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 space-y-6 shadow-[var(--shadow-soft)]">
                 <ResumePicker
                   source={source}
                   setSource={setSource}
@@ -571,7 +574,7 @@ export default function QAAnswersScreen() {
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the full job description — responsibilities, qualifications, all of it."
                     rows={6}
-                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] resize-y"
+                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
                   />
                 </div>
 
@@ -584,7 +587,7 @@ export default function QAAnswersScreen() {
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                       placeholder="e.g. Acme Inc."
-                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
                     />
                   </div>
                   <div className="space-y-2">
@@ -595,7 +598,7 @@ export default function QAAnswersScreen() {
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
                       placeholder="e.g. Frontend Engineer"
-                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                      className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
                     />
                   </div>
                 </div>
@@ -612,7 +615,7 @@ export default function QAAnswersScreen() {
                     value={focus}
                     onChange={(e) => setFocus(e.target.value)}
                     placeholder="e.g. React, system design, leadership, backend APIs…"
-                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)]"
+                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
                   />
                 </div>
 
@@ -648,7 +651,7 @@ export default function QAAnswersScreen() {
                     onChange={(e) => setCustomQuestions(e.target.value)}
                     placeholder="e.g. Tell me about a time you handled a production incident…"
                     rows={4}
-                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-soft)] resize-y"
+                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
                   />
                 </div>
 
@@ -695,10 +698,12 @@ export default function QAAnswersScreen() {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 flex flex-col min-h-[520px]">
-                <div className="flex items-center justify-between gap-3">
+              <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-soft)] flex flex-col min-h-[520px] overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-[var(--app-border)] px-5 py-3.5 bg-[var(--app-surface)]">
                   <div className="text-sm font-medium text-[var(--app-fg)] flex items-center gap-2">
-                    <MessageSquare className="size-4 text-[var(--accent-text)]" />
+                    <span className="grid size-8 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                      <MessageSquare className="size-4" />
+                    </span>
                     Output
                   </div>
                   <div className="flex items-center gap-2">
@@ -719,7 +724,7 @@ export default function QAAnswersScreen() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex-1 overflow-auto rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)]">
+                <div className="flex-1 overflow-auto bg-[var(--app-bg)]/20 px-5 py-4">
                   {!output && !streaming ? (
                     <div className="h-full flex flex-col items-center justify-center text-center px-6 py-10">
                       <div className="size-12 grid place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] mb-4">
@@ -801,12 +806,14 @@ export default function QAAnswersScreen() {
                       ))}
                     </div>
                   ) : (
-                    <pre className="p-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
-                      {output}
-                      {streaming && (
-                        <span className="inline-block w-1.5 h-4 ml-0.5 align-middle bg-[var(--accent)] animate-pulse" />
-                      )}
-                    </pre>
+                    <div className="min-h-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-5 py-5">
+                      <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
+                        {output}
+                        {streaming && (
+                          <span className="inline-block w-1.5 h-4 ml-0.5 align-middle bg-[var(--accent)] animate-pulse" />
+                        )}
+                      </pre>
+                    </div>
                   )}
                 </div>
               </div>

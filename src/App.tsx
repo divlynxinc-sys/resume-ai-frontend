@@ -5,8 +5,11 @@ import {
   Navigate,
   Outlet,
   ScrollRestoration,
+  useLocation,
+  useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 
 // ─── Lazy-load every page ─────────────────────────────────────────────────────
 const LandingPage        = lazy(() => import("./components/modal/landing-page"));
@@ -60,8 +63,14 @@ function Page({ children }: { children: React.ReactNode }) {
 // ─── Route guards ─────────────────────────────────────────────────────────────
 function PrivateRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
   if (isLoading) return <PageLoader />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={withNextParam("/login", next)} replace />;
+  }
+
   return (
     <>
       <ScrollRestoration />
@@ -72,8 +81,10 @@ function PrivateRoute() {
 
 function PublicOnlyRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+
   if (isLoading) return <PageLoader />;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) return <Navigate to={getSafeRedirectPath(searchParams.get("next"))} replace />;
   return <Outlet />;
 }
 
