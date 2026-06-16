@@ -86,6 +86,16 @@ export function resumeContentToHtml(content: ResumeContent, fallbackName = "Resu
   return renderTemplate(templateSlug, resumeContentToTemplateInput(content, fallbackName));
 }
 
+export function safeFileName(value: string): string {
+  const name = value
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\.+$/g, "");
+
+  return name || "Resume";
+}
+
 const A4_WIDTH_PX = 794;
 const A4_HEIGHT_PX = 1123;
 const A4_WIDTH_MM = 210;
@@ -336,4 +346,29 @@ export async function downloadResumeHtmlAsPdf(html: string, filename: string): P
   } finally {
     frame.remove();
   }
+}
+
+export function downloadResumeHtmlAsDocx(html: string, filename: string): void {
+  const docxHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${filename}</title>
+      </head>
+      <body>${html}</body>
+    </html>
+  `;
+  const blob = new Blob([docxHtml], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }

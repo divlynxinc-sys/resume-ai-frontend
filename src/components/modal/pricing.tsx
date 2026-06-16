@@ -170,7 +170,7 @@ const FEATURE_LIST = [
   "AI-tailored resumes",
   "AI-tailored cover letters",
   "HR email drafts",
-  "Q&A answers",
+  "Q&A Prep",
   "ATS optimization insights",
 ];
 
@@ -305,7 +305,7 @@ export function PricingSection() {
         Pick a plan, <span className="italic">land the role.</span>
       </h1>
       <p className="mt-5 max-w-2xl mx-auto text-[var(--app-fg-muted)] leading-relaxed">
-        Pick a plan to add AI-generated resumes, cover letters, emails, and Q&amp;A answers to each application.
+        Pick a plan to add AI-generated resumes, cover letters, emails, and Q&amp;A Prep to each application.
       </p>
 
       <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto">

@@ -5,7 +5,20 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
 import { resumeService, type ResumeContent } from "@/services";
-import { downloadResumeHtmlAsPdf, resumeContentToHtml } from "@/lib/resume-export";
+import { renderTemplate } from "@/lib/resume-templates";
+
+import {
+  downloadResumeHtmlAsDocx,
+  downloadResumeHtmlAsPdf,
+  resumeContentToHtml,
+  safeFileName,
+} from "@/lib/resume-export";
+import {
+  mapContentToLocal,
+  toTemplateInput,
+  readResumeDraft,
+  type ResumeData,
+} from "./resume-builder.helpers";
 
 interface ResumeItem {
   id: string;
@@ -53,40 +66,22 @@ function EmptyState() {
   );
 }
 
-function contentToHtml(content: ResumeContent): string {
-  return resumeContentToHtml(content);
-}
+const EMPTY_RESUME: ResumeData = {
+  name: "", email: "", phone: "", location: "", linkedin: "", portfolio: "",
+  experiences: [], education: [], skills: [], summary: "",
+  job: { title: "", company: "", location: "", description: "" },
+  customSections: [],
+};
 
-function safeFileName(value: string) {
-  return (value.trim() || "Untitled Resume").replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Untitled Resume";
-}
-
-function downloadResumeHtmlAsDocx(html: string, filename: string) {
-  const headContent = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? "";
-  const bodyContent = html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "");
-  const wordHtml =
-    '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-    'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-    '<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
-    "<title>Resume</title>" +
-    headContent +
-    "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>" +
-    "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
-    "</head><body>" +
-    bodyContent +
-    "</body></html>";
-
-  const blob = new Blob(["\uFEFF", wordHtml], {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+// Render a resume card using the SAME mapping + template the builder uses, so the
+// preview matches the editor exactly (and respects the resume's chosen template
+// instead of always rendering modern-minimal).
+function renderResumeCardHtml(resume: ResumeData, templateSlug: string): string {
+  try {
+    return renderTemplate(templateSlug, toTemplateInput(resume));
+  } catch {
+    return renderTemplate("modern-minimal", toTemplateInput(resume));
+  }
 }
 
 function MiniResumePreview({ id }: { id: string }) {
@@ -96,15 +91,13 @@ function MiniResumePreview({ id }: { id: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    resumeService.get(Number(id)).then((resume: any) => {
-      if (cancelled) return;
-      const content = resume?.content as ResumeContent | undefined;
-      if (!content) return;
+
+    const renderInto = (resume: ResumeData, slug: string) => {
+      const iframe = iframeRef.current;
+      const container = containerRef.current;
+      if (!iframe || !container) return;
       try {
-        const html = contentToHtml(content);
-        const iframe = iframeRef.current;
-        const container = containerRef.current;
-        if (!iframe || !container) return;
+        const html = renderResumeCardHtml(resume, slug);
         const doc = iframe.contentDocument;
         if (doc) {
           doc.open();
@@ -117,7 +110,24 @@ function MiniResumePreview({ id }: { id: string }) {
       } catch {
         /* keep skeleton on render failure */
       }
+    };
+
+    // Prefer the local draft (latest edits + chosen template) so the card matches
+    // what the user last saw in the builder; otherwise use the saved server content.
+    const draft = readResumeDraft(Number(id));
+    const slug = draft?.templateSlug || "modern-minimal";
+    if (draft?.resume) {
+      renderInto(draft.resume, slug);
+      return () => { cancelled = true; };
+    }
+
+    resumeService.get(Number(id)).then((resume: any) => {
+      if (cancelled) return;
+      const content = resume?.content as ResumeContent | undefined;
+      if (!content) return;
+      renderInto(mapContentToLocal(content, EMPTY_RESUME), slug);
     }).catch(() => { /* keep skeleton on network failure */ });
+
     return () => { cancelled = true; };
   }, [id]);
 

@@ -123,14 +123,14 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}
-          label="Q&A Answers"
+          label="Q&A Prep"
           route="qa-answers"
           active={current === "qa-answers"}
           collapsed={collapsed}
           premium
           paidPlanActive={isPaid}
           locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("Q&A answers are a Pro feature. Upgrade to generate tailored interview answers for your target roles.")}
+          onLockedClick={() => openUpgradeModal("Q&A Prep is a Pro feature. Upgrade to generate tailored interview answers for your target roles.")}
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}

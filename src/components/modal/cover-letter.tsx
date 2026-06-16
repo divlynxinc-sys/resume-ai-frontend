@@ -17,6 +17,7 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { resumeService, coverLetterService } from "@/services";
 import { usePlan } from "@/contexts/PlanContext";
+import GeneratingLoader from "./generating-loader";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -368,6 +369,8 @@ function OutputPanel({
               Pick a resume, paste the job description, and click Generate. Tokens stream in as the model writes.
             </div>
           </div>
+        ) : streaming && !letter ? (
+          <GeneratingLoader label="Drafting your cover letter…" />
         ) : (
           <div className="min-h-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-5 py-5">
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
