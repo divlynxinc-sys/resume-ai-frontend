@@ -126,18 +126,75 @@ function isCanvasBlank(canvas: HTMLCanvasElement, height: number): boolean {
   const width = canvas.width;
   const safeHeight = Math.max(1, Math.min(height, canvas.height));
   const data = context.getImageData(0, 0, width, safeHeight).data;
-  const step = 32;
+  const minInkPixels = Math.max(80, Math.floor((width * safeHeight) / 60000));
+  let inkPixels = 0;
 
-  for (let y = 0; y < safeHeight; y += step) {
-    for (let x = 0; x < width; x += step) {
+  for (let y = 0; y < safeHeight; y += 1) {
+    for (let x = 0; x < width; x += 1) {
       const index = (y * width + x) * 4;
-      if (data[index] < 248 || data[index + 1] < 248 || data[index + 2] < 248) {
+      if (data[index + 3] > 16 && (data[index] < 245 || data[index + 1] < 245 || data[index + 2] < 245)) {
+        inkPixels += 1;
+      }
+
+      if (inkPixels >= minInkPixels) {
         return false;
       }
     }
   }
 
   return true;
+}
+
+function getCanvasContentBottom(canvas: HTMLCanvasElement): number {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return canvas.height;
+
+  const { width, height } = canvas;
+  const data = context.getImageData(0, 0, width, height).data;
+  const minRowInkPixels = Math.max(4, Math.floor(width / 350));
+
+  for (let y = height - 1; y >= 0; y -= 1) {
+    let rowInkPixels = 0;
+
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      if (data[index + 3] > 16 && (data[index] < 245 || data[index + 1] < 245 || data[index + 2] < 245)) {
+        rowInkPixels += 1;
+      }
+
+      if (rowInkPixels >= minRowInkPixels) {
+        return y + 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+function getCanvasContentTop(canvas: HTMLCanvasElement): number {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return 0;
+
+  const { width, height } = canvas;
+  const data = context.getImageData(0, 0, width, height).data;
+  const minRowInkPixels = Math.max(4, Math.floor(width / 350));
+
+  for (let y = 0; y < height; y += 1) {
+    let rowInkPixels = 0;
+
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      if (data[index + 3] > 16 && (data[index] < 245 || data[index + 1] < 245 || data[index + 2] < 245)) {
+        rowInkPixels += 1;
+      }
+
+      if (rowInkPixels >= minRowInkPixels) {
+        return y;
+      }
+    }
+  }
+
+  return 0;
 }
 
 async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement> {
@@ -184,23 +241,44 @@ async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement>
     .filter(Boolean)
     .join("\n");
   resumeRoot.prepend(rootExportStyles);
+  if (resumeRoot.querySelector(".section-rule")) {
+    resumeRoot.classList.add("resume-export-modern-minimal");
+  }
+  if (resumeRoot.querySelector(".wrapper .sidebar")) {
+    resumeRoot.classList.add("resume-export-left-sidebar");
+  }
+  if (resumeRoot.querySelector(".name-underline") && resumeRoot.querySelector(".contact .ci")) {
+    resumeRoot.classList.add("resume-export-classic-professional");
+  }
+  if (
+    resumeRoot.querySelector(".page > .header") &&
+    resumeRoot.querySelector(".exp-line") &&
+    !resumeRoot.classList.contains("resume-export-modern-minimal") &&
+    !resumeRoot.classList.contains("resume-export-left-sidebar") &&
+    !resumeRoot.classList.contains("resume-export-classic-professional")
+  ) {
+    resumeRoot.classList.add("resume-export-compact-single-column");
+  }
+  if (resumeRoot.querySelector(".banner .bi") && resumeRoot.querySelector(".badge")) {
+    resumeRoot.classList.add("resume-export-creative-bold");
+  }
 
   const pdfLayoutFixes = doc.createElement("style");
   pdfLayoutFixes.setAttribute("data-resume-pdf-layout-fixes", "true");
   pdfLayoutFixes.textContent = `
-    .resume-root .contact-row {
+    .resume-root.resume-export-modern-minimal .contact-row {
       align-items: center !important;
       line-height: 1.8 !important;
       overflow: visible !important;
     }
 
-    .resume-root .contact-row .mm-ci-item {
+    .resume-root.resume-export-modern-minimal .contact-row .mm-ci-item {
       align-items: center !important;
       line-height: 1.8 !important;
       overflow: visible !important;
     }
 
-    .resume-root .contact-row .mm-ci {
+    .resume-root.resume-export-modern-minimal .contact-row .mm-ci {
       box-sizing: content-box !important;
       position: relative !important;
       top: 3px !important;
@@ -214,23 +292,23 @@ async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement>
       transform-origin: center center !important;
     }
 
-    .resume-root .contact-row .mm-ci * {
+    .resume-root.resume-export-modern-minimal .contact-row .mm-ci * {
       overflow: visible !important;
     }
 
-    .resume-root .section-title {
+    .resume-root.resume-export-modern-minimal .section-title {
       padding-bottom: 0 !important;
       margin-bottom: 8px !important;
       line-height: 1 !important;
     }
 
-    .resume-root .section-label {
+    .resume-root.resume-export-modern-minimal .section-label {
       display: block !important;
       line-height: 1 !important;
       margin-bottom: 0 !important;
     }
 
-    .resume-root .section-rule {
+    .resume-root.resume-export-modern-minimal .section-rule {
       position: static !important;
       display: block !important;
       width: 100% !important;
@@ -242,16 +320,366 @@ async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement>
       font-size: 0 !important;
       clear: both !important;
     }
+
+    .resume-root.resume-export-left-sidebar .wrapper {
+      display: flex !important;
+      align-items: stretch !important;
+      width: 100% !important;
+      min-height: 297mm !important;
+      background: linear-gradient(to right, #2d3748 30%, #ffffff 30%) !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .sidebar {
+      width: 30% !important;
+      flex: 0 0 30% !important;
+      min-height: 297mm !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main {
+      width: 70% !important;
+      flex: 0 0 70% !important;
+      min-height: 297mm !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main .section-title,
+    .resume-root.resume-export-left-sidebar .sidebar .section-title {
+      display: block !important;
+      line-height: 1.15 !important;
+      padding-bottom: 11px !important;
+      margin-bottom: 9px !important;
+      border-bottom-style: solid !important;
+      background: transparent !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main .section-title {
+      border-bottom-width: 2px !important;
+      border-bottom-color: #e2e8f0 !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .sidebar .section-title {
+      border-bottom-width: 1px !important;
+      border-bottom-color: #4a5568 !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .pill {
+      display: inline-block !important;
+      box-sizing: border-box !important;
+      min-height: 0 !important;
+      height: 16px !important;
+      line-height: 16px !important;
+      padding: 0 6px !important;
+      margin: 0 3px 3px 0 !important;
+      border-radius: 3px !important;
+      font-size: 7.5pt !important;
+      text-align: center !important;
+      background: #4a5568 !important;
+      color: #e2e8f0 !important;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      vertical-align: middle !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .pill-text {
+      display: inline-block !important;
+      position: relative !important;
+      top: -7px !important;
+      line-height: 1.05 !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .skill-group {
+      line-height: 1.5 !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main ul {
+      list-style: none !important;
+      padding-left: 14px !important;
+      margin: 2px 0 0 !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main li {
+      position: relative !important;
+      list-style: none !important;
+      padding-left: 0 !important;
+    }
+
+    .resume-root.resume-export-left-sidebar .main li::before {
+      content: "•" !important;
+      position: absolute !important;
+      left: -11px !important;
+      top: 2px !important;
+      line-height: 1 !important;
+      font-size: 8.5pt !important;
+      color: #222 !important;
+    }
+
+    .resume-root.resume-export-classic-professional .name-underline {
+      display: block !important;
+      width: 60px !important;
+      height: 2px !important;
+      margin: 10px auto 10px !important;
+      background: #1a365d !important;
+      line-height: 0 !important;
+      font-size: 0 !important;
+    }
+
+    .resume-root.resume-export-classic-professional .contact {
+      align-items: center !important;
+      line-height: 1.7 !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-classic-professional .ci-item {
+      align-items: center !important;
+      line-height: 1.7 !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-classic-professional .ci {
+      box-sizing: content-box !important;
+      position: relative !important;
+      top: 4px !important;
+      width: 15px !important;
+      height: 15px !important;
+      flex: 0 0 15px !important;
+      margin: 0 -1px 0 0 !important;
+      overflow: visible !important;
+      transform: none !important;
+    }
+
+    .resume-root.resume-export-classic-professional .ci * {
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-classic-professional .section-title {
+      display: block !important;
+      line-height: 1.1 !important;
+      padding-bottom: 16px !important;
+      margin-bottom: 13px !important;
+      border-bottom: 2.5px double #1a365d !important;
+      background: transparent !important;
+    }
+
+    .resume-root.resume-export-classic-professional ul {
+      list-style: none !important;
+      padding-left: 20px !important;
+      margin: 3px 0 0 !important;
+    }
+
+    .resume-root.resume-export-classic-professional li {
+      position: relative !important;
+      list-style: none !important;
+      padding-left: 0 !important;
+    }
+
+    .resume-root.resume-export-classic-professional li::before {
+      content: "\\2022" !important;
+      position: absolute !important;
+      left: -13px !important;
+      top: 2px !important;
+      line-height: 1 !important;
+      font-size: 9.5pt !important;
+      color: #1a1a1a !important;
+    }
+
+    .resume-root.resume-export-compact-single-column .section-title {
+      display: block !important;
+      line-height: 1.1 !important;
+      padding-bottom: 8px !important;
+      margin-bottom: 7px !important;
+      border-bottom: 0.5px solid #999 !important;
+      background: transparent !important;
+    }
+
+    .resume-root.resume-export-compact-single-column ul {
+      list-style: none !important;
+      padding-left: 14px !important;
+      margin: 1px 0 3px !important;
+    }
+
+    .resume-root.resume-export-compact-single-column li {
+      position: relative !important;
+      list-style: none !important;
+      padding-left: 0 !important;
+      margin-bottom: 1px !important;
+    }
+
+    .resume-root.resume-export-compact-single-column li::before {
+      content: "\\2022" !important;
+      position: absolute !important;
+      left: -11px !important;
+      top: 2px !important;
+      line-height: 1 !important;
+      font-size: 8.5pt !important;
+      color: #1a1a1a !important;
+    }
+
+    .resume-root.resume-export-creative-bold {
+      background: #ffffff !important;
+      min-height: 297mm !important;
+    }
+
+    .resume-root.resume-export-creative-bold .banner {
+      margin-top: 0 !important;
+      padding-top: 28px !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-creative-bold .banner .contact {
+      align-items: center !important;
+      line-height: 1.7 !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-creative-bold .bi-item {
+      align-items: center !important;
+      line-height: 1.7 !important;
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-creative-bold .bi {
+      box-sizing: content-box !important;
+      position: relative !important;
+      top: 3px !important;
+      width: 12px !important;
+      height: 12px !important;
+      flex: 0 0 12px !important;
+      overflow: visible !important;
+      transform: none !important;
+    }
+
+    .resume-root.resume-export-creative-bold .bi * {
+      overflow: visible !important;
+    }
+
+    .resume-root.resume-export-creative-bold .section-title {
+      display: block !important;
+      line-height: 1.1 !important;
+      padding-top: 1px !important;
+      padding-bottom: 2px !important;
+      border-left: 4px solid #2563eb !important;
+      background: transparent !important;
+    }
+
+    .resume-root.resume-export-creative-bold ul {
+      list-style: none !important;
+      padding-left: 18px !important;
+      margin: 3px 0 0 !important;
+    }
+
+    .resume-root.resume-export-creative-bold li {
+      position: relative !important;
+      list-style: none !important;
+      padding-left: 0 !important;
+      margin-bottom: 2px !important;
+    }
+
+    .resume-root.resume-export-creative-bold li::before {
+      content: "\\2022" !important;
+      position: absolute !important;
+      left: -13px !important;
+      top: 2px !important;
+      line-height: 1 !important;
+      font-size: 9.5pt !important;
+      color: #1e293b !important;
+    }
+
+    .resume-root.resume-export-creative-bold .exp-dates {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-sizing: border-box !important;
+      min-height: 0 !important;
+      height: 18px !important;
+      line-height: 18px !important;
+      padding: 0 8px !important;
+      overflow: visible !important;
+      vertical-align: middle !important;
+    }
+
+    .resume-root.resume-export-creative-bold .date-text {
+      display: inline-block !important;
+      position: relative !important;
+      top: -5px !important;
+      line-height: 1.05 !important;
+    }
+
+    .resume-root.resume-export-creative-bold .badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-sizing: border-box !important;
+      min-height: 0 !important;
+      height: 17px !important;
+      line-height: 17px !important;
+      padding: 0 10px !important;
+      margin: 0 4px 4px 0 !important;
+      overflow: visible !important;
+      vertical-align: middle !important;
+    }
+
+    .resume-root.resume-export-creative-bold .badge-text {
+      display: inline-block !important;
+      position: relative !important;
+      top: -5px !important;
+      line-height: 1.05 !important;
+    }
   `;
   resumeRoot.prepend(pdfLayoutFixes);
 
-  resumeRoot.querySelectorAll<SVGElement>(".contact-row .mm-ci").forEach((icon) => {
-    const viewBox = icon.getAttribute("viewBox");
-    if (viewBox === "0 0 24 24") {
-      icon.setAttribute("viewBox", "-5 -5 34 34");
-      icon.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    }
-  });
+  if (resumeRoot.classList.contains("resume-export-modern-minimal")) {
+    resumeRoot.querySelectorAll<SVGElement>(".contact-row .mm-ci").forEach((icon) => {
+      const viewBox = icon.getAttribute("viewBox");
+      if (viewBox === "0 0 24 24") {
+        icon.setAttribute("viewBox", "-5 -5 34 34");
+        icon.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      }
+    });
+  }
+  if (resumeRoot.classList.contains("resume-export-classic-professional")) {
+    resumeRoot.querySelectorAll<SVGElement>(".contact .ci").forEach((icon) => {
+      const viewBox = icon.getAttribute("viewBox");
+      if (viewBox === "0 0 24 24") {
+        icon.setAttribute("viewBox", "-5 -5 34 34");
+        icon.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      }
+    });
+  }
+  if (resumeRoot.classList.contains("resume-export-left-sidebar")) {
+    resumeRoot.querySelectorAll<HTMLElement>(".pill").forEach((pill) => {
+      if (pill.querySelector(".pill-text")) return;
+      const textNode = doc.createElement("span");
+      textNode.className = "pill-text";
+      textNode.textContent = pill.textContent ?? "";
+      pill.textContent = "";
+      pill.appendChild(textNode);
+    });
+  }
+  if (resumeRoot.classList.contains("resume-export-creative-bold")) {
+    resumeRoot.querySelectorAll<SVGElement>(".banner .bi").forEach((icon) => {
+      const viewBox = icon.getAttribute("viewBox");
+      if (viewBox === "0 0 24 24") {
+        icon.setAttribute("viewBox", "-5 -5 34 34");
+        icon.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      }
+    });
+    resumeRoot.querySelectorAll<HTMLElement>(".badge").forEach((badge) => {
+      if (badge.querySelector(".badge-text")) return;
+      const textNode = doc.createElement("span");
+      textNode.className = "badge-text";
+      textNode.textContent = badge.textContent ?? "";
+      badge.textContent = "";
+      badge.appendChild(textNode);
+    });
+    resumeRoot.querySelectorAll<HTMLElement>(".exp-dates").forEach((dateChip) => {
+      if (dateChip.querySelector(".date-text")) return;
+      const textNode = doc.createElement("span");
+      textNode.className = "date-text";
+      textNode.textContent = dateChip.textContent ?? "";
+      dateChip.textContent = "";
+      dateChip.appendChild(textNode);
+    });
+  }
 
   await nextFrame();
   await nextFrame();
@@ -275,6 +703,7 @@ export async function downloadResumeHtmlAsPdf(html: string, filename: string): P
 
     const resumeRoot = doc.querySelector<HTMLElement>(".resume-root");
     if (!resumeRoot) throw new Error("Could not find resume root for PDF export.");
+    const shouldAnchorToTop = resumeRoot.classList.contains("resume-export-creative-bold");
 
     const renderedHeight = Math.max(
       resumeRoot.scrollHeight,
@@ -307,24 +736,57 @@ export async function downloadResumeHtmlAsPdf(html: string, filename: string): P
     pageCanvas.height = pageHeightPx;
 
     const pages: string[] = [];
+    const contentBottom = getCanvasContentBottom(canvas);
+    const contentTop = getCanvasContentTop(canvas);
+    const singlePageFitOverflowPx = Math.floor(pageHeightPx * 0.08);
+    const effectiveCanvasHeight = Math.min(canvas.height, Math.max(contentBottom + 8, pageHeightPx));
 
-    for (let y = 0; y < canvas.height; y += pageHeightPx) {
-      const sliceHeight = Math.min(pageHeightPx, canvas.height - y);
+    if (contentBottom <= pageHeightPx + singlePageFitOverflowPx) {
+      const sourcePadding = 4;
+      const sourceY = Math.max(0, contentTop - sourcePadding);
+      const sourceBottom = Math.min(canvas.height, Math.max(contentBottom + sourcePadding, sourceY + 1));
+      const sourceHeight = sourceBottom - sourceY;
+      const targetHeight = pageHeightPx;
+      const fitScale = Math.min(1, targetHeight / sourceHeight);
+      const fittedWidth = Math.floor(canvas.width * fitScale);
+      const fittedHeight = Math.floor(sourceHeight * fitScale);
+      const fittedX = Math.floor((canvas.width - fittedWidth) / 2);
+      const fittedY = shouldAnchorToTop ? 0 : Math.floor((pageHeightPx - fittedHeight) / 2);
+
       pageContext.fillStyle = "#ffffff";
       pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
       pageContext.drawImage(
         canvas,
         0,
-        y,
+        sourceY,
         canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight,
+        sourceHeight,
+        fittedX,
+        fittedY,
+        fittedWidth,
+        fittedHeight,
       );
 
-      pages.push(isCanvasBlank(pageCanvas, sliceHeight) ? "" : pageCanvas.toDataURL("image/jpeg", 0.98));
+      pages.push(isCanvasBlank(pageCanvas, pageCanvas.height) ? "" : pageCanvas.toDataURL("image/jpeg", 0.98));
+    } else {
+      for (let y = 0; y < effectiveCanvasHeight; y += pageHeightPx) {
+        const sliceHeight = Math.min(pageHeightPx, effectiveCanvasHeight - y);
+        pageContext.fillStyle = "#ffffff";
+        pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        pageContext.drawImage(
+          canvas,
+          0,
+          y,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          canvas.width,
+          sliceHeight,
+        );
+
+        pages.push(isCanvasBlank(pageCanvas, sliceHeight) ? "" : pageCanvas.toDataURL("image/jpeg", 0.98));
+      }
     }
 
     while (pages.length > 1 && !pages[pages.length - 1]) {
