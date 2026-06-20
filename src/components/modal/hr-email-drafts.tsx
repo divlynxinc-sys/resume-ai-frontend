@@ -351,6 +351,30 @@ function parseDrafts(text: string): Draft[] {
   return drafts;
 }
 
+function parseDraftsFallback(text: string): Draft[] {
+  const matches = Array.from(text.matchAll(/^---\s*Draft\s+(\d+)\s*---\s*$/gmi));
+  if (!matches.length) return [];
+  const drafts: Draft[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
+    const start = (m.index ?? 0) + m[0].length;
+    const end = i + 1 < matches.length ? (matches[i + 1].index ?? text.length) : text.length;
+    const segment = text.slice(start, end).trim();
+    if (!segment) continue;
+    const idx = Number(m[1] ?? i + 1) || i + 1;
+    const lines = segment.split("\n");
+    let subject = "";
+    let bodyStartLine = 0;
+    if (lines[0] && /^Subject:\s*/i.test(lines[0])) {
+      subject = lines[0].replace(/^Subject:\s*/i, "").trim();
+      bodyStartLine = 1;
+    }
+    const body = lines.slice(bodyStartLine).join("\n").trim();
+    drafts.push({ index: idx, subject, body, raw: segment });
+  }
+  return drafts;
+}
+
 function mailtoHref(subject: string, body: string): string {
   const s = encodeURIComponent(subject || "");
   const b = encodeURIComponent(body || "");
@@ -361,10 +385,14 @@ export default function HREmailDraftsScreen() {
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    try { const v = sessionStorage.getItem("hr_selected_id"); return v ? Number(v) : null; } catch { return null; }
+  });
   const [resumeText, setResumeText] = useState("");
 
-  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescription, setJobDescription] = useState(() => {
+    try { return sessionStorage.getItem("hr_jd") ?? ""; } catch { return ""; }
+  });
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
@@ -377,7 +405,9 @@ export default function HREmailDraftsScreen() {
   const [availability, setAvailability] = useState("");
   const [extraContext, setExtraContext] = useState("");
 
-  const [output, setOutput] = useState("");
+  const [output, setOutput] = useState(() => {
+    try { return sessionStorage.getItem("hr_output") ?? ""; } catch { return ""; }
+  });
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -396,7 +426,11 @@ export default function HREmailDraftsScreen() {
           updatedAt: r?.updated_at,
         }));
         setResumes(opts);
-        if (opts.length === 1) setSelectedId(opts[0].id);
+        setSelectedId((prev) => {
+          if (prev !== null && opts.some((r) => r.id === prev)) return prev;
+          if (opts.length === 1) return opts[0].id;
+          return null;
+        });
         if (opts.length === 0) setSource("paste");
       })
       .catch(() => {
@@ -410,26 +444,33 @@ export default function HREmailDraftsScreen() {
     return () => abortRef.current?.abort();
   }, []);
 
-  const hasContext = useMemo(() => {
-    return Boolean(
-      jobDescription.trim() ||
-        company.trim() ||
-        role.trim() ||
-        jobLink.trim() ||
-        extraContext.trim()
-    );
-  }, [jobDescription, company, role, jobLink, extraContext]);
+  useEffect(() => {
+    try { sessionStorage.setItem("hr_output", output); } catch {}
+  }, [output]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("hr_jd", jobDescription); } catch {}
+  }, [jobDescription]);
+
+  useEffect(() => {
+    try {
+      if (selectedId !== null) sessionStorage.setItem("hr_selected_id", String(selectedId));
+      else sessionStorage.removeItem("hr_selected_id");
+    } catch {}
+  }, [selectedId]);
 
   const canGenerate = useMemo(() => {
     if (streaming) return false;
-    if (!hasContext) return false;
+    if (!jobDescription.trim()) return false;
     if (source === "saved") return selectedId !== null;
     return resumeText.trim().length > 0;
-  }, [streaming, hasContext, source, selectedId, resumeText]);
+  }, [streaming, jobDescription, source, selectedId, resumeText]);
 
   const parsedDrafts = useMemo(() => {
     if (streaming) return [];
-    return parseDrafts(output);
+    const primary = parseDrafts(output);
+    if (primary.length > 0) return primary;
+    return parseDraftsFallback(output);
   }, [output, streaming]);
   const waitingForFirstToken = streaming && !output && !error;
 
@@ -598,7 +639,7 @@ export default function HREmailDraftsScreen() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-[var(--app-fg)]">
-                      Job description (optional)
+                      Job description <span className="text-red-500">*</span>
                     </div>
                     <div className="text-xs text-[var(--app-fg-soft)]">{jobDescription.length} chars</div>
                   </div>
@@ -693,9 +734,9 @@ export default function HREmailDraftsScreen() {
                       </button>
                     ))}
                   </div>
-                  {!hasContext && (
+                  {!jobDescription.trim() && (
                     <div className="text-xs text-[var(--app-fg-soft)]">
-                      Add at least a company, role, job link, job description, or extra context to generate a good draft.
+                      Job description is required to generate email drafts.
                     </div>
                   )}
                 </div>
@@ -823,8 +864,16 @@ export default function HREmailDraftsScreen() {
                               </button>
                             </div>
                           </div>
-                          <div className="mt-3 whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
-                            {`Subject: ${d.subject || ""}\n\n${d.body}`}
+                          <div className="mt-3 space-y-2">
+                            {d.subject && (
+                              <div className="rounded-lg bg-[var(--app-surface-2)] border border-[var(--app-border)] px-3 py-2 text-xs">
+                                <span className="font-medium text-[var(--app-fg-muted)]">Subject: </span>
+                                <span className="text-[var(--app-fg)]">{d.subject}</span>
+                              </div>
+                            )}
+                            <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
+                              {d.body}
+                            </div>
                           </div>
                         </div>
                       ))}

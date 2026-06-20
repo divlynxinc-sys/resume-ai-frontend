@@ -391,15 +391,21 @@ export default function CoverLetterScreen() {
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    try { const v = sessionStorage.getItem("cl_selected_id"); return v ? Number(v) : null; } catch { return null; }
+  });
   const [resumeText, setResumeText] = useState("");
 
-  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescription, setJobDescription] = useState(() => {
+    try { return sessionStorage.getItem("cl_jd") ?? ""; } catch { return ""; }
+  });
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
 
-  const [letter, setLetter] = useState("");
+  const [letter, setLetter] = useState(() => {
+    try { return sessionStorage.getItem("cl_letter") ?? ""; } catch { return ""; }
+  });
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -419,7 +425,11 @@ export default function CoverLetterScreen() {
           updatedAt: r?.updated_at,
         }));
         setResumes(opts);
-        if (opts.length === 1) setSelectedId(opts[0].id);
+        setSelectedId((prev) => {
+          if (prev !== null && opts.some((r) => r.id === prev)) return prev;
+          if (opts.length === 1) return opts[0].id;
+          return null;
+        });
         if (opts.length === 0) setSource("paste");
       })
       .catch(() => {
@@ -433,6 +443,21 @@ export default function CoverLetterScreen() {
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("cl_letter", letter); } catch {}
+  }, [letter]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("cl_jd", jobDescription); } catch {}
+  }, [jobDescription]);
+
+  useEffect(() => {
+    try {
+      if (selectedId !== null) sessionStorage.setItem("cl_selected_id", String(selectedId));
+      else sessionStorage.removeItem("cl_selected_id");
+    } catch {}
+  }, [selectedId]);
 
   const canGenerate = useMemo(() => {
     if (streaming) return false;
@@ -589,7 +614,7 @@ export default function CoverLetterScreen() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-[var(--app-fg)]">
-                      Job description
+                      Job description <span className="text-red-500">*</span>
                     </div>
                     <div className="text-xs text-[var(--app-fg-soft)]">
                       {jobDescription.length} chars

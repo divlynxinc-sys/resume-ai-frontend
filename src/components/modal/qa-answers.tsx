@@ -361,14 +361,36 @@ function parseQa(text: string): QAItem[] {
   return items;
 }
 
+function parseQaFallback(text: string): QAItem[] {
+  const items: QAItem[] = [];
+  const entries = text.split(/\n{2,}(?=Q:)/);
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i].trim();
+    if (!entry.startsWith("Q:")) continue;
+    const firstNewline = entry.indexOf("\n");
+    const question =
+      firstNewline === -1 ? entry.slice(2).trim() : entry.slice(2, firstNewline).trim();
+    const aIdx = entry.search(/\nA:/i);
+    const answer =
+      aIdx === -1 ? "" : entry.slice(aIdx + 1).replace(/^A:\s*/i, "").trim();
+    if (!question) continue;
+    items.push({ index: items.length + 1, question, answer, keyPoints: [], followUp: "", raw: entry });
+  }
+  return items;
+}
+
 export default function QAAnswersScreen() {
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    try { const v = sessionStorage.getItem("qa_selected_id"); return v ? Number(v) : null; } catch { return null; }
+  });
   const [resumeText, setResumeText] = useState("");
 
-  const [jobDescription, setJobDescription] = useState("");
+  const [jobDescription, setJobDescription] = useState(() => {
+    try { return sessionStorage.getItem("qa_jd") ?? ""; } catch { return ""; }
+  });
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
@@ -377,7 +399,9 @@ export default function QAAnswersScreen() {
   const [questionCount, setQuestionCount] = useState(10);
   const [customQuestions, setCustomQuestions] = useState("");
 
-  const [output, setOutput] = useState("");
+  const [output, setOutput] = useState(() => {
+    try { return sessionStorage.getItem("qa_output") ?? ""; } catch { return ""; }
+  });
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -396,7 +420,11 @@ export default function QAAnswersScreen() {
           updatedAt: r?.updated_at,
         }));
         setResumes(opts);
-        if (opts.length === 1) setSelectedId(opts[0].id);
+        setSelectedId((prev) => {
+          if (prev !== null && opts.some((r) => r.id === prev)) return prev;
+          if (opts.length === 1) return opts[0].id;
+          return null;
+        });
         if (opts.length === 0) setSource("paste");
       })
       .catch(() => {
@@ -409,6 +437,21 @@ export default function QAAnswersScreen() {
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("qa_output", output); } catch {}
+  }, [output]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("qa_jd", jobDescription); } catch {}
+  }, [jobDescription]);
+
+  useEffect(() => {
+    try {
+      if (selectedId !== null) sessionStorage.setItem("qa_selected_id", String(selectedId));
+      else sessionStorage.removeItem("qa_selected_id");
+    } catch {}
+  }, [selectedId]);
 
   const questionsArray = useMemo(() => {
     const lines = customQuestions
@@ -428,7 +471,9 @@ export default function QAAnswersScreen() {
 
   const parsedItems = useMemo(() => {
     if (streaming) return [];
-    return parseQa(output);
+    const primary = parseQa(output);
+    if (primary.length > 0) return primary;
+    return parseQaFallback(output);
   }, [output, streaming]);
   const waitingForFirstToken = streaming && !output && !error;
 
@@ -565,7 +610,7 @@ export default function QAAnswersScreen() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-[var(--app-fg)]">
-                      Job description
+                      Job description <span className="text-red-500">*</span>
                     </div>
                     <div className="text-xs text-[var(--app-fg-soft)]">{jobDescription.length} chars</div>
                   </div>
