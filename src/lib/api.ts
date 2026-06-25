@@ -130,6 +130,54 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   return data as T;
 }
 
+/**
+ * Like apiRequest, but for endpoints that return a binary file (PDF/DOCX).
+ * Reuses the same auth + 401-refresh handling, but returns a Blob instead of
+ * parsing JSON. On error it parses the JSON `detail` so the UI can show why.
+ */
+export async function apiRequestBlob(path: string, body: unknown, options: RequestInit = {}): Promise<Blob> {
+  if (localStorage.getItem("accessToken") === "dev-bypass-token") {
+    throw new Error("DEV_BYPASS: backend not connected");
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const init: RequestInit = { method: "POST", ...options, headers, body: JSON.stringify(body) };
+  let res = await fetch(`${BASE_URL}${path}`, init);
+
+  if (res.status === 401) {
+    const newToken = await attemptRefresh();
+    if (newToken) {
+      headers["Authorization"] = `Bearer ${newToken}`;
+      res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+    } else {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      if (shouldRedirectToLogin()) window.location.href = "/login";
+      throw new Error("Session expired. Please log in again.");
+    }
+  }
+
+  if (!res.ok) {
+    let detail = `Export failed (${res.status})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") detail = data.detail;
+      else if (data?.detail?.message) detail = data.detail.message;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail);
+  }
+
+  return res.blob();
+}
+
 const api = {
   get: <T>(path: string) => apiRequest<T>(path),
   post: <T>(path: string, body?: unknown) =>

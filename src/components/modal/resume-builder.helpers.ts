@@ -34,6 +34,29 @@ export interface JobDetails {
 export interface CustomSection {
   title: string;
   content: string;
+  /** Optional explicit project link (feature 1.4 — "link display mode"). */
+  link?: string;
+  /** Optional custom display text for the link; falls back to the raw URL. */
+  linkLabel?: string;
+}
+
+/**
+ * Resolve a custom section's project link + bullets. Prefers the explicit
+ * `link`/`linkLabel` fields (feature 1.4); falls back to sniffing a URL out of
+ * the content lines for resumes authored before those fields existed.
+ */
+export function resolveProjectFromSection(s: CustomSection): { url: string; label: string; bullets: string[] } {
+  const lines = (s.content ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  let url = (s.link ?? "").trim();
+  const bullets: string[] = [];
+  for (const line of lines) {
+    if (!url && /^(https?:\/\/|www\.|github\.com\/)/i.test(line)) {
+      url = line;
+    } else {
+      bullets.push(line);
+    }
+  }
+  return { url, label: (s.linkLabel ?? "").trim(), bullets };
 }
 
 export interface ResumeData {
@@ -177,9 +200,21 @@ export function mapContentToLocal(content: ResumeContent, emptyResume: ResumeDat
     Array.isArray(backendProjects) && customSectionsFromBackend.length === 0
       ? (backendProjects as Record<string, unknown>[]).map((p) => {
           const bullets = Array.isArray(p?.bullets) ? p.bullets : typeof p?.bullets === "string" ? [p.bullets] : [];
+          const rawLink = (p as { link?: unknown }).link;
+          const url =
+            typeof rawLink === "string"
+              ? rawLink
+              : rawLink && typeof rawLink === "object"
+                ? String((rawLink as Record<string, unknown>).url ?? "")
+                : "";
+          const label =
+            (rawLink && typeof rawLink === "object" ? String((rawLink as Record<string, unknown>).label ?? "") : "") ||
+            (typeof (p as { link_label?: unknown }).link_label === "string" ? String((p as { link_label?: unknown }).link_label) : "");
           return {
             title: typeof p?.title === "string" ? p.title : "Project",
             content: bullets.map((b) => String(b)).join("\n"),
+            link: url || undefined,
+            linkLabel: label || undefined,
           };
         })
       : [];
@@ -296,17 +331,8 @@ export function toTemplateInput(resume: ResumeData): TemplateInput {
       projects: resume.customSections
         .filter((s) => s.title || s.content)
         .map((s) => {
-          const lines = s.content.split("\n").map((l) => l.trim()).filter(Boolean);
-          let link = "";
-          const bullets: string[] = [];
-          for (const line of lines) {
-            if (!link && /^(https?:\/\/|www\.|github\.com\/)/i.test(line)) {
-              link = line;
-            } else {
-              bullets.push(line);
-            }
-          }
-          return { title: s.title, link, bullets };
+          const { url, label, bullets } = resolveProjectFromSection(s);
+          return { title: s.title, link: label ? { url, label } : url, bullets };
         }),
       education: resume.education
         .filter((e) => e.school || e.degree)

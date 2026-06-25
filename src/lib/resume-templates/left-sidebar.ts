@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { formatDate, dateRange, esc, renderIf } from './utils';
+import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
 
 /**
  * Template 3 — Left Sidebar Layout
@@ -72,6 +72,28 @@ export function leftSidebar(data: TemplateInput): string {
     .proj-title { font-weight: 700; font-size: 9pt; color: #2d3748; }
     .proj-link { font-size: 7.5pt; color: #718096; text-decoration: none; margin-left: 6px; }
     p { font-size: 8.5pt; line-height: 1.4; }
+
+    /* Print / PDF pagination. A two-column FLEX layout cannot be split across
+     * printed pages — Chromium collapses it (content overlaps the sidebar). So
+     * for print we repeat the sidebar on every page with position:fixed (which
+     * print media paints per-page) and let the main column flow beside it. This
+     * keeps a full-height dark sidebar AND consistent margins on every page. */
+    @media print {
+      /* Top/bottom margins come from @page so the MAIN column gets the same top
+       * margin on every page (its own padding would only apply on page 1).
+       * Sides are 0 so the sidebar stays edge-to-edge. */
+      @page { size: A4; margin: 12mm 0; }
+      html { background: #fff !important; }   /* kill the dark <html> bleed */
+      .wrapper { display: block; min-height: 0; }
+      /* position:fixed repeats the sidebar on every printed page; the negative
+       * top + full-page height let it bleed through the @page top/bottom band. */
+      .sidebar {
+        position: fixed; top: -12mm; left: 0;
+        width: 30%; height: 297mm;
+        padding: 24mm 10mm;
+      }
+      .main { width: 70%; margin-left: 30%; padding: 0 12mm; }
+    }
   `;
 
   /* ── Sidebar content ── */
@@ -165,7 +187,7 @@ export function leftSidebar(data: TemplateInput): string {
               <!-- resume.projects[].title, .link -->
               <div>
                 <span class="proj-title">${esc(proj.title)}</span>
-                ${proj.link ? `<a class="proj-link" href="${esc(proj.link)}">${esc(proj.link)}</a>` : ''}
+                ${(l => l ? `<a class="proj-link" href="${esc(l.href)}">${esc(l.text)}</a>` : '')(linkParts(proj.link))}
               </div>
               <!-- resume.projects[].bullets[] -->
               <ul>${proj.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>

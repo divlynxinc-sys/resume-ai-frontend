@@ -1,7 +1,6 @@
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import type { ResumeContent } from "@/services/resume";
 import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
+import { apiRequestBlob } from "@/lib/api";
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -20,6 +19,27 @@ function descriptionBullets(value: unknown): string[] {
     .split("\n")
     .map((line) => line.replace(/^(-|\*|\d+\.)\s*/g, "").trim())
     .filter(Boolean);
+}
+
+/**
+ * Normalize a stored project link into the `{ url, label }` shape used across
+ * the PDF and Word exports (feature 1.4 — "link display mode"). Accepts:
+ *   - a bare URL string (legacy)            → { url, label: url }
+ *   - an object { url, label }              → passed through
+ *   - a separate `link_label` field         → used as the label for a string url
+ */
+function normalizeLink(link: unknown, label?: unknown): { url: string; label?: string } | undefined {
+  if (link && typeof link === "object" && !Array.isArray(link)) {
+    const obj = link as Record<string, unknown>;
+    const url = text(obj.url) || text(obj.link);
+    if (!url) return undefined;
+    const lbl = text(obj.label) || text(label);
+    return { url, label: lbl || undefined };
+  }
+  const url = text(link);
+  if (!url) return undefined;
+  const lbl = text(label);
+  return { url, label: lbl || undefined };
 }
 
 export function resumeContentToTemplateInput(content: ResumeContent, fallbackName = "Resume"): TemplateInput {
@@ -63,7 +83,7 @@ export function resumeContentToTemplateInput(content: ResumeContent, fallbackNam
         .map(record)
         .map((item) => ({
           title: text(item.title) || "Project",
-          link: text(item.link) || undefined,
+          link: normalizeLink(item.link, item.link_label),
           bullets: textList(item.bullets).length ? textList(item.bullets) : descriptionBullets(item.description),
         }))
         .filter((item) => item.title || item.bullets.length),
@@ -96,279 +116,47 @@ export function safeFileName(value: string): string {
   return name || "Resume";
 }
 
-const A4_WIDTH_PX = 794;
-const A4_HEIGHT_PX = 1123;
-const A4_WIDTH_MM = 210;
-const A4_HEIGHT_MM = 297;
-
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-}
-
-async function waitForImages(root: ParentNode): Promise<void> {
-  const images = Array.from(root.querySelectorAll("img"));
-  await Promise.all(
-    images.map(async (image) => {
-      if (image.complete && image.naturalWidth > 0) return;
-      await new Promise<void>((resolve) => {
-        image.addEventListener("load", () => resolve(), { once: true });
-        image.addEventListener("error", () => resolve(), { once: true });
-      });
-      await image.decode?.().catch(() => undefined);
-    }),
-  );
-}
-
-function isCanvasBlank(canvas: HTMLCanvasElement, height: number): boolean {
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return false;
-
-  const width = canvas.width;
-  const safeHeight = Math.max(1, Math.min(height, canvas.height));
-  const data = context.getImageData(0, 0, width, safeHeight).data;
-  const step = 32;
-
-  for (let y = 0; y < safeHeight; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const index = (y * width + x) * 4;
-      if (data[index] < 248 || data[index + 1] < 248 || data[index + 2] < 248) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-async function createResumeRenderFrame(html: string): Promise<HTMLIFrameElement> {
-  const frame = document.createElement("iframe");
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.cssText = [
-    "position:fixed",
-    "left:-10000px",
-    "top:0",
-    `width:${A4_WIDTH_PX}px`,
-    `height:${A4_HEIGHT_PX}px`,
-    "border:0",
-    "background:#fff",
-    "opacity:0",
-    "pointer-events:none",
-    "z-index:-2147483648",
-  ].join(";");
-
-  document.body.appendChild(frame);
-  const doc = frame.contentDocument;
-  if (!doc) {
-    frame.remove();
-    throw new Error("Could not create resume PDF render frame.");
-  }
-
-  doc.open();
-  doc.write(html);
-  doc.close();
-
-  const exportReset = doc.createElement("style");
-  exportReset.textContent = "html,body{margin:0;padding:0;width:794px;min-height:1123px;background:#fff;}";
-  doc.head.appendChild(exportReset);
-
-  const resumeRoot = doc.querySelector<HTMLElement>(".resume-root");
-  if (!resumeRoot) {
-    frame.remove();
-    throw new Error("Could not find resume root for PDF export.");
-  }
-
-  const rootExportStyles = doc.createElement("style");
-  rootExportStyles.setAttribute("data-resume-export-styles", "true");
-  rootExportStyles.textContent = Array.from(doc.head.querySelectorAll("style"))
-    .map((style) => style.textContent ?? "")
-    .filter(Boolean)
-    .join("\n");
-  resumeRoot.prepend(rootExportStyles);
-
-  const pdfLayoutFixes = doc.createElement("style");
-  pdfLayoutFixes.setAttribute("data-resume-pdf-layout-fixes", "true");
-  pdfLayoutFixes.textContent = `
-    .resume-root .contact-row {
-      align-items: center !important;
-      line-height: 1.8 !important;
-      overflow: visible !important;
-    }
-
-    .resume-root .contact-row .mm-ci-item {
-      align-items: center !important;
-      line-height: 1.8 !important;
-      overflow: visible !important;
-    }
-
-    .resume-root .contact-row .mm-ci {
-      box-sizing: content-box !important;
-      position: relative !important;
-      top: 3px !important;
-      width: 18px !important;
-      height: 18px !important;
-      flex: 0 0 18px !important;
-      padding: 0 !important;
-      margin: 0 -1px 0 0 !important;
-      overflow: visible !important;
-      transform: none !important;
-      transform-origin: center center !important;
-    }
-
-    .resume-root .contact-row .mm-ci * {
-      overflow: visible !important;
-    }
-
-    .resume-root .section-title {
-      padding-bottom: 0 !important;
-      margin-bottom: 8px !important;
-      line-height: 1 !important;
-    }
-
-    .resume-root .section-label {
-      display: block !important;
-      line-height: 1 !important;
-      margin-bottom: 0 !important;
-    }
-
-    .resume-root .section-rule {
-      position: static !important;
-      display: block !important;
-      width: 100% !important;
-      height: 0 !important;
-      margin-top: 15px !important;
-      border-top: 1px solid #9aa3ad !important;
-      background: transparent !important;
-      line-height: 0 !important;
-      font-size: 0 !important;
-      clear: both !important;
-    }
-  `;
-  resumeRoot.prepend(pdfLayoutFixes);
-
-  resumeRoot.querySelectorAll<SVGElement>(".contact-row .mm-ci").forEach((icon) => {
-    const viewBox = icon.getAttribute("viewBox");
-    if (viewBox === "0 0 24 24") {
-      icon.setAttribute("viewBox", "-5 -5 34 34");
-      icon.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    }
-  });
-
-  await nextFrame();
-  await nextFrame();
-  await doc.fonts?.ready.catch(() => undefined);
-  await waitForImages(doc);
-  await nextFrame();
-
-  return frame;
-}
-
-export async function downloadResumeHtmlAsPdf(html: string, filename: string): Promise<void> {
-  const frame = await createResumeRenderFrame(html);
-
-  try {
-    const doc = frame.contentDocument;
-    if (!doc) throw new Error("Could not find resume document for PDF export.");
-
-    await nextFrame();
-    await waitForImages(doc);
-    await nextFrame();
-
-    const resumeRoot = doc.querySelector<HTMLElement>(".resume-root");
-    if (!resumeRoot) throw new Error("Could not find resume root for PDF export.");
-
-    const renderedHeight = Math.max(
-      resumeRoot.scrollHeight,
-      resumeRoot.offsetHeight,
-      resumeRoot.getBoundingClientRect().height,
-      doc.body.scrollHeight,
-      doc.documentElement.scrollHeight,
-    );
-    const canvas = await html2canvas(resumeRoot, {
-      scale: 2,
-      windowWidth: A4_WIDTH_PX,
-      windowHeight: Math.max(A4_HEIGHT_PX, Math.ceil(renderedHeight)),
-      allowTaint: true,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      imageTimeout: 30000,
-      scrollX: 0,
-      scrollY: 0,
-      removeContainer: true,
-      logging: false,
-    });
-
-    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-    const pageHeightPx = Math.floor((canvas.width * A4_HEIGHT_MM) / A4_WIDTH_MM);
-    const pageCanvas = document.createElement("canvas");
-    const pageContext = pageCanvas.getContext("2d");
-    if (!pageContext) throw new Error("Could not create resume PDF page canvas.");
-
-    pageCanvas.width = canvas.width;
-    pageCanvas.height = pageHeightPx;
-
-    const pages: string[] = [];
-
-    for (let y = 0; y < canvas.height; y += pageHeightPx) {
-      const sliceHeight = Math.min(pageHeightPx, canvas.height - y);
-      pageContext.fillStyle = "#ffffff";
-      pageContext.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-      pageContext.drawImage(
-        canvas,
-        0,
-        y,
-        canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight,
-      );
-
-      pages.push(isCanvasBlank(pageCanvas, sliceHeight) ? "" : pageCanvas.toDataURL("image/jpeg", 0.98));
-    }
-
-    while (pages.length > 1 && !pages[pages.length - 1]) {
-      pages.pop();
-    }
-
-    pages.forEach((pageImage, pageIndex) => {
-      if (pageIndex > 0) pdf.addPage();
-      if (pageImage) {
-        pdf.addImage(pageImage, "JPEG", 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM);
-      }
-    });
-
-    if (pages.length === 0) {
-      pdf.addPage();
-    }
-
-    pdf.save(filename);
-  } finally {
-    frame.remove();
-  }
-}
-
-export function downloadResumeHtmlAsDocx(html: string, filename: string): void {
-  const docxHtml = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>${filename}</title>
-      </head>
-      <body>${html}</body>
-    </html>
-  `;
-  const blob = new Blob([docxHtml], {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8",
-  });
+function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Export a resume to PDF.
+ *
+ * The previous implementation rasterized the resume with html2canvas and
+ * sliced the resulting JPEG into pages. That produced image-only PDFs with no
+ * selectable/ATS-readable text, no clickable links, and page breaks that cut
+ * through content. We now POST the rendered template HTML to the backend, which
+ * renders it with headless Chromium — yielding real text, real link
+ * annotations, and proper CSS pagination (`@page`, `page-break-inside: avoid`).
+ */
+export async function downloadResumeHtmlAsPdf(html: string, filename: string): Promise<void> {
+  const blob = await apiRequestBlob("/resumes/export/pdf", { html, filename });
+  saveBlob(blob, filename);
+}
+
+/**
+ * Export a resume to a real Word (.docx) document. The backend builds a genuine
+ * OOXML file from structured content (with real hyperlinks), replacing the old
+ * approach of relabelling an HTML blob as `.docx` (which Word flagged as
+ * corrupt and rendered unreliably).
+ */
+export async function downloadTemplateInputAsDocx(templateInput: TemplateInput, filename: string): Promise<void> {
+  const blob = await apiRequestBlob("/resumes/export/docx", { content: templateInput, filename });
+  saveBlob(blob, filename);
+}
+
+export async function downloadResumeContentAsDocx(
+  content: ResumeContent,
+  filename: string,
+  fallbackName = "Resume",
+): Promise<void> {
+  await downloadTemplateInputAsDocx(resumeContentToTemplateInput(content, fallbackName), filename);
 }

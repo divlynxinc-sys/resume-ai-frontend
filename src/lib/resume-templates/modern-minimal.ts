@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { esc } from './utils';
+import { esc, linkParts } from './utils';
 
 /**
  * Pixel-faithful match to the reference resume PDF.
@@ -186,9 +186,15 @@ export function modernMinimal(data: TemplateInput): string {
     .resume-root .skill-cat { font-weight: 700; font-size: 9pt; color: #111; min-width: 88px; margin-right: 10px; flex-shrink: 0; }
     .resume-root .skill-vals { font-size: 9pt; color: #222; flex: 1; }
 
+    /* Print / PDF pagination: margins are owned by @page so EVERY page (not
+     * just page 1) gets identical top/bottom/side margins. The on-screen
+     * single-card padding is moved out of the flow here so it can't leave
+     * page 2+ flush against the paper edge. */
     @media print {
+      @page { size: A4; margin: 11mm 14mm; }
       html, body { margin: 0; padding: 0; background: #fff; }
-      .resume-root { margin: 0 auto; }
+      .resume-root { width: auto; min-height: 0; margin: 0; }
+      .resume-root .page { padding: 0; }
     }
   `;
 
@@ -226,8 +232,9 @@ export function modernMinimal(data: TemplateInput): string {
   /* ── Projects ── */
   const projectsHtml = r.projects
     .map(proj => {
-      const linkHtml = proj.link
-        ? `<a class="proj-url" href="${esc(proj.link)}">${esc(proj.link)}</a>`
+      const link = linkParts(proj.link);
+      const linkHtml = link
+        ? `<a class="proj-url" href="${esc(link.href)}">${esc(link.text)}</a>`
         : '';
       const bulletsHtml = proj.bullets.length ? bulletList(proj.bullets) : '';
       return `<div class="proj-block">

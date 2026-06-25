@@ -41,6 +41,22 @@ export function renderIf(value: string | undefined | null, htmlFn: (v: string) =
 }
 
 /**
+ * Resolve a project link (string | { url, label }) into a usable href + display
+ * text (feature 1.4 — "link display mode"). Returns null when there is no URL.
+ * `href` is normalized so bare domains become clickable in the exported PDF.
+ */
+export function linkParts(
+  link: string | { url?: string; label?: string } | undefined | null,
+): { href: string; text: string } | null {
+  if (!link) return null;
+  const url = (typeof link === 'string' ? link : link.url || '').trim();
+  if (!url) return null;
+  const label = (typeof link === 'string' ? '' : (link.label || '')).trim();
+  const href = /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
+  return { href, text: label || url };
+}
+
+/**
  * Rewrite a template's CSS so every selector is scoped to `.resume-root`.
  * Without this, the template's `*`, `html`, `body`, `h1`, `ul`, etc. rules
  * leak onto the host page when the HTML is `innerHTML`'d into a div during

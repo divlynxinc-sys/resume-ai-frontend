@@ -17,10 +17,17 @@ export interface ExperienceItem {
   bullets: string[];
 }
 
+/** A displayable hyperlink: the destination plus optional custom label text. */
+export interface ResumeLink {
+  url: string;
+  label?: string;
+}
+
 /** resume.projects[] */
 export interface ProjectItem {
   title: string;
-  link?: string;
+  /** Either a bare URL string (legacy) or a { url, label } object (feature 1.4). */
+  link?: string | ResumeLink;
   bullets: string[];
 }
 

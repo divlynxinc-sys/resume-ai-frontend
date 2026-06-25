@@ -8,7 +8,7 @@ import { resumeService, type ResumeContent } from "@/services";
 import { renderTemplate } from "@/lib/resume-templates";
 
 import {
-  downloadResumeHtmlAsDocx,
+  downloadResumeContentAsDocx,
   downloadResumeHtmlAsPdf,
   resumeContentToHtml,
   safeFileName,
@@ -364,7 +364,7 @@ export default function MyResumesScreen() {
       if (format === "pdf") {
         await downloadResumeHtmlAsPdf(html, `${baseName}.pdf`);
       } else {
-        downloadResumeHtmlAsDocx(html, `${baseName}.docx`);
+        await downloadResumeContentAsDocx(resume.content, `${baseName}.docx`, baseName);
       }
 
       setDownloadTarget(null);
