@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { formatDate, dateRange, esc, renderIf } from './utils';
+import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
 
 /**
  * Template 2 — Classic Professional
@@ -83,6 +83,14 @@ export function classicProfessional(data: TemplateInput): string {
     .skills-table { width: 100%; border-collapse: collapse; }
     .skills-table td { padding: 3px 0; font-size: 9.5pt; vertical-align: top; }
     .skills-table .cat { font-weight: 700; width: 120px; color: #1a365d; }
+
+    /* Print / PDF: @page owns the margins so every page is identical; the
+     * single-card padding is dropped so page 2+ isn't flush to the edge. */
+    @media print {
+      @page { size: A4; margin: 15mm 18mm; }
+      html, body { margin: 0; padding: 0; }
+      .page { width: auto; min-height: 0; padding: 0; }
+    }
   `;
 
   /* ── Header: candidate_info.name + contact ── */
@@ -149,7 +157,7 @@ export function classicProfessional(data: TemplateInput): string {
           <!-- resume.projects[].title, .link -->
           <div>
             <span class="proj-title">${esc(proj.title)}</span>
-            ${proj.link ? `<a class="proj-link" href="${esc(proj.link)}">${esc(proj.link)}</a>` : ''}
+            ${(l => l ? `<a class="proj-link" href="${esc(l.href)}">${esc(l.text)}</a>` : '')(linkParts(proj.link))}
           </div>
           <!-- resume.projects[].bullets[] -->
           <ul>${proj.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>

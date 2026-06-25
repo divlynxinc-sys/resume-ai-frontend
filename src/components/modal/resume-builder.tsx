@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Download, ChevronDown, X } from "lucide-react";
 import { renderTemplate } from "@/lib/resume-templates";
-import { downloadResumeHtmlAsPdf } from "@/lib/resume-export";
+import { downloadResumeHtmlAsPdf, downloadTemplateInputAsDocx } from "@/lib/resume-export";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
@@ -12,6 +12,7 @@ import { useToast } from "@/contexts/ToastContext";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
+  resolveProjectFromSection,
   readResumeDraft,
   writeResumeDraft,
   type ResumeData,
@@ -249,14 +250,15 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
       const projects = sections
         .filter((sec) => (sec.title ?? "").toLowerCase().includes("project"))
         .map((sec) => {
-          const bullets = (sec.content ?? "")
-            .split("\n")
+          const { url, label, bullets: rawBullets } = resolveProjectFromSection(sec);
+          const bullets = rawBullets
             .map((line) => line.replace(/^(\-|\*|•|\d+\.)\s*/g, "").trim())
             .filter(Boolean);
 
           return {
             title: sec.title || "Project",
-            link: "",
+            link: url,
+            link_label: label || undefined,
             bullets,
           };
         });
@@ -657,6 +659,16 @@ function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r
               <Label>Project Details</Label>
               <TextArea value={sec.content} onChange={(v) => updateSection(idx, { content: v })} rows={6} placeholder="Describe your role, tools, and measurable outcomes." />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Project Link (URL)</Label>
+                <TextInput value={sec.link ?? ""} onChange={(v) => updateSection(idx, { link: v })} placeholder="https://github.com/you/project" />
+              </div>
+              <div>
+                <Label>Link Display Text (optional)</Label>
+                <TextInput value={sec.linkLabel ?? ""} onChange={(v) => updateSection(idx, { linkLabel: v })} placeholder="e.g., Chatbot — GitHub" />
+              </div>
+            </div>
           </div>
           <div className="mt-3 flex justify-end">
             <button className="text-sm rounded-md border border-white/20 px-3 py-1 hover:bg-white/[0.06]" onClick={() => removeSection(idx)}>Remove</button>
@@ -698,29 +710,12 @@ async function downloadResumePdf(resume: ResumeData, fileName: string, templateS
   await downloadResumeHtmlAsPdf(html, `${resolvedResumeFileName(fileName, resume)}.pdf`);
 }
 
-function downloadResumeDocx(resume: ResumeData, fileName: string, templateSlug: string): void {
-  const html = buildResumeHtmlForPdf(resume, templateSlug);
-  const headContent = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? "";
-  const bodyContent = html.replace(/^[\s\S]*?<body[^>]*>/i, "").replace(/<\/body>[\s\S]*$/i, "");
-  const wordHtml =
-    '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-    'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-    '<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">' +
-    "<title>Resume</title>" +
-    headContent +
-    "<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom>" +
-    "<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->" +
-    "</head><body>" +
-    bodyContent +
-    "</body></html>";
-
-  const blob = new Blob(["\uFEFF", wordHtml], { type: "application/msword" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${resolvedResumeFileName(fileName, resume)}.doc`;
-  a.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+async function downloadResumeDocx(resume: ResumeData, fileName: string, templateSlug: string): Promise<void> {
+  // Real OOXML .docx (with selectable text + real hyperlinks) from the backend,
+  // matching the My Resumes export. Replaces the old client-side HTML-as-.doc
+  // blob, which Word opened with a format-mismatch warning.
+  void templateSlug;
+  await downloadTemplateInputAsDocx(toTemplateInput(resume), `${resolvedResumeFileName(fileName, resume)}.docx`);
 }
 
 function CompletedResumeModal({
@@ -734,12 +729,29 @@ function CompletedResumeModal({
   templateSlug: string;
   onClose: () => void;
 }) {
+  const { showToast } = useToast();
+  const [busy, setBusy] = useState<"pdf" | "docx" | null>(null);
+
   const handlePdf = async () => {
-    await downloadResumePdf(resume, fileName, templateSlug);
+    setBusy("pdf");
+    try {
+      await downloadResumePdf(resume, fileName, templateSlug);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download PDF. Please try again.", "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
-  const handleDocx = () => {
-    downloadResumeDocx(resume, fileName, templateSlug);
+  const handleDocx = async () => {
+    setBusy("docx");
+    try {
+      await downloadResumeDocx(resume, fileName, templateSlug);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download Word file. Please try again.", "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -763,18 +775,20 @@ function CompletedResumeModal({
           <button
             type="button"
             onClick={handlePdf}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white transition-opacity"
+            disabled={busy !== null}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white transition-opacity disabled:opacity-60"
           >
             <Download className="size-4" />
-            Download PDF
+            {busy === "pdf" ? "Preparing…" : "Download PDF"}
           </button>
           <button
             type="button"
             onClick={handleDocx}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] transition-colors hover:bg-[var(--app-surface-2)]"
+            disabled={busy !== null}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-fg)] transition-colors hover:bg-[var(--app-surface-2)] disabled:opacity-60"
           >
             <Download className="size-4" />
-            Download DOCX
+            {busy === "docx" ? "Preparing…" : "Download DOCX"}
           </button>
         </div>
       </div>
@@ -807,6 +821,7 @@ function ResumePreview({
   const pct = Math.min(100, Math.max(0, displayedScore));
   const dashOffset = circumference - (pct / 100) * circumference;
   const lift = score != null && initialScore != null ? score - initialScore : null;
+  const { showToast } = useToast();
   const [downloadOpen, setDownloadOpen] = useState(false);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -835,12 +850,20 @@ function ResumePreview({
 
   const handleDownloadPdf = async () => {
     setDownloadOpen(false);
-    await downloadResumePdf(resume, fileName, templateSlug);
+    try {
+      await downloadResumePdf(resume, fileName, templateSlug);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download PDF. Please try again.", "error");
+    }
   };
 
   const handleDownloadDocx = async () => {
     setDownloadOpen(false);
-    downloadResumeDocx(resume, fileName, templateSlug);
+    try {
+      await downloadResumeDocx(resume, fileName, templateSlug);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download Word file. Please try again.", "error");
+    }
   };
 
   return (

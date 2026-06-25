@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { formatDate, dateRange, esc, renderIf } from './utils';
+import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
 
 /**
  * Template 4 — Compact Single-Column
@@ -64,6 +64,14 @@ export function compactSingleColumn(data: TemplateInput): string {
     .skill-line { font-size: 8.5pt; margin-bottom: 2px; }
     .skill-cat { font-weight: 700; }
     p { font-size: 8.5pt; }
+
+    /* Print / PDF: @page owns the margins so every page is identical; the
+     * single-card padding is dropped so page 2+ isn't flush to the edge. */
+    @media print {
+      @page { size: A4; margin: 9mm 12mm; }
+      html, body { margin: 0; padding: 0; }
+      .page { width: auto; min-height: 0; padding: 0; }
+    }
   `;
 
   /* ── Header: candidate_info.name + compact contact ── */
@@ -109,7 +117,7 @@ export function compactSingleColumn(data: TemplateInput): string {
         <div class="proj-block">
           <!-- resume.projects[].title, .link -->
           <span class="proj-title">${esc(proj.title)}</span>
-          ${proj.link ? `<a class="proj-link" href="${esc(proj.link)}">${esc(proj.link)}</a>` : ''}
+          ${(l => l ? `<a class="proj-link" href="${esc(l.href)}">${esc(l.text)}</a>` : '')(linkParts(proj.link))}
           <!-- resume.projects[].bullets[] -->
           <ul>${proj.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
         </div>

@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { formatDate, dateRange, esc, renderIf } from './utils';
+import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
 
 /**
  * Template 5 — Creative Bold Design
@@ -88,6 +88,22 @@ export function creativeBold(data: TemplateInput): string {
       font-size: 8.5pt; font-weight: 600; padding: 2px 10px; border-radius: 12px;
       margin: 0 4px 4px 0;
     }
+
+    /* Print / PDF pagination. The on-screen design is full-bleed (dark banner
+     * edge-to-edge, @page margin 0), but full-bleed can't keep consistent
+     * margins across pages — page 2+ ended up flush to the paper edge and the
+     * dark <html> background bled in at the bottom of the last page. For the
+     * PDF we switch to uniform @page margins (every page identical) and render
+     * the dark header as an inset band on a white page. */
+    @media print {
+      @page { size: A4; margin: 12mm 14mm; }
+      /* !important is required: the template sets a dark background inline on
+       * <html>, and inline styles otherwise beat this rule — which let the dark
+       * page background bleed into the empty area below the content. */
+      html, body { width: auto; min-height: 0; background: #fff !important; }
+      .banner { padding: 22px 24px 20px; border-radius: 6px; }
+      .body { padding: 14px 0 0; }
+    }
   `;
 
   /* ── Banner: candidate_info.name + contact with icons ── */
@@ -141,7 +157,7 @@ export function creativeBold(data: TemplateInput): string {
           <!-- resume.projects[].title, .link -->
           <div>
             <span class="proj-title">${esc(proj.title)}</span>
-            ${proj.link ? `<a class="proj-link" href="${esc(proj.link)}">${esc(proj.link)}</a>` : ''}
+            ${(l => l ? `<a class="proj-link" href="${esc(l.href)}">${esc(l.text)}</a>` : '')(linkParts(proj.link))}
           </div>
           <!-- resume.projects[].bullets[] -->
           <ul>${proj.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
