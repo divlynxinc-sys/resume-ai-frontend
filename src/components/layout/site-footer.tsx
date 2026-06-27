@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+//import logoIcon from "../../assets/logo-icon-indigo.png";
+import secondaryLogo from "../../assets/secondary.png";
 
 function Brand() {
   return (
@@ -9,12 +10,20 @@ function Brand() {
         aria-label="Jobsynk AI — go to home"
         className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-md w-fit"
       >
-        <img
-          src={resumeLogo}
-          alt="Jobsynk AI Logo"
-          className="h-10 w-10 rounded-md"
-        />
-        <span className="text-white text-2xl font-black tracking-tight">Jobsynk AI</span>
+        {/*<span className="relative size-10 shrink-0 overflow-hidden" aria-hidden="true">
+          <img
+            src={logoIcon}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-[4.75rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>*/}
+        <span className="relative h-10 w-36 overflow-hidden" aria-hidden="true">
+          <img
+            src={secondaryLogo}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-48 max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
       </Link>
 
       <p className="text-white/60 text-sm mt-4 max-w-[280px] leading-relaxed">

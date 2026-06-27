@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+import secondaryLogo from "../../assets/secondary.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -167,9 +167,12 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
           className="flex items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
           aria-label="Jobsynk AI — go to home"
         >
-          <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-8 w-8 rounded-lg" />
-          <span className="font-display text-xl text-[var(--app-fg)] tracking-tight">
-            Jobsynk <span className="italic font-light">AI</span>
+          <span className="relative h-9 w-44 overflow-hidden" aria-hidden="true">
+            <img
+              src={secondaryLogo}
+              alt=""
+              className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+            />
           </span>
         </button>
 

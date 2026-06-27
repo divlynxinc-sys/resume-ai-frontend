@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+import secondaryLogo from "../../assets/secondary.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { authService } from "@/services/auth";
@@ -14,8 +14,13 @@ function BrandBar() {
   return (
     <div className="h-16 flex items-center justify-between px-6">
       <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-8 w-8 rounded-md" />
-        <span className="text-white text-xl font-black tracking-tight">Jobsynk AI</span>
+        <span className="relative h-9 w-44 overflow-hidden" aria-hidden="true">
+          <img
+            src={secondaryLogo}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
       </Link>
       <Link
         to="/"

@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+import secondaryLogo from "../../assets/secondary.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
@@ -21,7 +21,13 @@ function TopLogo() {
         aria-label="Jobsynk AI — go to home"
         className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
       >
-        <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-5" />
+        <span className="relative mb-5 block h-9 w-44 overflow-hidden" aria-hidden="true">
+          <img
+            src={secondaryLogo}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
       </Link>
       <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
         Welcome <span className="italic">back</span>
