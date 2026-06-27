@@ -118,12 +118,16 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
       throw err;
     }
 
+    const fallbackMessage =
+      res.status === 404
+        ? "API endpoint not found. Check the backend URL or deployment."
+        : `Request failed (${res.status})`;
     const msg =
       typeof data?.detail === "string"
         ? data.detail
         : Array.isArray(data?.detail)
-        ? (data.detail[0] as any)?.msg ?? "Request failed"
-        : "Request failed";
+        ? (data.detail[0] as any)?.msg ?? fallbackMessage
+        : fallbackMessage;
     throw new Error(msg);
   }
 

@@ -13,9 +13,9 @@ interface AuthContextValue {
   user: UserProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  googleLogin: (credential: string) => Promise<{ is_new_user: boolean }>;
+  googleLogin: (credential: string, turnstileToken: string) => Promise<{ is_new_user: boolean }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser().finally(() => setIsLoading(false));
   }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
-    const { access_token, refresh_token } = await authService.login(email, password);
+  const login = async (email: string, password: string, turnstileToken: string) => {
+    const { access_token, refresh_token } = await authService.login(email, password, turnstileToken);
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
     await refreshUser();
@@ -76,8 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUser();
   };
 
-  const googleLogin = async (credential: string) => {
-    const { access_token, refresh_token, is_new_user } = await authService.googleAuth(credential);
+  const googleLogin = async (credential: string, turnstileToken: string) => {
+    const { access_token, refresh_token, is_new_user } = await authService.googleAuth(credential, turnstileToken);
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
     await refreshUser();

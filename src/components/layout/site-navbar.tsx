@@ -177,6 +177,15 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
 
         {/* Right: actions */}
         <div className="flex items-center gap-4 ml-auto relative">
+          {marketingMode && (
+            <button
+              type="button"
+              onClick={() => navigate("/signup")}
+              className="h-9 rounded-lg bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
+            >
+              Start free
+            </button>
+          )}
 
           {/* Theme toggle — always visible */}
           <button
