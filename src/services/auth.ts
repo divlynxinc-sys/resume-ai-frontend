@@ -23,14 +23,14 @@ export interface OtpVerifyResponse {
 }
 
 export const authService = {
-  login: (email: string, password: string) =>
-    api.post<LoginResponse>("/auth/login", { email, password }),
+  login: (email: string, password: string, turnstile_token: string) =>
+    api.post<LoginResponse>("/auth/login", { email, password, turnstile_token }),
 
   signup: (name: string, email: string, password: string) =>
     api.post<LoginResponse>("/auth/signup", { name, email, password }),
 
-  signupSendOtp: (email: string) =>
-    api.post<OtpSendResponse>("/auth/signup/send-otp", { email }),
+  signupSendOtp: (email: string, turnstile_token = "") =>
+    api.post<OtpSendResponse>("/auth/signup/send-otp", { email, turnstile_token }),
 
   signupVerifyOtp: (email: string, otp_code: string) =>
     api.post<OtpVerifyResponse>("/auth/signup/verify-otp", { email, otp_code }),
@@ -40,6 +40,6 @@ export const authService = {
 
   logoutAll: () => api.post<{ message: string }>("/auth/logout-all"),
 
-  googleAuth: (credential: string) =>
-    api.post<LoginResponse>("/auth/google", { credential }),
+  googleAuth: (credential: string, turnstile_token: string) =>
+    api.post<LoginResponse>("/auth/google", { credential, turnstile_token }),
 };

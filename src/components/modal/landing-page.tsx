@@ -1,12 +1,175 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ArrowRight, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
+import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { AppButtonLink } from "@/components/ui/AppButton";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import { PricingSection } from "./pricing";
 import { TailoringSection } from "./tailoring";
 import { TemplatesShowingSection } from "./templates-showing";
+
+type ResumePreviewTone = "blue" | "lavender" | "warm";
+
+function MiniResumeSheet({
+  name,
+  role,
+  tone = "blue",
+  className = "",
+}: {
+  name: string;
+  role: string;
+  tone?: ResumePreviewTone;
+  className?: string;
+}) {
+  const tones: Record<ResumePreviewTone, string> = {
+    blue: "from-[#f4f8ff] via-white to-white border-[#d9e4f6]",
+    lavender: "from-[#f8f3ff] via-white to-white border-[#eadcf7]",
+    warm: "from-[#fbfaf4] via-white to-white border-[#e9e5d8]",
+  };
+
+  const skills =
+    tone === "warm"
+      ? ["Roadmaps", "Analytics", "SQL", "Strategy"]
+      : tone === "lavender"
+      ? ["Figma", "Research", "Systems", "Testing"]
+      : ["React", "Python", "APIs", "Cloud"];
+
+  return (
+    <article
+      aria-hidden
+      className={`absolute w-[265px] sm:w-[335px] md:w-[390px] aspect-[0.72] overflow-hidden rounded-lg border bg-gradient-to-br ${tones[tone]} px-6 py-7 text-left shadow-[0_28px_70px_rgba(26,26,26,0.12)] ${className}`}
+    >
+      <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 pb-4">
+        <div className="min-w-0 pr-2">
+          <h3 className="text-[16px] font-black tracking-tight text-slate-950">{name}</h3>
+          <p className="mt-1.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {role}
+          </p>
+        </div>
+        <div className="hidden shrink-0 space-y-1 text-right text-[6px] font-medium text-slate-400 sm:block">
+          <p>{name.toLowerCase().replaceAll(" ", ".")}@email.com</p>
+          <p>+1 (555) 789-1011</p>
+          <p>linkedin.com/in/{name.toLowerCase().replaceAll(" ", "-")}</p>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+          Professional Summary
+        </h4>
+        <p className="mt-2 text-[7px] leading-relaxed text-slate-500">
+          Creative and results-driven professional with experience building clear,
+          measurable outcomes across product, teams, and customer-facing work.
+        </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-5">
+        <div>
+          <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+            Skills
+          </h4>
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+            {skills.map((skill) => (
+              <span key={skill} className="text-[6px] font-semibold text-slate-500">
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+            Tools
+          </h4>
+          <div className="mt-2 space-y-1">
+            <div className="h-1.5 w-20 rounded-full bg-slate-200" />
+            <div className="h-1.5 w-16 rounded-full bg-slate-200" />
+            <div className="h-1.5 w-24 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+          Experience
+        </h4>
+        {[0, 1].map((item) => (
+          <div key={item} className="mt-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[8px] font-bold text-slate-800">
+                {item === 0 ? role : "Associate " + role}
+              </p>
+              <span className="text-[6px] text-slate-400">2021 - Present</span>
+            </div>
+            <p className="mt-1 text-[6px] font-semibold text-slate-500">BrightWorks Studio</p>
+            <ul className="mt-2 space-y-1.5 text-[6px] leading-relaxed text-slate-500">
+              <li>Led cross-functional work that improved delivery speed by 24%.</li>
+              <li>Created repeatable systems for clearer planning and reporting.</li>
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        <div className="h-1.5 rounded-full bg-slate-200" />
+        <div className="h-1.5 rounded-full bg-slate-200" />
+        <div className="h-1.5 rounded-full bg-slate-200" />
+      </div>
+    </article>
+  );
+}
+
+function HeroResumeStack() {
+  return (
+    <div
+      className="relative mx-auto mt-7 h-[345px] w-full max-w-7xl overflow-hidden sm:h-[405px] md:h-[505px]"
+      style={{
+        WebkitMaskImage: "linear-gradient(to bottom, black 88%, transparent 100%)",
+        maskImage: "linear-gradient(to bottom, black 88%, transparent 100%)",
+      }}
+    >
+      <style>{`
+        .resume-stack-left {
+          transform: translateX(-154%) translateY(54px) rotate(-5deg) scale(0.94);
+          opacity: 0.72;
+          z-index: 1;
+        }
+
+        .resume-stack-center {
+          transform: translateX(-50%) translateY(0) rotate(0deg) scale(1);
+          opacity: 1;
+          z-index: 3;
+        }
+
+        .resume-stack-right {
+          transform: translateX(54%) translateY(54px) rotate(5deg) scale(0.94);
+          opacity: 0.72;
+          z-index: 1;
+        }
+
+      `}</style>
+      <div className="resume-stack absolute inset-0">
+        <div className="pointer-events-none absolute inset-x-8 bottom-8 h-32 rounded-[50%] bg-[rgba(91,108,219,0.10)] blur-3xl" />
+        <MiniResumeSheet
+          name="John Smith"
+          role="Software Engineer"
+          tone="blue"
+          className="resume-sheet resume-stack-left left-1/2 top-3 hidden md:block"
+        />
+        <MiniResumeSheet
+          name="Hello, I'm Michael Davis"
+          role="Product Manager"
+          tone="warm"
+          className="resume-sheet resume-stack-right left-1/2 top-3 hidden md:block"
+        />
+        <MiniResumeSheet
+          name="Emily Johnson"
+          role="Product Designer"
+          tone="lavender"
+          className="resume-sheet resume-stack-center left-1/2 top-0"
+        />
+      </div>
+    </div>
+  );
+}
 
 function Hero() {
   const [entered, setEntered] = useState(false);
@@ -17,20 +180,15 @@ function Hero() {
   return (
     <section
       id="landing-hero"
-      className={`px-6 pt-16 pb-8 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`px-6 pt-6 pb-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         entered ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}>
-      <div className="relative max-w-5xl mx-auto">
+      <div className="relative max-w-7xl mx-auto">
         {/* Soft pastel ambient blobs */}
         <div aria-hidden className="pointer-events-none absolute -top-10 -left-10 size-72 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-60" />
         <div aria-hidden className="pointer-events-none absolute -bottom-16 -right-10 size-80 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
 
-        <div className="relative text-center py-12 lg:py-20">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] px-3 py-1 text-xs font-medium mb-6 border border-[var(--app-border)]">
-            <Sparkles className="size-3.5" />
-            AI-tailored resumes in minutes
-          </div>
-
+        <div className="relative text-center py-5 lg:py-8">
           <h1 className="font-display text-5xl md:text-7xl font-light tracking-tight text-[var(--app-fg)] leading-[1.05]">
             Craft a resume that
             <br />
@@ -42,19 +200,7 @@ function Hero() {
             so you stand out without spending the weekend on it.
           </p>
 
-          <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
-            <AppButtonLink to="/signup" variant="primary" size="lg" className="group">
-              Start free
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </AppButtonLink>
-            <AppButtonLink to="/templates" variant="secondary" size="lg">
-              Browse templates
-            </AppButtonLink>
-          </div>
-
-          <p className="mt-5 text-xs text-[var(--app-fg-soft)]">
-            Free forever · No credit card required
-          </p>
+          <HeroResumeStack />
         </div>
       </div>
     </section>

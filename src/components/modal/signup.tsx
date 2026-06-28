@@ -3,18 +3,24 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+import secondaryLogo from "../../assets/secondary.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { authService } from "@/services/auth";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 function BrandBar() {
   return (
     <div className="h-16 flex items-center justify-between px-6">
       <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-8 w-8 rounded-md" />
-        <span className="text-white text-xl font-black tracking-tight">Jobsynk AI</span>
+        <span className="relative h-9 w-44 overflow-hidden" aria-hidden="true">
+          <img
+            src={secondaryLogo}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
       </Link>
       <Link
         to="/"
@@ -322,15 +328,21 @@ export default function Signup() {
 
   const handleGoogleSuccess = async (accessToken: string) => {
     setError("");
+    if (!turnstileToken) {
+      setError("Please complete the security verification.");
+      return;
+    }
     setStatus("loading");
     try {
-      const { is_new_user } = await googleLogin(accessToken);
+      const { is_new_user } = await googleLogin(accessToken, turnstileToken);
       showToast(is_new_user ? "Account created successfully!" : "Logged in successfully!");
       navigate(authSuccessPath);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Google signup failed.");
       showToast(msg, "error");
       setError(msg);
+      setTurnstileToken(null);
+      setTurnstileKey((key) => key + 1);
     } finally {
       setStatus("idle");
     }
@@ -345,6 +357,8 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "otp" | "completing">("form");
   const [credentialFieldsUnlocked, setCredentialFieldsUnlocked] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const allPasswordRulesPassed = passwordRules.every((r) => r.test(password));
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -358,13 +372,16 @@ export default function Signup() {
     if (!password) { setError("Password is required."); return; }
     if (!allPasswordRulesPassed) { setError("Password does not meet all requirements."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
+    if (!turnstileToken) { setError("Please complete the security verification."); return; }
 
     setStatus("loading");
     try {
-      await authService.signupSendOtp(email);
+      await authService.signupSendOtp(email, turnstileToken);
       setStep("otp");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to send verification code."));
+      setTurnstileToken(null);
+      setTurnstileKey((key) => key + 1);
     } finally {
       setStatus("idle");
     }
@@ -475,7 +492,7 @@ export default function Signup() {
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setCredentialFieldsUnlocked(true)}
                       readOnly={!credentialFieldsUnlocked}
-                      disabled={status === "loading"}
+                      disabled={status === "loading" || !turnstileToken}
                       className="w-full rounded-lg bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 text-sm placeholder:text-white/30 outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                     />
                   </div>
@@ -509,13 +526,20 @@ export default function Signup() {
                     </div>
                   )}
 
+                  <TurnstileWidget
+                    key={turnstileKey}
+                    action="signup"
+                    onVerify={setTurnstileToken}
+                    onError={setError}
+                  />
+
                   {error ? <div className="text-xs text-red-400">{error}</div> : null}
 
                   <div className="pt-2 flex items-center justify-between gap-4 flex-wrap">
                     <button
                       className="min-w-48 flex-1 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-white text-sm font-medium hover:bg-[var(--accent-hover)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent)]"
                       onClick={handleSendOtp}
-                      disabled={status === "loading"}
+                      disabled={status === "loading" || !turnstileToken}
                     >
                       {status === "loading" ? "Sending verification code…" : "Create Account"}
                     </button>

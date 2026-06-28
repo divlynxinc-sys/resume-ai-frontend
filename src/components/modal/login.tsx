@@ -4,9 +4,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import resumeLogo from "../../assets/resume-ai-logo.png";
+import secondaryLogo from "../../assets/secondary.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -20,7 +21,13 @@ function TopLogo() {
         aria-label="Jobsynk AI — go to home"
         className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
       >
-        <img src={resumeLogo} alt="Jobsynk AI Logo" className="h-11 w-11 rounded-lg mb-5" />
+        <span className="relative mb-5 block h-9 w-44 overflow-hidden" aria-hidden="true">
+          <img
+            src={secondaryLogo}
+            alt=""
+            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
       </Link>
       <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
         Welcome <span className="italic">back</span>
@@ -56,6 +63,8 @@ export default function LoginScreen() {
   const [error, setError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const { login, googleLogin, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -67,12 +76,18 @@ export default function LoginScreen() {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setError("");
+      if (!turnstileToken) {
+        setError("Please complete the security verification.");
+        return;
+      }
       setStatus("loading");
       try {
-        await googleLogin(tokenResponse.access_token);
+        await googleLogin(tokenResponse.access_token, turnstileToken);
         navigate(authSuccessPath());
       } catch (err: unknown) {
         setError(getErrorMessage(err, "Google login failed"));
+        setTurnstileToken(null);
+        setTurnstileKey((key) => key + 1);
       } finally {
         setStatus("idle");
       }
@@ -103,6 +118,10 @@ export default function LoginScreen() {
       setError("Please fix the errors above.");
       return;
     }
+    if (!turnstileToken) {
+      setError("Please complete the security verification.");
+      return;
+    }
     setStatus("loading");
     try {
       // Temporary dev bypass — remove once DB integration is live
@@ -113,10 +132,12 @@ export default function LoginScreen() {
         navigate(authSuccessPath());
         return;
       }
-      await login(email, password);
+      await login(email, password, turnstileToken);
       navigate(authSuccessPath());
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed."));
+      setTurnstileToken(null);
+      setTurnstileKey((key) => key + 1);
     } finally {
       setStatus("idle");
     }
@@ -205,12 +226,22 @@ export default function LoginScreen() {
                 <Link to="/forgot-password" className="text-xs text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Forgot your password?</Link>
               </div>
 
+              <div className="mt-4">
+                <TurnstileWidget
+                  key={turnstileKey}
+                  action="login"
+                  onVerify={setTurnstileToken}
+                  onError={setError}
+                />
+              </div>
+
               {error ? <div className="mt-2 text-xs text-red-400">{error}</div> : null}
 
               <button
                 type="submit"
                 disabled={
                   status === "loading" ||
+                  !turnstileToken ||
                   !!validateEmailField(email) ||
                   !!validatePasswordField(password)
                 }
@@ -225,7 +256,7 @@ export default function LoginScreen() {
                 <button
                   type="button"
                   onClick={() => handleGoogleLogin()}
-                  disabled={status === "loading"}
+                  disabled={status === "loading" || !turnstileToken}
                   className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-colors"
                 >
                   <span className="text-xl"><FcGoogle /></span>
