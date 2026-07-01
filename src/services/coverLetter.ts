@@ -61,6 +61,23 @@ export const coverLetterService = {
               detail: { path: "/cover-letter/generate", message: detail },
             }),
           );
+        } else if (
+          res.status === 429 &&
+          data?.detail &&
+          typeof data.detail === "object" &&
+          data.detail.code === "usage_limit_reached"
+        ) {
+          detail = data.detail.message || "Weekly limit reached";
+          window.dispatchEvent(
+            new CustomEvent("usage-limit-reached", {
+              detail: {
+                path: "/cover-letter/generate",
+                message: detail,
+                resetsAt: data.detail.resets_at,
+                feature: data.detail.feature,
+              },
+            }),
+          );
         } else {
           detail = typeof data.detail === "string" ? data.detail : detail;
         }

@@ -35,6 +35,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [modalReason, setModalReason] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Hidden weekly usage cap (backend 429). Distinct from the upgrade modal —
+  // paid users hit this too, so there's no upgrade CTA.
+  const [usageModalOpen, setUsageModalOpen] = useState(false);
+  const [usageMessage, setUsageMessage] = useState<string | null>(null);
+  const [usageResetsAt, setUsageResetsAt] = useState<string | null>(null);
+
   // Track in a ref so the global `upgrade-required` listener (defined once) always
   // sees the latest value without re-binding on every isPaid change.
   const isPaidRef = useRef(false);
@@ -102,6 +108,18 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("upgrade-required", onUpgradeRequired);
   }, []);
 
+  // Listen to backend-driven 429s (hidden weekly usage cap) and surface the modal.
+  useEffect(() => {
+    const onUsageLimit = (e: Event) => {
+      const detail = (e as CustomEvent<{ message?: string; resetsAt?: string }>).detail;
+      setUsageMessage(detail?.message ?? null);
+      setUsageResetsAt(detail?.resetsAt ?? null);
+      setUsageModalOpen(true);
+    };
+    window.addEventListener("usage-limit-reached", onUsageLimit);
+    return () => window.removeEventListener("usage-limit-reached", onUsageLimit);
+  }, []);
+
   const openUpgradeModal = useCallback((reason?: string) => {
     setModalReason(reason ?? null);
     setModalOpen(true);
@@ -124,6 +142,15 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       {modalOpen &&
         createPortal(
           <UpgradeModal reason={modalReason} onClose={() => setModalOpen(false)} />,
+          document.body,
+        )}
+      {usageModalOpen &&
+        createPortal(
+          <UsageLimitModal
+            message={usageMessage}
+            resetsAt={usageResetsAt}
+            onClose={() => setUsageModalOpen(false)}
+          />,
           document.body,
         )}
     </PlanContext.Provider>
@@ -225,6 +252,79 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
           >
             View plans
           </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Usage-limit modal ────────────────────────────────────────────────────────────
+
+/** Turn an ISO `resets_at` into a soft, user-friendly hint (never exact tokens). */
+function formatResetHint(resetsAt: string | null): string | null {
+  if (!resetsAt) return null;
+  const ts = new Date(resetsAt).getTime();
+  if (Number.isNaN(ts)) return null;
+  const ms = ts - Date.now();
+  if (ms <= 0) return "You can try again now.";
+  const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+  return days <= 1 ? "It resets within a day." : `It resets in about ${days} days.`;
+}
+
+function UsageLimitModal({
+  message,
+  resetsAt,
+  onClose,
+}: {
+  message: string | null;
+  resetsAt: string | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const resetHint = formatResetHint(resetsAt);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="w-full max-w-md rounded-2xl p-6 text-left"
+        style={{
+          backgroundColor: "var(--app-surface)",
+          border: "1px solid var(--app-border)",
+          boxShadow: "var(--shadow-pop)",
+          color: "var(--app-fg)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold">You're going fast! 🚀</h3>
+        <p className="mt-3 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+          {message ||
+            "You've reached your weekly limit for this feature. Please try again in a few days."}
+        </p>
+        {resetHint && (
+          <p className="mt-2 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+            {resetHint}
+          </p>
+        )}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white"
+            style={{ backgroundColor: "var(--accent)" }}
+          >
+            Got it
+          </button>
         </div>
       </div>
     </div>

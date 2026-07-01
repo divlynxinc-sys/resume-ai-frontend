@@ -49,7 +49,26 @@ export const hrEmailDraftsService = {
       let detail = `Request failed (${res.status})`;
       try {
         const data = await res.json();
-        detail = typeof data.detail === "string" ? data.detail : detail;
+        if (
+          res.status === 429 &&
+          data?.detail &&
+          typeof data.detail === "object" &&
+          data.detail.code === "usage_limit_reached"
+        ) {
+          detail = data.detail.message || "Weekly limit reached";
+          window.dispatchEvent(
+            new CustomEvent("usage-limit-reached", {
+              detail: {
+                path: "/hr-email-drafts/generate",
+                message: detail,
+                resetsAt: data.detail.resets_at,
+                feature: data.detail.feature,
+              },
+            }),
+          );
+        } else {
+          detail = typeof data.detail === "string" ? data.detail : detail;
+        }
       } catch {
         /* non-JSON error body */
       }
