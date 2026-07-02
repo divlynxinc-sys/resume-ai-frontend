@@ -1,134 +1,263 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { BarChart3, CheckCircle2, Cookie, Megaphone, Settings2, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
+import SiteFooter from "../layout/site-footer";
 
+const COOKIE_PREFERENCES_KEY = "jobsynk.cookiePreferences";
 
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl bg-white/5 border border-white/12 shadow-[0_12px_40px_rgba(0,0,0,0.35)] p-6 ${className}`}>{children}</div>
-  );
+type Preferences = {
+  performance: boolean;
+  functional: boolean;
+  targeting: boolean;
+};
+
+const DEFAULT_PREFERENCES: Preferences = {
+  performance: false,
+  functional: false,
+  targeting: false,
+};
+
+function getSavedPreferences(): Preferences {
+  try {
+    const saved = localStorage.getItem(COOKIE_PREFERENCES_KEY);
+    if (!saved) return DEFAULT_PREFERENCES;
+    const parsed = JSON.parse(saved) as Partial<Preferences>;
+    return {
+      performance: Boolean(parsed.performance),
+      functional: Boolean(parsed.functional),
+      targeting: Boolean(parsed.targeting),
+    };
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
 }
 
-function CookieIconLarge() {
-  return <span className="text-2xl align-middle">🍪</span>;
-}
-
-function Switch({ checked, onChange }: { checked: boolean; onChange: (val: boolean) => void }) {
+function PreferenceSwitch({
+  checked,
+  onChange,
+  disabled = false,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  label: string;
+}) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-label={label}
+      aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex w-10 h-6 rounded-full transition-colors border ${
-        checked ? "bg-[#2b5bd9] border-[#2b5bd9]" : "bg-white/12 border-white/20"
-      }`}
-      aria-pressed={checked}
+      className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--app-surface)] ${
+        checked
+          ? "border-[var(--accent)] bg-[var(--accent)]"
+          : "border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)]"
+      } ${disabled ? "cursor-not-allowed opacity-80" : "cursor-pointer"}`}
     >
       <span
-        className={`absolute top-1/2 -translate-y-1/2 left-[4px] size-4 rounded-full bg-white transition-all ${
-          checked ? "translate-x-[16px]" : "translate-x-0"
-        }`}
+        className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-0"}`}
       />
     </button>
   );
 }
 
-function ToggleRow({ title, desc, checked, onChange }: { title: string; desc: string; checked: boolean; onChange: (val: boolean) => void }) {
+function PreferenceRow({
+  icon,
+  title,
+  description,
+  checked,
+  onChange,
+  required = false,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  required?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between py-3">
-      <div className="max-w-[640px]">
-        <div className="text-white font-semibold text-sm">{title}</div>
-        <p className="text-white/60 text-sm mt-1">{desc}</p>
+    <div className="flex items-start justify-between gap-5 border-b border-[var(--app-border)] py-5 last:border-b-0">
+      <div className="flex min-w-0 gap-4">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+          {icon}
+        </span>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-medium text-[var(--app-fg)] sm:text-base">{title}</h3>
+            {required && (
+              <span className="rounded-full bg-[var(--pastel-mint)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#3F8E5C]">
+                Always active
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 text-sm leading-6 text-[var(--app-fg-muted)]">{description}</p>
+        </div>
       </div>
-      <Switch checked={checked} onChange={onChange} />
+      <PreferenceSwitch checked={checked} onChange={onChange} disabled={required} label={`${title} cookies`} />
     </div>
   );
 }
 
-import { useState } from "react";
-
 export default function CookiePolicyScreen() {
-  const [perf, setPerf] = useState(false);
-  const [func, setFunc] = useState(false);
-  const [targeting, setTargeting] = useState(false);
+  const [preferences, setPreferences] = useState<Preferences>(getSavedPreferences);
+  const [saved, setSaved] = useState(false);
+
+  const persistPreferences = (next: Preferences) => {
+    setPreferences(next);
+    localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(next));
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 3000);
+  };
+
+  const updatePreference = (key: keyof Preferences, checked: boolean) => {
+    setPreferences((current) => ({ ...current, [key]: checked }));
+    setSaved(false);
+  };
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white">
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
-      <main className="max-w-[1000px] mx-auto px-6 py-10">
-        <Card className="">
-          {/* Header */}
-          <div className="flex items-center gap-2">
-            <div className="size-7 grid place-items-center text-cyan-300">
-              <CookieIconLarge />
+
+      <main>
+        <section className="relative overflow-hidden px-6 pb-14 pt-16 text-center sm:pt-20">
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div className="absolute -left-32 -top-40 size-96 rounded-full bg-[var(--pastel-lavender)] opacity-40 blur-3xl" />
+            <div className="absolute -right-32 -top-32 size-96 rounded-full bg-[var(--pastel-peach)] opacity-35 blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent-text)]">
+              <Cookie className="size-4" />
+              Privacy preferences
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold">Cookie Policy</h1>
-          </div>
-          <p className="text-white/70 mt-3 text-sm leading-relaxed">
-            This Cookie Policy explains how we use cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are and why we use them, as well as your rights to control our use of them.
-          </p>
-
-          {/* What are cookies */}
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold">What are cookies?</h2>
-            <p className="text-white/70 mt-2 text-sm leading-relaxed">
-              Cookies are small data files that are placed on your computer or mobile device when you visit a website. Cookies are widely used by website owners in order to make their websites work, or to work more efficiently, as well as to provide reporting information.
+            <h1 className="font-display text-4xl font-light tracking-tight text-[var(--app-fg)] sm:text-5xl">
+              Cookie <span className="italic">Policy.</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base">
+              Learn how Jobsynk AI uses cookies and choose which optional technologies you’re comfortable with.
             </p>
+            <p className="mt-3 text-xs text-[var(--app-fg-soft)]">Last updated: July 3, 2026</p>
           </div>
+        </section>
 
-          {/* Why do we use cookies */}
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold">Why do we use cookies?</h2>
-            <p className="text-white/70 mt-2 text-sm leading-relaxed">
-              We use cookies for several reasons. Some cookies are required for technical reasons in order for our website to operate, and we refer to these as 'essential' or 'strictly necessary' cookies. Other cookies enable us to track and target the interests of our users to enhance the experience on our website. Third parties serve cookies through our website for advertising, analytics, and other purposes.
-            </p>
-          </div>
+        <div className="mx-auto max-w-4xl space-y-6 px-6 pb-20">
+          <article className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+            <div className="grid gap-8 md:grid-cols-2">
+              <section>
+                <div className="flex items-center gap-3">
+                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--pastel-butter)] text-[#A07820]">
+                    <Cookie className="size-5" />
+                  </span>
+                  <h2 className="font-display text-2xl font-light text-[var(--app-fg)]">What are cookies?</h2>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-[var(--app-fg-muted)]">
+                  Cookies are small data files stored on your device when you visit a website. They help essential features work, remember preferences, and provide useful information about site performance.
+                </p>
+              </section>
 
-          {/* Consent Panel */}
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold">Cookie Consent Panel</h2>
-            <div className="mt-3 space-y-2">
-              <ToggleRow
-                title="Essential Cookies"
-                desc="These cookies are essential for the website to function and cannot be switched off in our systems."
-                checked={true}
+              <section>
+                <div className="flex items-center gap-3">
+                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--pastel-lavender)] text-[#6A55C7]">
+                    <Settings2 className="size-5" />
+                  </span>
+                  <h2 className="font-display text-2xl font-light text-[var(--app-fg)]">Why we use them</h2>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-[var(--app-fg-muted)]">
+                  Jobsynk AI uses essential cookies to operate securely and optional cookies to understand performance, remember choices, and improve how relevant our experience feels.
+                </p>
+              </section>
+            </div>
+
+            <div className="mt-8 flex gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--accent-soft)] p-4">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[var(--accent-text)]" />
+              <p className="text-sm leading-6 text-[var(--app-fg-muted)]">
+                Essential cookies cannot be disabled because they support security, authentication, and core site functionality. Optional choices can be changed below at any time.
+              </p>
+            </div>
+          </article>
+
+          <section id="cookie-preferences" className="scroll-mt-24 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                <SlidersHorizontal className="size-5" />
+              </span>
+              <div>
+                <h2 className="font-display text-2xl font-light text-[var(--app-fg)]">Manage cookie preferences</h2>
+                <p className="mt-1 text-sm leading-6 text-[var(--app-fg-muted)]">Choose the optional cookies Jobsynk AI may use on this device.</p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <PreferenceRow
+                icon={<ShieldCheck className="size-5" />}
+                title="Essential cookies"
+                description="Required for secure sign-in, navigation, account features, and reliable operation."
+                checked
+                required
                 onChange={() => {}}
               />
-              <ToggleRow
-                title="Performance Cookies"
-                desc="These cookies allow us to count visits and traffic sources so we can measure and improve site performance."
-                checked={perf}
-                onChange={setPerf}
+              <PreferenceRow
+                icon={<BarChart3 className="size-5" />}
+                title="Performance cookies"
+                description="Help us understand visits and feature usage so we can measure and improve performance."
+                checked={preferences.performance}
+                onChange={(checked) => updatePreference("performance", checked)}
               />
-              <ToggleRow
-                title="Functional Cookies"
-                desc="These cookies enable the website to provide enhanced functionality and personalization."
-                checked={func}
-                onChange={setFunc}
+              <PreferenceRow
+                icon={<Settings2 className="size-5" />}
+                title="Functional cookies"
+                description="Remember your preferences and enable a more personalized Jobsynk AI experience."
+                checked={preferences.functional}
+                onChange={(checked) => updatePreference("functional", checked)}
               />
-              <ToggleRow
-                title="Targeting Cookies"
-                desc="These cookies may be set through our site by our advertising partners to build a profile of your interests."
-                checked={targeting}
-                onChange={setTargeting}
+              <PreferenceRow
+                icon={<Megaphone className="size-5" />}
+                title="Targeting cookies"
+                description="Help tailor communications and measure whether campaigns are useful and relevant."
+                checked={preferences.targeting}
+                onChange={(checked) => updatePreference("targeting", checked)}
               />
             </div>
 
-            <div className="mt-6 flex items-center gap-4">
-              <button className="h-11 px-5 rounded-xl bg-[#2b5bd9] text-white text-sm">Accept All</button>
-              <button className="h-11 px-5 rounded-xl bg-white/6 border border-white/12 text-white text-sm">Customize</button>
+            <div className="mt-6 flex flex-wrap gap-3 border-t border-[var(--app-border)] pt-6">
+              <button
+                type="button"
+                onClick={() => persistPreferences({ performance: true, functional: true, targeting: true })}
+                className="h-10 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
+              >
+                Accept all
+              </button>
+              <button
+                type="button"
+                onClick={() => persistPreferences(preferences)}
+                className="h-10 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]"
+              >
+                Save preferences
+              </button>
+              <button
+                type="button"
+                onClick={() => persistPreferences(DEFAULT_PREFERENCES)}
+                className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--btn-secondary-hover)] hover:text-[var(--app-fg)]"
+              >
+                Reject optional
+              </button>
             </div>
-          </div>
-        </Card>
 
-        {/* Footer */}
-        <div className="mt-10 text-center text-white/60 text-xs">
-          <div className="space-x-6">
-            <a href="#" className="hover:text-white">Terms of Service</a>
-            <a href="#" className="hover:text-white">Privacy Policy</a>
-            <a href="#" className="hover:text-white">Cookie Policy</a>
-          </div>
-          <div className="mt-3">© 2024 ResumeAI. All rights reserved.</div>
+            {saved && (
+              <div role="status" className="mt-5 flex items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+                <CheckCircle2 className="size-4" />
+                Your cookie preferences have been saved.
+              </div>
+            )}
+          </section>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -9,16 +9,62 @@ import { TemplatesShowingSection } from "./templates-showing";
 
 type ResumePreviewTone = "blue" | "lavender" | "warm";
 
+function useSequentialTyping(texts: string[], enabled: boolean) {
+  const [fieldIndex, setFieldIndex] = useState(0);
+  const [characterIndex, setCharacterIndex] = useState(0);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    const currentText = texts[fieldIndex];
+    const fieldComplete = characterIndex >= currentText.length;
+    const finalField = fieldIndex === texts.length - 1;
+    const delay = fieldComplete ? (finalField ? 3200 : 1100) : 78;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!fieldComplete) {
+        setCharacterIndex((current) => current + 1);
+      } else if (!finalField) {
+        setFieldIndex((current) => current + 1);
+        setCharacterIndex(0);
+      } else {
+        setFieldIndex(0);
+        setCharacterIndex(0);
+      }
+    }, delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [characterIndex, enabled, fieldIndex, texts]);
+
+  if (!enabled || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return { fieldIndex: -1, values: texts };
+  }
+
+  return {
+    fieldIndex,
+    values: texts.map((text, index) => {
+      if (index < fieldIndex) return text;
+      if (index > fieldIndex) return "";
+      return text.slice(0, characterIndex);
+    }),
+  };
+}
+
 function MiniResumeSheet({
   name,
   role,
   tone = "blue",
   className = "",
+  animated = false,
 }: {
   name: string;
   role: string;
   tone?: ResumePreviewTone;
   className?: string;
+  animated?: boolean;
 }) {
   const tones: Record<ResumePreviewTone, string> = {
     blue: "from-[#f4f8ff] via-white to-white border-[#d9e4f6]",
@@ -33,85 +79,163 @@ function MiniResumeSheet({
       ? ["Figma", "Research", "Systems", "Testing"]
       : ["React", "Python", "APIs", "Cloud"];
 
+  const details = {
+    blue: {
+      summary: "Software engineer delivering reliable web platforms, scalable APIs, and measurable improvements to product performance.",
+      typing: "",
+      tools: ["TypeScript", "GitHub", "PostgreSQL", "AWS"],
+      company: "Northstar Systems",
+      previousCompany: "BrightWorks Studio",
+      school: "University of Washington",
+      degree: "BSc, Computer Science",
+      project: "Developer Analytics Portal",
+      certification: "AWS Cloud Practitioner",
+    },
+    lavender: {
+      summary: "Product designer creating accessible interfaces through research, prototyping, and close collaboration with engineering teams.",
+      typing: "Transforms customer insights into polished experiences that improve activation and long-term retention.",
+      tools: ["Figma", "FigJam", "Maze", "Notion"],
+      company: "CreativeLab Studio",
+      previousCompany: "Lumen Products",
+      school: "California College of the Arts",
+      degree: "BFA, Interaction Design",
+      project: "Mobile Banking Redesign",
+      certification: "NN/g UX Certification",
+    },
+    warm: {
+      summary: "Product manager aligning customer needs, business goals, and delivery teams to launch useful products with confidence.",
+      typing: "",
+      tools: ["Jira", "Amplitude", "Notion", "Looker"],
+      company: "InnovateTech",
+      previousCompany: "NextGen Digital",
+      school: "University of Michigan",
+      degree: "MBA, Product Strategy",
+      project: "Commerce Growth Platform",
+      certification: "Certified Scrum Product Owner",
+    },
+  }[tone];
+
+  const contactName = name.replace("Hello, I'm ", "");
+  const contactSlug = contactName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const displayName = animated ? contactName : name;
+
+  const liveDetails = [
+    displayName,
+    role,
+    details.typing,
+    "Turned customer feedback into a focused quarterly roadmap.",
+    "Launched an end-to-end solution used across three product teams.",
+    `${details.certification} · 2023`,
+  ];
+  const typing = useSequentialTyping(liveDetails, animated);
+  const liveText = (index: number) => animated ? typing.values[index] : liveDetails[index];
+  const cursor = (index: number) => animated && typing.fieldIndex === index ? (
+    <span className="ml-px inline-block font-bold text-[#6a55c7] animate-pulse">|</span>
+  ) : null;
+
   return (
     <article
       aria-hidden
-      className={`absolute w-[265px] sm:w-[335px] md:w-[390px] aspect-[0.72] overflow-hidden rounded-lg border bg-gradient-to-br ${tones[tone]} px-6 py-7 text-left shadow-[0_28px_70px_rgba(26,26,26,0.12)] ${className}`}
+      className={`absolute w-[265px] sm:w-[335px] md:w-[390px] aspect-[0.68] overflow-hidden rounded-lg border bg-gradient-to-br ${tones[tone]} px-6 py-7 text-left shadow-[0_28px_70px_rgba(26,26,26,0.12)] ${className}`}
     >
       <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div className="min-w-0 pr-2">
-          <h3 className="text-[16px] font-black tracking-tight text-slate-950">{name}</h3>
-          <p className="mt-1.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            {role}
+          <h3 className="min-h-[1.2em] text-[19px] font-black tracking-tight text-slate-950">
+            {liveText(0)}{cursor(0)}
+          </h3>
+          <p className="mt-1.5 min-h-[1.2em] text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {liveText(1)}{cursor(1)}
           </p>
         </div>
-        <div className="hidden shrink-0 space-y-1 text-right text-[6px] font-medium text-slate-400 sm:block">
-          <p>{name.toLowerCase().replaceAll(" ", ".")}@email.com</p>
+        <div className="hidden shrink-0 space-y-1 text-right text-[8px] font-medium text-slate-400 sm:block">
+          <p>{contactSlug.replaceAll("-", ".")}@email.com</p>
           <p>+1 (555) 789-1011</p>
-          <p>linkedin.com/in/{name.toLowerCase().replaceAll(" ", "-")}</p>
+          <p>linkedin.com/in/{contactSlug}</p>
         </div>
       </div>
 
       <div className="mt-4">
-        <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+        <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">
           Professional Summary
         </h4>
-        <p className="mt-2 text-[7px] leading-relaxed text-slate-500">
-          Creative and results-driven professional with experience building clear,
-          measurable outcomes across product, teams, and customer-facing work.
+        <p className="mt-2 text-[9px] leading-relaxed text-slate-500">
+          {details.summary}
+          {animated ? (
+            <span className="mt-1 block min-h-[1.8em] text-slate-600">
+              {liveText(2)}{cursor(2)}
+            </span>
+          ) : null}
         </p>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-5">
         <div>
-          <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+          <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">
             Skills
           </h4>
           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
             {skills.map((skill) => (
-              <span key={skill} className="text-[6px] font-semibold text-slate-500">
+              <span key={skill} className="text-[8px] font-semibold text-slate-500">
                 {skill}
               </span>
             ))}
           </div>
         </div>
         <div>
-          <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+          <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">
             Tools
           </h4>
-          <div className="mt-2 space-y-1">
-            <div className="h-1.5 w-20 rounded-full bg-slate-200" />
-            <div className="h-1.5 w-16 rounded-full bg-slate-200" />
-            <div className="h-1.5 w-24 rounded-full bg-slate-200" />
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+            {details.tools.map((tool) => (
+              <span key={tool} className="text-[8px] font-semibold text-slate-500">
+                {tool}
+              </span>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="mt-5">
-        <h4 className="text-[8px] font-extrabold uppercase tracking-wide text-slate-800">
+        <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">
           Experience
         </h4>
         {[0, 1].map((item) => (
           <div key={item} className="mt-3">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-[8px] font-bold text-slate-800">
+              <p className="text-[10px] font-bold text-slate-800">
                 {item === 0 ? role : "Associate " + role}
               </p>
-              <span className="text-[6px] text-slate-400">2021 - Present</span>
+              <span className="text-[8px] text-slate-400">{item === 0 ? "2022 - Present" : "2019 - 2022"}</span>
             </div>
-            <p className="mt-1 text-[6px] font-semibold text-slate-500">BrightWorks Studio</p>
-            <ul className="mt-2 space-y-1.5 text-[6px] leading-relaxed text-slate-500">
-              <li>Led cross-functional work that improved delivery speed by 24%.</li>
-              <li>Created repeatable systems for clearer planning and reporting.</li>
+            <p className="mt-1 text-[8px] font-semibold text-slate-500">
+              {item === 0 ? details.company : details.previousCompany}
+            </p>
+            <ul className="mt-2 space-y-1.5 text-[8px] leading-relaxed text-slate-500">
+              <li>{item === 0 ? "Led cross-functional delivery that improved activation by 24%." : "Built repeatable workflows that shortened delivery cycles by 18%."}</li>
+              <li className={item === 0 ? "min-h-[1.35em]" : undefined}>
+                {item === 0 ? <>{liveText(3)}{cursor(3)}</> : "Partnered with design and engineering from discovery through launch."}
+              </li>
             </ul>
           </div>
         ))}
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
-        <div className="h-1.5 rounded-full bg-slate-200" />
-        <div className="h-1.5 rounded-full bg-slate-200" />
-        <div className="h-1.5 rounded-full bg-slate-200" />
+      <div className="mt-4 grid grid-cols-2 gap-5 border-t border-slate-200/80 pt-3">
+        <div>
+          <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">Education</h4>
+          <p className="mt-1.5 text-[9px] font-bold text-slate-700">{details.degree}</p>
+          <p className="mt-1 text-[8px] text-slate-500">{details.school} · 2019</p>
+        </div>
+        <div>
+          <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">Selected Project</h4>
+          <p className="mt-1.5 text-[9px] font-bold text-slate-700">{details.project}</p>
+          <p className="mt-1 min-h-[2.7em] text-[8px] leading-relaxed text-slate-500">{liveText(4)}{cursor(4)}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 border-t border-slate-200/80 pt-2.5">
+        <h4 className="text-[10px] font-extrabold uppercase tracking-wide text-slate-800">Certification</h4>
+        <p className="mt-1 min-h-[1.35em] text-[8px] font-semibold text-slate-500">{liveText(5)}{cursor(5)}</p>
       </div>
     </article>
   );
@@ -120,7 +244,7 @@ function MiniResumeSheet({
 function HeroResumeStack() {
   return (
     <div
-      className="relative mx-auto mt-7 h-[345px] w-full max-w-7xl overflow-hidden sm:h-[405px] md:h-[505px]"
+      className="relative mx-auto mt-7 h-[365px] w-full max-w-7xl overflow-hidden sm:h-[430px] md:h-[535px]"
       style={{
         WebkitMaskImage: "linear-gradient(to bottom, black 88%, transparent 100%)",
         maskImage: "linear-gradient(to bottom, black 88%, transparent 100%)",
@@ -129,7 +253,7 @@ function HeroResumeStack() {
       <style>{`
         .resume-stack-left {
           transform: translateX(-154%) translateY(54px) rotate(-5deg) scale(0.94);
-          opacity: 0.72;
+          opacity: 0.86;
           z-index: 1;
         }
 
@@ -141,7 +265,7 @@ function HeroResumeStack() {
 
         .resume-stack-right {
           transform: translateX(54%) translateY(54px) rotate(5deg) scale(0.94);
-          opacity: 0.72;
+          opacity: 0.86;
           z-index: 1;
         }
 
@@ -164,6 +288,7 @@ function HeroResumeStack() {
           name="Emily Johnson"
           role="Product Designer"
           tone="lavender"
+          animated
           className="resume-sheet resume-stack-center left-1/2 top-0"
         />
       </div>
@@ -267,6 +392,7 @@ function FeatureCard({
   const styles = pastelStyles[color];
   return (
     <div
+      data-landing-reveal
       className={`group relative rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] ${
         featured ? "ring-1 ring-[var(--accent)]/30" : ""
       }`}
@@ -301,7 +427,7 @@ function Testimonial({
 }) {
   const styles = pastelStyles[color];
   return (
-    <div className="rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]">
+    <div data-landing-reveal className="rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]">
       <Quote className={`size-5 ${styles.iconText} opacity-60`} />
       <p className="mt-4 text-sm text-[var(--app-fg)] leading-relaxed">
         "{quote}"
@@ -347,8 +473,30 @@ export default function LandingPageScreen() {
     });
   }, [location.hash]);
 
+  useEffect(() => {
+    const cards = document.querySelectorAll<HTMLElement>(".landing-page [data-landing-reveal]");
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      cards.forEach((card) => card.classList.add("landing-reveal-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("landing-reveal-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px" }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
+    <div className="landing-page min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
       <Hero />
 

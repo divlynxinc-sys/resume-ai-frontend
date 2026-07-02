@@ -3,28 +3,39 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import secondaryLogo from "../../assets/secondary.png";
+import lightLogo from "../../assets/Logo-01.png";
+import lightBrandIcon from "../../assets/Logo-03.png";
+import darkLogo from "../../assets/Logo-04.png";
+import darkBrandIcon from "../../assets/Logo-06.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
 import { authService } from "@/services/auth";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
 function BrandBar() {
+  const { theme } = useTheme();
+
   return (
     <div className="h-16 flex items-center justify-between px-6">
-      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <span className="relative h-9 w-44 overflow-hidden" aria-hidden="true">
+      <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+        <img
+          src={theme === "dark" ? darkBrandIcon : lightBrandIcon}
+          alt=""
+          className="pointer-events-none size-8 shrink-0 object-contain select-none"
+        />
+        <span className="relative h-7 w-[8.75rem] shrink-0 overflow-hidden" aria-hidden="true">
           <img
-            src={secondaryLogo}
+            src={theme === "dark" ? darkLogo : lightLogo}
             alt=""
-            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute -left-[0.2rem] -top-[3.54rem] w-[8.86rem] max-w-none select-none"
           />
         </span>
       </Link>
       <Link
         to="/"
-        className="text-sm font-medium text-white/60 hover:text-white transition-colors flex items-center gap-2"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-4 text-sm font-medium text-[var(--btn-secondary-text)] shadow-sm transition-colors hover:bg-[var(--btn-secondary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
       >
         <ArrowLeft className="size-4" />
         Back to Home
@@ -59,6 +70,8 @@ const passwordRules = [
   { key: "number", label: "One number", test: (p: string) => /\d/.test(p) },
   { key: "special", label: "One special character (!@#$...)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
+
+const OTP_COOLDOWN_SECONDS = 5 * 60;
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (typeof err !== "object" || err === null) return fallback;
@@ -155,7 +168,7 @@ function OtpVerification({
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<"idle" | "verifying">("idle");
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(OTP_COOLDOWN_SECONDS);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -222,7 +235,7 @@ function OtpVerification({
   const handleResend = async () => {
     setError("");
     setCanResend(false);
-    setTimer(60);
+    setTimer(OTP_COOLDOWN_SECONDS);
     setOtp(["", "", "", "", "", ""]);
     try {
       await authService.signupSendOtp(email);
@@ -348,11 +361,11 @@ export default function Signup() {
     }
   };
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("Alex");
+  const [lastName, setLastName] = useState("Morgan");
+  const [email, setEmail] = useState("alex.morgan@example.com");
+  const [password, setPassword] = useState("Demo@1234");
+  const [confirmPassword, setConfirmPassword] = useState("Demo@1234");
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "otp" | "completing">("form");
@@ -443,7 +456,7 @@ export default function Signup() {
                 <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
                   Create your <span className="italic">account</span>
                 </h1>
-                <p className="text-[var(--app-fg-muted)] text-sm">Get started with Jobsynk AI — free forever.</p>
+                <p className="text-[var(--app-fg-muted)] text-sm">Build a polished, job-ready resume in minutes.</p>
               </div>
             </div>
 
@@ -537,7 +550,7 @@ export default function Signup() {
 
                   <div className="pt-2 flex items-center justify-between gap-4 flex-wrap">
                     <button
-                      className="min-w-48 flex-1 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-white text-sm font-medium hover:bg-[var(--accent-hover)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent)]"
+                      className="h-9 shrink-0 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-white transition-all hover:bg-[var(--btn-primary-hover)] active:scale-[0.99] disabled:opacity-50 disabled:hover:bg-[var(--btn-primary-bg)]"
                       onClick={handleSendOtp}
                       disabled={status === "loading" || !turnstileToken}
                     >
@@ -545,7 +558,7 @@ export default function Signup() {
                     </button>
                     <Link
                       to={requestedNextPath ? withNextParam("/login", requestedNextPath) : "/login"}
-                      className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                      className="px-4 py-2 text-sm text-blue-400 underline decoration-blue-400/60 underline-offset-4 transition-colors hover:text-blue-300"
                     >
                       Already have an account?
                     </Link>

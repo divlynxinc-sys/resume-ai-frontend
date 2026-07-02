@@ -48,7 +48,7 @@ function PlanCard({
   const navigate = useNavigate();
   const isSwitchTarget = !!hasActiveSubscription && !isCurrent;
   return (
-    <div className="relative group transition-all duration-300">
+    <div data-landing-reveal className="relative group transition-all duration-300">
       <div
         className="relative rounded-2xl px-7 py-8 h-full flex flex-col text-left transition-all duration-300 bg-[var(--app-surface)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
         style={{
@@ -299,7 +299,7 @@ export function PricingSection() {
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-4 pb-20 text-center">
+    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-6 pt-4 pb-20 text-center">
       <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">Pricing</div>
       <h1 className="font-display text-3xl md:text-5xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
         Pick a plan, <span className="italic">land the role.</span>
