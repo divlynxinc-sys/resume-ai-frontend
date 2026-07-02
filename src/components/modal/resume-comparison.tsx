@@ -7,7 +7,7 @@ function Sidebar() {
       <div>
         <div className="flex items-center gap-2 px-2">
           <span className="size-2 rounded-full bg-emerald-400" />
-          <span className="text-white font-semibold">ResumeCraft</span>
+          <span className="text-white font-semibold">Jobsynk AI</span>
         </div>
         <nav className="mt-6 space-y-1">
           <a href="#" className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-white/75 hover:bg-white/5">

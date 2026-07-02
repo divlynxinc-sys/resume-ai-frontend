@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
               <span className="text-2xl">✨</span>
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold">Welcome to ResumeAI</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">Welcome to Jobsynk AI</h1>
               <p className="mt-2 text-white/70">Let's get you set up. Here are a few quick tips to help you make the most of the app.</p>
               <ul className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/80">
                 <li className="rounded-xl border border-white/10 bg-white/[0.03] p-4">Use AI Tailoring to align your resume to job postings.</li>

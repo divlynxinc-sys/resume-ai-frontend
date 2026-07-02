@@ -49,7 +49,7 @@ export default function ContactUsModal() {
               <div className="mt-4 space-y-3 text-white/80">
                 <div className="flex items-center gap-3">
                   <span className="text-white/50">✉️</span>
-                  <span>contact@resumecraft.ai</span>
+                  <span>contact@jobsynk.ai</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-white/50">📞</span>
@@ -132,7 +132,7 @@ export default function ContactUsModal() {
             <a href="#" className="hover:text-white">Terms of Service</a>
             <a href="#" className="hover:text-white">Privacy Policy</a>
           </div>
-          <div className="mt-3 text-xs">© 2024 ResumeCraft. All rights reserved.</div>
+          <div className="mt-3 text-xs">© 2024 Jobsynk AI. All rights reserved.</div>
         </footer>
       </main>
     </div>

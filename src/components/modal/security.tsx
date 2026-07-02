@@ -1,71 +1,160 @@
 import type { ReactNode } from "react";
-import { FiLock, FiShield, FiUser, FiKey } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { ArrowRight, CheckCircle2, Database, EyeOff, KeyRound, Lock, MessageCircle, RefreshCw, ShieldCheck, UserCheck } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
+import SiteFooter from "../layout/site-footer";
 
-function FeatureCard({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
+function SecurityCard({
+  icon,
+  title,
+  description,
+  tint,
+  iconColor,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  tint: string;
+  iconColor: string;
+}) {
   return (
-    <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-[var(--app-fg)]">
-      <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-blue-700/40 bg-blue-500/5 shadow-[0_0_40px_0_rgba(56,189,248,0.15)]">
-        <span className="text-xl text-blue-400">{icon}</span>
-      </div>
-      <div className="font-semibold text-[var(--app-fg)]">{title}</div>
-      <p className="mt-2 text-sm text-[var(--app-fg-muted)]">{description}</p>
-    </div>
+    <article className="group rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]">
+      <span className={`grid size-11 place-items-center rounded-xl ${iconColor}`} style={{ backgroundColor: tint }}>
+        {icon}
+      </span>
+      <h2 className="mt-5 text-base font-medium tracking-tight text-[var(--app-fg)]">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-[var(--app-fg-muted)]">{description}</p>
+    </article>
   );
 }
 
-function CTABanner() {
-  return (
-    <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--accent-soft)] p-8 text-center text-[var(--app-fg)]">
-      <h3 className="text-xl font-semibold">Have Questions?</h3>
-      <p className="mt-2 text-[var(--app-fg-muted)]">
-        If you have any questions or concerns about our security practices, please don’t hesitate to reach out. Our team is here to help.
-      </p>
-      <button className="mt-5 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-[0_10px_20px_rgba(56,189,248,0.25)] hover:bg-blue-500">
-        Contact Security Team
-      </button>
-    </div>
-  );
-}
+const USER_SAFETY_STEPS = [
+  "Use a strong, unique password for your Jobsynk AI account.",
+  "Never share verification codes or password reset links.",
+  "Sign out when using a shared or public device.",
+  "Review account activity and report anything unexpected.",
+];
 
 export default function SecurityScreen() {
   return (
-    <div className="min-h-screen w-full bg-[var(--app-bg)] text-[var(--app-fg)]">
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
 
-      <section className="mx-auto max-w-6xl px-4 pt-12">
-        <h1 className="text-center text-4xl sm:text-5xl font-semibold">Security at its Core</h1>
-        <p className="mx-auto mt-3 max-w-3xl text-center text-[var(--app-fg-muted)]">
-          At ResumeAI, we prioritize the security and privacy of your data. Our robust security measures ensure your information is protected at every step.
-        </p>
+      <main>
+        <section className="relative overflow-hidden px-6 pb-14 pt-16 text-center sm:pt-20">
+          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+            <div className="absolute -left-32 -top-40 size-96 rounded-full bg-[var(--pastel-lavender)] opacity-40 blur-3xl" />
+            <div className="absolute -right-32 -top-32 size-96 rounded-full bg-[var(--pastel-mint)] opacity-35 blur-3xl" />
+          </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <FeatureCard
-            icon={<FiLock />}
-            title="Encryption at Every Layer"
-            description="We use advanced encryption to protect your data in transit and at rest."
-          />
-          <FeatureCard
-            icon={<FiShield />}
-            title="AI Safety Protocols"
-            description="Our AI models are built with safety and ethical considerations at the forefront."
-          />
-          <FeatureCard
-            icon={<FiUser />}
-            title="Data Anonymization"
-            description="We anonymize your data to ensure your personal information remains private."
-          />
-          <FeatureCard
-            icon={<FiKey />}
-            title="Access Control & Authentication"
-            description="We implement strict access controls and authentication methods to secure your account."
-          />
-        </div>
+          <div className="relative mx-auto max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent-text)]">
+              <ShieldCheck className="size-4" />
+              Trust &amp; protection
+            </div>
+            <h1 className="font-display text-4xl font-light tracking-tight text-[var(--app-fg)] sm:text-5xl">
+              Security, <span className="italic">built in.</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base">
+              Jobsynk AI is designed with safeguards that help protect your account, personal information, and resume data throughout your experience.
+            </p>
+          </div>
+        </section>
 
-        <div className="mt-12">
-          <CTABanner />
+        <div className="mx-auto max-w-6xl px-6 pb-20">
+          <section aria-label="Security practices" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <SecurityCard
+              icon={<Lock className="size-5" />}
+              title="Protected connections"
+              description="Secure connections help protect information while it moves between your browser and Jobsynk AI."
+              tint="var(--accent-soft)"
+              iconColor="text-[#3949B5]"
+            />
+            <SecurityCard
+              icon={<KeyRound className="size-5" />}
+              title="Account authentication"
+              description="Authentication checks and verification flows help prevent unauthorized access to your account."
+              tint="var(--pastel-lavender)"
+              iconColor="text-[#6A55C7]"
+            />
+            <SecurityCard
+              icon={<EyeOff className="size-5" />}
+              title="Privacy-conscious design"
+              description="We limit exposure of personal information and provide controls for managing your account data."
+              tint="var(--pastel-mint)"
+              iconColor="text-[#3F8E5C]"
+            />
+            <SecurityCard
+              icon={<RefreshCw className="size-5" />}
+              title="Ongoing safeguards"
+              description="We continue reviewing product behavior and security practices as Jobsynk AI evolves."
+              tint="var(--pastel-butter)"
+              iconColor="text-[#A07820]"
+            />
+          </section>
+
+          <section className="mt-12 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <article className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+              <div className="flex items-start gap-4">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                  <Database className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent-text)]">Your information</p>
+                  <h2 className="mt-2 font-display text-2xl font-light text-[var(--app-fg)] sm:text-3xl">Data controls that stay within reach.</h2>
+                </div>
+              </div>
+              <p className="mt-5 text-sm leading-7 text-[var(--app-fg-muted)]">
+                Your resume contains information that matters. Jobsynk AI provides account tools for managing profile details, reviewing preferences, and requesting an export of your account data.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link to="/privacy" className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
+                  Read Privacy Policy
+                  <ArrowRight className="size-4" />
+                </Link>
+                <Link to="/account" className="inline-flex h-10 items-center rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
+                  Manage Account
+                </Link>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-xl bg-[var(--pastel-mint)] text-[#3F8E5C]">
+                  <UserCheck className="size-5" />
+                </span>
+                <h2 className="font-display text-2xl font-light text-[var(--app-fg)]">Protect your account</h2>
+              </div>
+              <ul className="mt-6 space-y-4">
+                {USER_SAFETY_STEPS.map((step) => (
+                  <li key={step} className="flex items-start gap-3 text-sm leading-6 text-[var(--app-fg-muted)]">
+                    <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[#3F8E5C]" />
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          </section>
+
+          <section className="mt-12 rounded-2xl border border-[var(--app-border)] bg-[var(--accent-soft)] p-7 text-center sm:p-9">
+            <MessageCircle className="mx-auto size-7 text-[var(--accent-text)]" />
+            <h2 className="mt-4 font-display text-2xl font-light text-[var(--app-fg)] sm:text-3xl">See something concerning?</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)]">
+              If you notice unexpected account activity or have a question about our security practices, contact the Jobsynk AI team. We’re here to help.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link to="/contact-us" className="inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
+                Contact Security Team
+              </Link>
+              <Link to="/help-center" className="inline-flex h-10 items-center rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
+                Visit Help Center
+              </Link>
+            </div>
+          </section>
         </div>
-      </section>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }

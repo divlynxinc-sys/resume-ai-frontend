@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
-//import logoIcon from "../../assets/logo-icon-indigo.png";
-import secondaryLogo from "../../assets/secondary.png";
+import lightLogo from "../../assets/Logo-02.png";
+import darkLogo from "../../assets/Logo-05.png";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function Brand() {
+  const { theme } = useTheme();
+
   return (
     <div>
       <Link
@@ -10,18 +13,11 @@ function Brand() {
         aria-label="Jobsynk AI — go to home"
         className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-md w-fit"
       >
-        {/*<span className="relative size-10 shrink-0 overflow-hidden" aria-hidden="true">
+        <span className="relative h-[5.25rem] w-44 shrink-0 overflow-hidden" aria-hidden="true">
           <img
-            src={logoIcon}
+            src={theme === "dark" ? darkLogo : lightLogo}
             alt=""
-            className="absolute left-1/2 top-1/2 w-[4.75rem] max-w-none -translate-x-1/2 -translate-y-1/2"
-          />
-        </span>*/}
-        <span className="relative h-10 w-36 overflow-hidden" aria-hidden="true">
-          <img
-            src={secondaryLogo}
-            alt=""
-            className="absolute left-1/2 top-1/2 w-48 max-w-none -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute -left-1 -top-12 w-[11.25rem] max-w-none select-none"
           />
         </span>
       </Link>
@@ -72,7 +68,7 @@ export default function SiteFooter() {
           title="PRODUCT"
           links={[
             { label: "Features", to: "/#features" },
-            { label: "Pricing", to: "/pricing" },
+            { label: "Pricing", to: "/#pricing" },
             { label: "Templates", to: "/templates" },
             { label: "Dashboard", to: "/dashboard" },
           ]}
@@ -99,11 +95,8 @@ export default function SiteFooter() {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 border-t border-white/5 py-8 text-white/40 text-sm flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="max-w-7xl mx-auto px-6 border-t border-white/5 py-8 text-center text-sm text-white/40">
         <p>© 2025 Jobsynk AI. All rights reserved.</p>
-        <div className="flex items-center gap-6">
-           {/* Placeholder for future bottom links if needed */}
-        </div>
       </div>
     </footer>
   );
