@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
 import lightLogo from "../../assets/Logo-01.png";
 import lightBrandIcon from "../../assets/Logo-03.png";
@@ -49,8 +49,10 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [planTitle, setPlanTitle] = useState<string>(FREE_PLAN_LABEL);
   const showAuthControls = isAuthenticated && !marketingMode;
+  const compactBrand = isAuthenticated && !marketingMode && location.pathname === "/dashboard";
 
   // Fetch the user's current plan from /settings/account/summary, with refetch
   // on focus and on the `plan-updated` event (dispatched after a Polar sync).
@@ -167,19 +169,19 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
         <button
           type="button"
           onClick={() => navigate(isAuthenticated && !marketingMode ? "/dashboard" : "/")}
-          className="flex h-full items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
+          className={`flex h-full items-center select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg ${compactBrand ? "gap-2" : "gap-2.5"}`}
           aria-label="Jobsynk AI — go to home"
         >
           <img
             src={theme === "dark" ? darkBrandIcon : lightBrandIcon}
             alt=""
-            className="pointer-events-none size-8 shrink-0 object-contain select-none"
+            className={`pointer-events-none shrink-0 object-contain select-none ${compactBrand ? "size-6" : "size-8"}`}
           />
-          <span className="relative h-7 w-[8.75rem] shrink-0 overflow-hidden" aria-hidden="true">
+          <span className={`relative shrink-0 overflow-hidden ${compactBrand ? "h-[1.4rem] w-28" : "h-7 w-[8.75rem]"}`} aria-hidden="true">
             <img
               src={theme === "dark" ? darkLogo : lightLogo}
               alt=""
-              className="pointer-events-none absolute -left-[0.2rem] -top-[3.54rem] w-[8.86rem] max-w-none select-none"
+              className={`pointer-events-none absolute max-w-none select-none ${compactBrand ? "-left-[0.16rem] -top-[2.83rem] w-[7.09rem]" : "-left-[0.2rem] -top-[3.54rem] w-[8.86rem]"}`}
             />
           </span>
         </button>
