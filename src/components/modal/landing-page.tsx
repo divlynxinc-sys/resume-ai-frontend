@@ -497,12 +497,8 @@ export default function LandingPageScreen() {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
-      <LaunchOfferBanner />
-=======
     <div className="landing-page min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
->>>>>>> 75122c5bddf331f425f1f3b311f51a3cee054196
+      <LaunchOfferBanner />
       <SiteNavbar marketingMode />
       <Hero />
 
