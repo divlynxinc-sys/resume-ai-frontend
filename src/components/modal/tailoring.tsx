@@ -38,7 +38,7 @@ function StepCard({
   icon: ReactNode;
 }) {
   return (
-    <div className="relative rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 text-[var(--app-fg)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]">
+    <div data-landing-reveal className="relative rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 text-[var(--app-fg)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]">
       <NumberBadge n={n} />
       <div className="space-y-3">
         <IconWrap>{icon}</IconWrap>
@@ -51,7 +51,7 @@ function StepCard({
 
 function InfoPanel({ title, items }: { title: string; items: string[] }) {
   return (
-    <div className="relative rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-7 text-[var(--app-fg)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]">
+    <div data-landing-reveal className="relative rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-7 text-[var(--app-fg)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]">
       <h3 className="font-display text-xl font-light tracking-tight text-[var(--app-fg)]">{title}</h3>
       <ul className="mt-5 space-y-3">
         {items.map((it, idx) => (

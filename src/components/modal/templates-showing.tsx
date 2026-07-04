@@ -98,7 +98,7 @@ function SectionTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: s
 function TemplateCard({ slug, name, html }: { slug: string; name: string; html: string }) {
   const navigate = useNavigate();
   return (
-    <div className="flex-none w-64 sm:w-72">
+    <div data-landing-reveal className="flex-none w-64 sm:w-72">
       <div
         onClick={() => navigate(`/templates?selected=${slug}`)}
         className="relative group w-full aspect-[3/4] rounded-2xl bg-white border border-[var(--app-border)] shadow-[var(--shadow-soft)] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-pop)]"

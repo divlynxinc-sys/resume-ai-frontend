@@ -4,8 +4,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
-import secondaryLogo from "../../assets/secondary.png";
+import lightLogo from "../../assets/Logo-02.png";
+import darkLogo from "../../assets/Logo-05.png";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 
@@ -14,6 +16,8 @@ function isValidEmail(email: string) {
 }
 
 function TopLogo() {
+  const { theme } = useTheme();
+
   return (
     <div className="flex flex-col items-center">
       <Link
@@ -21,18 +25,18 @@ function TopLogo() {
         aria-label="Jobsynk AI — go to home"
         className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
       >
-        <span className="relative mb-5 block h-9 w-44 overflow-hidden" aria-hidden="true">
+        <span className="relative mb-5 block h-[5.25rem] w-44 overflow-hidden" aria-hidden="true">
           <img
-            src={secondaryLogo}
+            src={theme === "dark" ? darkLogo : lightLogo}
             alt=""
-            className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+            className="absolute -left-1 -top-12 w-[11.25rem] max-w-none"
           />
         </span>
       </Link>
       <h1 className="font-display text-3xl md:text-4xl font-light text-[var(--app-fg)] tracking-tight">
         Welcome <span className="italic">back</span>
       </h1>
-      <p className="mt-2 text-sm text-[var(--app-fg-muted)]">Sign in to continue to Jobsynk AI</p>
+      <p className="mt-2 text-sm text-[var(--app-fg-muted)]">Ready for landing your next role?</p>
     </div>
   );
 }
@@ -266,7 +270,12 @@ export default function LoginScreen() {
 
               <div className="mt-5 text-center text-xs text-white/60">
                 Don't have an account?{' '}
-                <Link to={nextPath ? withNextParam("/signup", nextPath) : "/signup"} className="text-[var(--accent-text)] hover:text-[var(--accent-hover)]">Sign up</Link>
+                <Link
+                  to={nextPath ? withNextParam("/signup", nextPath) : "/signup"}
+                  className="text-blue-400 underline decoration-blue-400/60 underline-offset-4 transition-colors hover:text-blue-300"
+                >
+                  Sign up
+                </Link>
               </div>
             </form>
           </div>

@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
-import secondaryLogo from "../../assets/secondary.png";
+import lightLogo from "../../assets/Logo-01.png";
+import lightBrandIcon from "../../assets/Logo-03.png";
+import darkLogo from "../../assets/Logo-04.png";
+import darkBrandIcon from "../../assets/Logo-06.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -164,14 +167,19 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
         <button
           type="button"
           onClick={() => navigate(isAuthenticated && !marketingMode ? "/dashboard" : "/")}
-          className="flex items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
+          className="flex h-full items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
           aria-label="Jobsynk AI — go to home"
         >
-          <span className="relative h-9 w-44 overflow-hidden" aria-hidden="true">
+          <img
+            src={theme === "dark" ? darkBrandIcon : lightBrandIcon}
+            alt=""
+            className="pointer-events-none size-8 shrink-0 object-contain select-none"
+          />
+          <span className="relative h-7 w-[8.75rem] shrink-0 overflow-hidden" aria-hidden="true">
             <img
-              src={secondaryLogo}
+              src={theme === "dark" ? darkLogo : lightLogo}
               alt=""
-              className="absolute left-1/2 top-1/2 w-[14.5rem] max-w-none -translate-x-1/2 -translate-y-1/2"
+              className="pointer-events-none absolute -left-[0.2rem] -top-[3.54rem] w-[8.86rem] max-w-none select-none"
             />
           </span>
         </button>
@@ -181,13 +189,22 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
         {/* Right: actions */}
         <div className="flex items-center gap-4 ml-auto relative">
           {marketingMode && (
-            <button
-              type="button"
-              onClick={() => navigate("/signup")}
-              className="h-9 rounded-lg bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
-            >
-              Start free
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
+                className="h-9 rounded-lg bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
+              >
+                Sign up
+              </button>
+            </div>
           )}
 
           {/* Theme toggle — always visible */}

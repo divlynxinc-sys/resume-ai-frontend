@@ -461,3 +461,31 @@ html.light ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.18);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Landing cards reveal once as they enter the viewport. */
+.landing-page [data-landing-reveal] {
+  opacity: 0;
+  transform: translateY(2.25rem);
+  transition-property: opacity, transform;
+  transition-duration: 650ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.landing-page [data-landing-reveal].landing-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+.landing-page [data-landing-reveal].landing-reveal-visible:hover {
+  transform: translateY(-0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page [data-landing-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
