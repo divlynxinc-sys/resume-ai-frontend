@@ -296,13 +296,32 @@ export default function AccountManagementScreen() {
     setSubBusy(true);
     setSubError(null);
     try {
-      const updated = await pricingService.cancelSubscription();
-      setSubDetails(updated);
+      const res = await pricingService.cancelSubscription();
+      refreshSubscriptionState();
       window.dispatchEvent(new CustomEvent("plan-updated"));
       setShowCancelModal(false);
-      showToast("Subscription will end at the end of the current billing period.");
+      showToast(
+        res.refunded
+          ? "Cancelled and refunded in full."
+          : "Cancelled. You can re-subscribe for free until your period ends.",
+      );
     } catch (err: unknown) {
       setSubError(err instanceof Error ? err.message : "Failed to cancel subscription.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      await pricingService.reactivateSubscription();
+      refreshSubscriptionState();
+      window.dispatchEvent(new CustomEvent("plan-updated"));
+      showToast("Your plan is active again until the end of your current period.");
+    } catch (err: unknown) {
+      setSubError(err instanceof Error ? err.message : "Failed to reactivate subscription.");
     } finally {
       setSubBusy(false);
     }
@@ -422,7 +441,11 @@ export default function AccountManagementScreen() {
                   </div>
                 </div>
 
-                {subDetails?.cancel_at_period_end ? (
+                {subDetails?.can_reactivate_free ? (
+                  <div className="w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
+                    Cancelled — paid features locked. Re-subscribe free until {renewalLabel ?? "your period ends"}.
+                  </div>
+                ) : subDetails?.cancel_at_period_end ? (
                   <div className="w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
                     Cancellation scheduled
                   </div>
@@ -438,7 +461,16 @@ export default function AccountManagementScreen() {
                   <SecondaryButton onClick={handleOpenPortal} disabled={subBusy}>
                     Payment & Invoices
                   </SecondaryButton>
-                  {subDetails?.has_subscription && !subDetails.cancel_at_period_end ? (
+                  {subDetails?.can_reactivate_free ? (
+                    <button
+                      type="button"
+                      onClick={handleReactivateSubscription}
+                      disabled={subBusy}
+                      className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {subBusy ? "Reactivating…" : "Reactivate (free)"}
+                    </button>
+                  ) : subDetails?.has_subscription && !subDetails.cancel_at_period_end ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -532,11 +564,30 @@ export default function AccountManagementScreen() {
             </>
           }
         >
-          You will keep access until{" "}
-          <span className="font-medium text-[var(--app-fg)]">
-            {renewalLabel ?? "the end of this billing period"}
-          </span>
-          . After that, your plan ends and we will not bill you again.
+          {subDetails?.refund_eligible_now ? (
+            <>
+              You're still within your{" "}
+              <span className="font-medium text-[var(--app-fg)]">
+                {subDetails.refund_window_days}-day money-back window
+              </span>
+              , so cancelling now will{" "}
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                refund you 100%
+              </span>{" "}
+              and end your plan immediately.
+            </>
+          ) : (
+            <>
+              You're past the money-back window, so{" "}
+              <span className="font-medium text-[var(--app-fg)]">no refund</span> is issued
+              and paid features are locked immediately. You can re-subscribe for{" "}
+              <span className="font-medium text-[var(--app-fg)]">free</span> anytime until{" "}
+              <span className="font-medium text-[var(--app-fg)]">
+                {renewalLabel ?? "your period ends"}
+              </span>
+              , when your plan fully expires. We won't bill you again.
+            </>
+          )}
           {subError ? (
             <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-600 dark:text-rose-300">
               {subError}

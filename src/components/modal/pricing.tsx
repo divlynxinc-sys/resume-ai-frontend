@@ -25,6 +25,8 @@ type PlanProps = {
   features: string[];
   highlight?: boolean;
   label?: string;
+  /** Money-back / free-trial line shown under the price (e.g. "7-day free trial"). */
+  trialNote?: string;
   labelClassName?: string;
   pop?: boolean;
   popMode?: "hover" | "always";
@@ -41,6 +43,7 @@ function PlanCard({
   features,
   highlight,
   label,
+  trialNote,
   isCurrent,
   hasActiveSubscription,
   onSwitch,
@@ -119,6 +122,11 @@ function PlanCard({
               </span>
             ) : null}
           </div>
+          {trialNote ? (
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              {trialNote}
+            </div>
+          ) : null}
         </div>
 
         <ul className="mt-7 space-y-3 text-sm flex-1">
@@ -177,6 +185,7 @@ type PlanData = {
   features: string[];
   highlight?: boolean;
   label?: string;
+  trialNote?: string;
 };
 
 const FEATURE_LIST = [
@@ -196,6 +205,7 @@ const defaultPlans: PlanData[] = [
     blurb: "Try the full toolkit on a short-term sprint.",
     button: "Get Weekly",
     features: FEATURE_LIST,
+    trialNote: "1-day money-back guarantee",
   },
   {
     title: "Monthly",
@@ -207,6 +217,7 @@ const defaultPlans: PlanData[] = [
     features: FEATURE_LIST,
     highlight: true,
     label: "Most Popular",
+    trialNote: "1-day money-back guarantee",
   },
   {
     title: "3 months",
@@ -216,6 +227,7 @@ const defaultPlans: PlanData[] = [
     blurb: "Best value for a longer search — save vs monthly.",
     button: "Get 3 months",
     features: FEATURE_LIST,
+    trialNote: "7-day free trial · 100% money-back",
   },
 ];
 
@@ -355,6 +367,7 @@ export function PricingSection() {
             features={plan.features}
             highlight={plan.highlight}
             label={plan.label}
+            trialNote={plan.trialNote}
             isCurrent={!!normalizedCurrent && plan.title.trim().toLowerCase() === normalizedCurrent}
             hasActiveSubscription={hasActiveSubscription}
             onSwitch={handleSwitchRequest}

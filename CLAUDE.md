@@ -38,6 +38,8 @@ Two distinct backend signals, both handled globally:
 
 Never surface token counts or exact quotas in UI — limits are intentionally soft/hidden. Cheapest-plan price comes from `useMinPlanPrice()` (cached `pricingService.listPlans()` call).
 
+**Cancellation / money-back / free-reactivate** (account-management billing card + cancel modal): `pricingService.cancelSubscription()` returns `{refunded}` — within the plan's money-back window (weekly/monthly 1 day, 3-month 7 days) it's an automatic 100% refund + immediate end; past the window it's no-refund + blocked-now but **re-subscribe free until `reserved_until`** via `pricingService.reactivateSubscription()`. The cancel modal text and the "Reactivate (free)" button branch on `subDetails` fields (`refund_eligible_now`, `refund_window_days`, `can_reactivate_free`). Pricing cards show a per-plan `trialNote` ("7-day free trial · 100% money-back" on 3-month). Backend policy lives in `resumeai-backend` (see its CLAUDE.md).
+
 `PlanContext` also self-heals Polar subscription drift: if an authenticated user looks unpaid it calls `pricingService.syncPolarSubscription()` once per session (sessionStorage flag `polar-reconciled`). Broadcast `plan-updated` CustomEvent after any plan change so all listeners refetch.
 
 ## Launch offer (50% off, ends 2027-01-04)
