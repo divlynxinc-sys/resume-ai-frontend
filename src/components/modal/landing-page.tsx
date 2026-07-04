@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
+import LaunchOfferBanner from "../layout/launch-offer-banner";
 import SiteFooter from "../layout/site-footer";
 import { PricingSection } from "./pricing";
 import { TailoringSection } from "./tailoring";
@@ -349,6 +350,7 @@ export default function LandingPageScreen() {
 
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
+      <LaunchOfferBanner />
       <SiteNavbar marketingMode />
       <Hero />
 

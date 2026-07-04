@@ -9,6 +9,8 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { resumeService } from "@/services";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
+import { usePlan } from "@/contexts/PlanContext";
+import { FREE_TEMPLATE_SLUG, isTemplateLockedForFree } from "@/lib/template-access";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
@@ -1103,6 +1105,15 @@ export default function ResumeBuilderScreen() {
   const [previewMode, setPreviewMode] = useState<'preview' | 'ats'>('preview');
   const [templateSlug, setTemplateSlug] = useState(initialTemplate);
 
+  // Free tier gets only the Classic template. Coerce anything else (deep link,
+  // stale draft) back to it for preview/export once the plan has loaded, so the
+  // lock on /templates can't be bypassed via ?template=.
+  const { isPaid, isLoading: planLoading } = usePlan();
+  const effectiveTemplateSlug =
+    !planLoading && isTemplateLockedForFree(templateSlug, isPaid)
+      ? FREE_TEMPLATE_SLUG
+      : templateSlug;
+
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(blankResume);
   const [resumeId, setResumeId] = useState<number | null>(null);
@@ -1338,7 +1349,7 @@ export default function ResumeBuilderScreen() {
 
         {/* Right side — Preview */}
         <div className="xl:sticky xl:top-[80px] xl:self-start xl:pt-4">
-          <ResumePreview mode={previewMode} resume={resume} ats={null} liveAts={liveAts} fileName={resumeFileName} templateSlug={templateSlug} />
+          <ResumePreview mode={previewMode} resume={resume} ats={null} liveAts={liveAts} fileName={resumeFileName} templateSlug={effectiveTemplateSlug} />
         </div>
       </PageWithSidebar>
 
@@ -1370,7 +1381,7 @@ export default function ResumeBuilderScreen() {
         <CompletedResumeModal
           resume={resume}
           fileName={resumeFileName}
-          templateSlug={templateSlug}
+          templateSlug={effectiveTemplateSlug}
           onClose={() => setCompletedModalOpen(false)}
         />
       )}

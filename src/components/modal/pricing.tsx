@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import LaunchOfferBanner from "../layout/launch-offer-banner";
 import { usePlan } from "@/contexts/PlanContext";
 import { pricingService } from "@/services";
 import { settingsService } from "@/services/settings";
+import { LAUNCH_OFFER, isLaunchOfferActive, launchOfferPriceLabel } from "@/lib/launch-offer";
 
 
 
@@ -15,6 +17,8 @@ type PlanProps = {
   title: string;
   slug: string;
   price: string;
+  /** Pre-discount price, shown struck through next to `price` during the launch offer. */
+  originalPrice?: string;
   subtitle?: string;
   blurb?: string;
   button: string;
@@ -30,6 +34,7 @@ function PlanCard({
   title,
   slug,
   price,
+  originalPrice,
   subtitle,
   blurb,
   button,
@@ -91,6 +96,14 @@ function PlanCard({
             </p>
           ) : null}
           <div className="mt-5 flex items-baseline gap-1.5">
+            {originalPrice && (
+              <span
+                className="font-display text-2xl font-light tracking-tight line-through"
+                style={{ color: "var(--app-fg-muted)" }}
+              >
+                {originalPrice}
+              </span>
+            )}
             <span
               className="font-display text-5xl font-light tracking-tight"
               style={{ color: "var(--app-fg)" }}
@@ -277,6 +290,17 @@ export function PricingSection() {
   const normalizedCurrent = (currentPlanName || "").trim().toLowerCase();
   const hasActiveSubscription = !!normalizedCurrent;
 
+  // Launch offer: show the discounted price with the original struck through.
+  // Polar charges the discounted amount (backend pre-applies POLAR_DISCOUNT_ID).
+  const offerActive = isLaunchOfferActive();
+  const displayPlans = offerActive
+    ? plans.map((p) => ({
+        ...p,
+        price: launchOfferPriceLabel(p.price),
+        originalPrice: p.price,
+      }))
+    : plans.map((p) => ({ ...p, originalPrice: undefined as string | undefined }));
+
   const handleSwitchRequest = (slug: string, title: string, price: string, subtitle?: string) => {
     setSwitchError(null);
     setPendingSwitch({ slug, title, price, subtitle });
@@ -307,14 +331,24 @@ export function PricingSection() {
       <p className="mt-5 max-w-2xl mx-auto text-[var(--app-fg-muted)] leading-relaxed">
         Pick a plan to add AI-generated resumes, cover letters, emails, and Q&amp;A Prep to each application.
       </p>
+      {offerActive && (
+        <div
+          className="mt-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
+          style={{ color: "var(--app-fg)" }}
+        >
+          🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans — already
+          applied at checkout.
+        </div>
+      )}
 
       <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto">
-        {plans.map((plan) => (
+        {displayPlans.map((plan) => (
           <PlanCard
             key={plan.title}
             title={plan.title}
             slug={plan.slug}
             price={plan.price}
+            originalPrice={plan.originalPrice}
             subtitle={plan.subtitle}
             blurb={plan.blurb}
             button={plan.button}

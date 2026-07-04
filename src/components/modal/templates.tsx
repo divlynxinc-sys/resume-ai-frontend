@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle2, FileText } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, Lock } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { TEMPLATES, renderTemplate, type TemplateInput } from "@/lib/resume-templates";
+import { usePlan } from "@/contexts/PlanContext";
+import { isTemplateLockedForFree } from "@/lib/template-access";
 
 /**
  * Sample data used to render template previews on this page.
@@ -120,20 +122,31 @@ function TemplateCard({
   html,
   tone,
   bestFor,
+  locked,
+  onLockedClick,
 }: {
   title: string;
   slug: string;
   html: string;
   tone: string;
   bestFor: string;
+  locked: boolean;
+  onLockedClick: (templateName: string) => void;
 }) {
   const navigate = useNavigate();
+  const open = () => {
+    if (locked) {
+      onLockedClick(title);
+    } else {
+      navigate(`/resumes?template=${slug}`);
+    }
+  };
 
   return (
     <article className="group w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-pop)]">
       <div
         className="relative w-full aspect-[210/297] overflow-hidden rounded-xl bg-white cursor-pointer ring-1 ring-[var(--app-border)]"
-        onClick={() => navigate(`/resumes?template=${slug}`)}
+        onClick={open}
       >
         <iframe
           srcDoc={htmlForPreview(html)}
@@ -151,18 +164,34 @@ function TemplateCard({
           }}
         />
 
+        {locked && (
+          <div className="absolute right-2 top-2 z-30 inline-flex items-center gap-1 rounded-full bg-[rgba(26,26,26,0.78)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
+            <Lock className="size-3" />
+            Pro
+          </div>
+        )}
+
         <div className="absolute inset-0 z-20 flex items-end justify-center bg-gradient-to-t from-[rgba(26,26,26,0.58)] via-transparent to-transparent pb-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/resumes?template=${slug}`);
+              open();
             }}
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium shadow-md transition-colors"
             style={{ backgroundColor: "#ffffff", color: "#1a1a1a" }}
           >
-            Use this template
-            <ArrowRight className="size-3.5" />
+            {locked ? (
+              <>
+                <Lock className="size-3.5" />
+                Unlock with Pro
+              </>
+            ) : (
+              <>
+                Use this template
+                <ArrowRight className="size-3.5" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -187,6 +216,8 @@ function TemplateCard({
 }
 
 export default function TemplatesScreen() {
+  const { isPaid, openUpgradeModal } = usePlan();
+
   const cards = useMemo(() => {
     return Object.values(TEMPLATES).map((tpl) => ({
       slug: tpl.slug,
@@ -244,6 +275,12 @@ export default function TemplatesScreen() {
               html={c.html}
               tone={c.meta.tone}
               bestFor={c.meta.bestFor}
+              locked={isTemplateLockedForFree(c.slug, isPaid)}
+              onLockedClick={(name) =>
+                openUpgradeModal(
+                  `The ${name} template is a Pro template. Subscribe to unlock all templates and AI features.`,
+                )
+              }
             />
           ))}
         </div>

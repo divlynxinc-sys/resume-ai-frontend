@@ -12,10 +12,48 @@ import { createPortal } from "react-dom";
 import { settingsService } from "@/services/settings";
 import { pricingService } from "@/services";
 import { useAuth } from "@/contexts/AuthContext";
+import { LAUNCH_OFFER, isLaunchOfferActive, launchOfferPrice } from "@/lib/launch-offer";
 
 // Only attempt the Polar self-heal once per browser session, so we don't hit
 // Polar on every navigation for genuinely free users.
 const RECONCILE_FLAG = "polar-reconciled";
+
+/** A recorded "weekly usage cap hit" for one feature, persisted until it resets. */
+export interface UsageLimitHit {
+  feature: string;
+  message: string | null;
+  resetsAt: string | null;
+  hitAt: number;
+}
+
+const USAGE_HITS_KEY = "jobsynk.usageLimitHits";
+const FALLBACK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function loadUsageHits(): Record<string, UsageLimitHit> {
+  try {
+    const raw = localStorage.getItem(USAGE_HITS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, UsageLimitHit>;
+    const now = Date.now();
+    const alive: Record<string, UsageLimitHit> = {};
+    for (const [feature, hit] of Object.entries(parsed)) {
+      const resetTs = hit.resetsAt ? new Date(hit.resetsAt).getTime() : NaN;
+      const expiry = Number.isNaN(resetTs) ? hit.hitAt + FALLBACK_WINDOW_MS : resetTs;
+      if (expiry > now) alive[feature] = hit;
+    }
+    return alive;
+  } catch {
+    return {};
+  }
+}
+
+function saveUsageHits(hits: Record<string, UsageLimitHit>) {
+  try {
+    localStorage.setItem(USAGE_HITS_KEY, JSON.stringify(hits));
+  } catch {
+    // Local storage can be unavailable in restricted browser contexts.
+  }
+}
 
 interface PlanContextValue {
   currentPlan: string | null;
@@ -24,6 +62,9 @@ interface PlanContextValue {
   /** Open the upgrade modal manually (e.g. from a pre-click guard). */
   openUpgradeModal: (reason?: string) => void;
   refresh: () => void;
+  /** Features whose weekly cap the user has hit (newest first), for the banner. */
+  usageLimitHits: UsageLimitHit[];
+  dismissUsageLimit: (feature: string) => void;
 }
 
 const PlanContext = createContext<PlanContextValue | null>(null);
@@ -35,11 +76,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [modalReason, setModalReason] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Hidden weekly usage cap (backend 429). Distinct from the upgrade modal —
-  // paid users hit this too, so there's no upgrade CTA.
+  // Hidden weekly usage cap (backend 429). Free users get an upgrade CTA in the
+  // modal/banner; paid users just see when it resets.
   const [usageModalOpen, setUsageModalOpen] = useState(false);
   const [usageMessage, setUsageMessage] = useState<string | null>(null);
   const [usageResetsAt, setUsageResetsAt] = useState<string | null>(null);
+  const [usageHits, setUsageHits] = useState<Record<string, UsageLimitHit>>(loadUsageHits);
 
   // Track in a ref so the global `upgrade-required` listener (defined once) always
   // sees the latest value without re-binding on every isPaid change.
@@ -108,13 +150,29 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("upgrade-required", onUpgradeRequired);
   }, []);
 
-  // Listen to backend-driven 429s (hidden weekly usage cap) and surface the modal.
+  // Listen to backend-driven 429s (hidden weekly usage cap): surface the modal
+  // and persist the hit so the banner survives reloads until the window resets.
   useEffect(() => {
     const onUsageLimit = (e: Event) => {
-      const detail = (e as CustomEvent<{ message?: string; resetsAt?: string }>).detail;
+      const detail = (e as CustomEvent<{ message?: string; resetsAt?: string; feature?: string }>)
+        .detail;
       setUsageMessage(detail?.message ?? null);
       setUsageResetsAt(detail?.resetsAt ?? null);
       setUsageModalOpen(true);
+      const feature = detail?.feature || "ai";
+      setUsageHits((prev) => {
+        const next = {
+          ...prev,
+          [feature]: {
+            feature,
+            message: detail?.message ?? null,
+            resetsAt: detail?.resetsAt ?? null,
+            hitAt: Date.now(),
+          },
+        };
+        saveUsageHits(next);
+        return next;
+      });
     };
     window.addEventListener("usage-limit-reached", onUsageLimit);
     return () => window.removeEventListener("usage-limit-reached", onUsageLimit);
@@ -125,6 +183,27 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     setModalOpen(true);
   }, []);
 
+  const dismissUsageLimit = useCallback((feature: string) => {
+    setUsageHits((prev) => {
+      if (!(feature in prev)) return prev;
+      const next = { ...prev };
+      delete next[feature];
+      saveUsageHits(next);
+      return next;
+    });
+  }, []);
+
+  const usageLimitHits = useMemo(() => {
+    const now = Date.now();
+    return Object.values(usageHits)
+      .filter((h) => {
+        const resetTs = h.resetsAt ? new Date(h.resetsAt).getTime() : NaN;
+        const expiry = Number.isNaN(resetTs) ? h.hitAt + FALLBACK_WINDOW_MS : resetTs;
+        return expiry > now;
+      })
+      .sort((a, b) => b.hitAt - a.hitAt);
+  }, [usageHits]);
+
   const value = useMemo<PlanContextValue>(
     () => ({
       currentPlan,
@@ -132,8 +211,10 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       isLoading,
       openUpgradeModal,
       refresh: fetchPlan,
+      usageLimitHits,
+      dismissUsageLimit,
     }),
-    [currentPlan, isLoading, openUpgradeModal, fetchPlan],
+    [currentPlan, isLoading, openUpgradeModal, fetchPlan, usageLimitHits, dismissUsageLimit],
   );
 
   return (
@@ -149,6 +230,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
           <UsageLimitModal
             message={usageMessage}
             resetsAt={usageResetsAt}
+            isPaid={!!currentPlan}
             onClose={() => setUsageModalOpen(false)}
           />,
           document.body,
@@ -232,6 +314,12 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
             <span>AI resume optimization, all templates, priority generation</span>
           </li>
         </ul>
+        {isLaunchOfferActive() && (
+          <p className="mt-4 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-sm font-medium">
+            🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans — applied
+            automatically at checkout.
+          </p>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -260,6 +348,43 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
 
 // ─── Usage-limit modal ────────────────────────────────────────────────────────────
 
+// Cheapest active plan price, fetched once per page load and shared by the
+// usage-limit modal and banner ("plans start at $X").
+let minPricePromise: Promise<number | null> | null = null;
+
+function fetchMinPlanPrice(): Promise<number | null> {
+  if (!minPricePromise) {
+    minPricePromise = pricingService
+      .listPlans()
+      .then((plans) => {
+        const prices = plans.map((p) => p.price).filter((p) => p > 0);
+        // Reflect the launch offer so upsell copy matches the pricing page.
+        return prices.length ? launchOfferPrice(Math.min(...prices)) : null;
+      })
+      .catch(() => {
+        minPricePromise = null; // allow a retry next time
+        return null;
+      });
+  }
+  return minPricePromise;
+}
+
+/** Cheapest paid-plan price, or null while loading / on failure. */
+export function useMinPlanPrice(enabled = true): number | null {
+  const [price, setPrice] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    fetchMinPlanPrice().then((p) => {
+      if (alive) setPrice(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [enabled]);
+  return price;
+}
+
 /** Turn an ISO `resets_at` into a soft, user-friendly hint (never exact tokens). */
 function formatResetHint(resetsAt: string | null): string | null {
   if (!resetsAt) return null;
@@ -274,10 +399,12 @@ function formatResetHint(resetsAt: string | null): string | null {
 function UsageLimitModal({
   message,
   resetsAt,
+  isPaid,
   onClose,
 }: {
   message: string | null;
   resetsAt: string | null;
+  isPaid: boolean;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -289,6 +416,7 @@ function UsageLimitModal({
   }, [onClose]);
 
   const resetHint = formatResetHint(resetsAt);
+  const minPrice = useMinPlanPrice(!isPaid);
 
   return (
     <div
@@ -307,7 +435,9 @@ function UsageLimitModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold">You're going fast! 🚀</h3>
+        <h3 className="text-lg font-semibold">
+          {isPaid ? "You're going fast! 🚀" : "You've hit your free weekly limit"}
+        </h3>
         <p className="mt-3 text-sm" style={{ color: "var(--app-fg-muted)" }}>
           {message ||
             "You've reached your weekly limit for this feature. Please try again in a few days."}
@@ -317,14 +447,44 @@ function UsageLimitModal({
             {resetHint}
           </p>
         )}
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-white"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
-            Got it
-          </button>
+        {!isPaid && (
+          <p className="mt-2 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+            Subscribe to a paid plan for higher weekly limits
+            {minPrice != null ? ` — plans start at $${minPrice.toFixed(2)}` : ""}.
+          </p>
+        )}
+        <div className="mt-6 flex justify-end gap-3">
+          {isPaid ? (
+            <button
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white"
+              style={{ backgroundColor: "var(--accent)" }}
+            >
+              Got it
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: "var(--btn-secondary-bg)",
+                  border: "1px solid var(--btn-secondary-border)",
+                  color: "var(--btn-secondary-text)",
+                }}
+              >
+                Maybe later
+              </button>
+              <a
+                href="/pricing"
+                onClick={onClose}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                View plans
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>

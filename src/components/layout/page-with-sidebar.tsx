@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Sidebar } from "../modal/dashboard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import UsageLimitBanner from "./usage-limit-banner";
 
 const SIDEBAR_OPEN_WIDTH = "w-[260px]";
 const SIDEBAR_COLLAPSED_WIDTH = "w-[64px]";
@@ -92,6 +93,7 @@ export default function PageWithSidebar({
 
       <div className="flex-1 min-w-0 relative">
         <div className={"px-6 py-6 " + (mainClassName ?? "")}>
+          <UsageLimitBanner />
           {children}
         </div>
       </div>
