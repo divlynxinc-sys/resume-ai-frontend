@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
+import { ArrowRight, Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
 import lightLogo from "../../assets/Logo-01.png";
 import lightBrandIcon from "../../assets/Logo-03.png";
 import darkLogo from "../../assets/Logo-04.png";
@@ -167,19 +167,19 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
         <button
           type="button"
           onClick={() => navigate(isAuthenticated && !marketingMode ? "/dashboard" : "/")}
-          className="flex h-full items-center gap-2.5 select-none cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 rounded-lg"
+          className="flex h-full items-center gap-2 rounded-lg select-none cursor-pointer transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60"
           aria-label="Jobsynk AI — go to home"
         >
           <img
             src={theme === "dark" ? darkBrandIcon : lightBrandIcon}
             alt=""
-            className="pointer-events-none size-8 shrink-0 object-contain select-none"
+            className="pointer-events-none size-6 shrink-0 object-contain select-none"
           />
-          <span className="relative h-7 w-[8.75rem] shrink-0 overflow-hidden" aria-hidden="true">
+          <span className="relative h-[1.4rem] w-28 shrink-0 overflow-hidden" aria-hidden="true">
             <img
               src={theme === "dark" ? darkLogo : lightLogo}
               alt=""
-              className="pointer-events-none absolute -left-[0.2rem] -top-[3.54rem] w-[8.86rem] max-w-none select-none"
+              className="pointer-events-none absolute -left-[0.16rem] -top-[2.83rem] w-[7.09rem] max-w-none select-none"
             />
           </span>
         </button>
@@ -323,44 +323,76 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen((o) => !o)}
-              className="size-8 rounded-full bg-white/10 border border-white/20 grid place-items-center cursor-pointer hover:bg-white/20 transition"
+              className={`grid size-9 place-items-center rounded-xl border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+                profileOpen
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                  : "border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-fg-muted)] hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
+              }`}
               aria-label="Profile"
+              aria-expanded={profileOpen}
             >
-              <User2 className="size-4 text-white/70" />
+              <User2 className="size-4" />
             </button>
             {profileOpen && (
-              <div className="absolute right-0 top-10 w-64 rounded-xl bg-[#0f1629] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+              <div className="absolute right-0 top-11 w-64 overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 shadow-[var(--shadow-pop)]">
+                <span className="absolute right-3.5 top-0 size-3 -translate-y-1/2 rotate-45 border-l border-t border-[var(--app-border)] bg-[var(--app-surface)]" aria-hidden="true" />
                 {/* User info */}
-                <div className="px-3 py-3 flex items-center gap-3">
-                  <div className="size-9 rounded-full bg-blue-500/20 border border-blue-400/30 grid place-items-center shrink-0">
-                    <User2 className="size-4 text-blue-300" />
+                <div className="flex items-center gap-2.5 px-2 py-2">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                    <User2 className="size-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">{user?.name || "User"}</div>
-                    <div className="text-xs text-white/50 truncate">{user?.email || ""}</div>
+                    <div className="truncate text-sm font-semibold text-[var(--app-fg)]">{user?.name || "User"}</div>
+                    <div className="truncate text-[11px] text-[var(--app-fg-soft)]">{user?.email || ""}</div>
                   </div>
                 </div>
-                <div className="h-px bg-white/10" />
-                <div className="px-3 py-2.5 flex items-center gap-2">
-                  <div className="size-7 rounded-md bg-purple-500/20 border border-purple-400/40 grid place-items-center">
-                    <Crown className="size-4 text-purple-300" />
+
+                <div className="my-1 h-px bg-[var(--app-border)]" />
+
+                <div className="flex items-center justify-between gap-2.5 rounded-lg bg-[var(--app-surface-2)] px-2.5 py-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="grid size-7 shrink-0 place-items-center rounded-md bg-[var(--pastel-lavender)] text-[var(--accent-text)]">
+                      <Crown className="size-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--app-fg-soft)]">Current plan</p>
+                      <p className="truncate text-[13px] font-semibold text-[var(--app-fg)]">{planTitle}</p>
+                    </div>
                   </div>
-                  <div className="text-sm text-white/90">Plan: <span className="font-semibold text-white">{planTitle}</span></div>
+                  <span className="size-2 shrink-0 rounded-full bg-emerald-500 ring-4 ring-emerald-500/10" aria-label="Plan active" />
                 </div>
-                <div className="h-px bg-white/10" />
+
+                <div className="mt-1.5 space-y-0.5">
                 <button
-                  onClick={() => { navigate("/enterprise"); }}
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-sm text-white/80 hover:text-white hover:bg-white/5"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    navigate("/enterprise");
+                  }}
+                  className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--accent-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
                 >
-                  <Building2 className="size-4" /> Enterprise Plans
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--accent-text)] transition-colors group-hover:border-transparent">
+                    <Building2 className="size-3.5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-[var(--app-fg)]">Enterprise Plans</span>
+                    <span className="block text-[11px] text-[var(--app-fg-soft)]">Plans and tools for teams</span>
+                  </span>
+                  <ArrowRight className="size-4 text-[var(--app-fg-soft)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]" />
                 </button>
-                <div className="h-px bg-white/10" />
+
                 <button
                   onClick={() => askLogout()}
-                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 text-sm text-white/80 hover:text-white hover:bg-white/5"
+                  className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-rose-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30"
                 >
-                  <LogOut className="size-4" /> Logout
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-rose-500 transition-colors group-hover:border-rose-500/20">
+                    <LogOut className="size-3.5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-[var(--app-fg)] group-hover:text-rose-600 dark:group-hover:text-rose-400">Logout</span>
+                    <span className="block text-[11px] text-[var(--app-fg-soft)]">Sign out of your account</span>
+                  </span>
                 </button>
+                </div>
               </div>
             )}
           </div>

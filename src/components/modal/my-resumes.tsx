@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MoreVertical, Pencil, Trash2, Download, FileText, X } from "lucide-react";
+import { Search, MoreVertical, Pencil, Trash2, Download, FileText, Plus, X } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
@@ -91,11 +91,17 @@ function MiniResumePreview({ id }: { id: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    const iframe = iframeRef.current;
+    const container = containerRef.current;
+    if (!iframe || !container) return;
+
+    const updateScale = () => {
+      iframe.style.transform = `scale(${container.clientWidth / 794})`;
+    };
+    const resizeObserver = new ResizeObserver(updateScale);
+    resizeObserver.observe(container);
 
     const renderInto = (resume: ResumeData, slug: string) => {
-      const iframe = iframeRef.current;
-      const container = containerRef.current;
-      if (!iframe || !container) return;
       try {
         const html = renderResumeCardHtml(resume, slug);
         const doc = iframe.contentDocument;
@@ -103,9 +109,19 @@ function MiniResumePreview({ id }: { id: string }) {
           doc.open();
           doc.write(html);
           doc.close();
+
+          // Preview-only cleanup: remove scaled section rules and browser
+          // scrollbars that otherwise render as dark lines on the cards.
+          const previewStyles = doc.createElement("style");
+          previewStyles.textContent = `
+            html, body { overflow: hidden !important; scrollbar-width: none !important; }
+            body::-webkit-scrollbar, html::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+            .resume-root, .resume-root .page { border: 0 !important; outline: 0 !important; box-shadow: none !important; }
+            .resume-root .section-rule, .resume-root hr { display: none !important; }
+          `;
+          doc.head?.appendChild(previewStyles);
         }
-        const scale = container.clientWidth / 794;
-        iframe.style.transform = `scale(${scale})`;
+        updateScale();
         setReady(true);
       } catch {
         /* keep skeleton on render failure */
@@ -118,7 +134,10 @@ function MiniResumePreview({ id }: { id: string }) {
     const slug = draft?.templateSlug || "modern-minimal";
     if (draft?.resume) {
       renderInto(draft.resume, slug);
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+        resizeObserver.disconnect();
+      };
     }
 
     resumeService.get(Number(id)).then((resume: any) => {
@@ -128,11 +147,14 @@ function MiniResumePreview({ id }: { id: string }) {
       renderInto(mapContentToLocal(content, EMPTY_RESUME), slug);
     }).catch(() => { /* keep skeleton on network failure */ });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      resizeObserver.disconnect();
+    };
   }, [id]);
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-white select-none pointer-events-none border border-[var(--app-border)]">
+    <div ref={containerRef} className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-white select-none pointer-events-none shadow-[0_1px_3px_rgba(26,26,26,0.08)]">
       {/* Skeleton shown while fetching */}
       {!ready && (
         <div className="absolute inset-0 flex flex-col p-3 gap-1.5 bg-white">
@@ -161,6 +183,8 @@ function MiniResumePreview({ id }: { id: string }) {
         className="absolute top-0 left-0 origin-top-left border-none"
         style={{ width: 794, height: 1123, display: ready ? "block" : "none" }}
         sandbox="allow-same-origin"
+        scrolling="no"
+        tabIndex={-1}
       />
     </div>
   );
@@ -205,17 +229,20 @@ function ResumeCard({
     : null;
 
   return (
-    <div className="group/card rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] overflow-hidden flex flex-col hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] transition-all duration-300">
+    <article className="group/card flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-pop)]">
       {/* Mini document preview — clickable to edit */}
       <div
-        className="px-4 pt-4 pb-3 cursor-pointer"
+        className="relative cursor-pointer bg-[var(--app-surface-2)] p-3.5"
         onClick={() => navigate(`/resumes?id=${item.id}`)}
       >
         <MiniResumePreview id={item.id} />
+        <div className="pointer-events-none absolute inset-3.5 flex items-end justify-center rounded-xl bg-gradient-to-t from-black/25 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+          <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-sm">Open resume</span>
+        </div>
       </div>
 
       {/* Card footer */}
-      <div className="px-4 pb-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3.5 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {editing ? (
@@ -238,14 +265,14 @@ function ResumeCard({
               />
             ) : (
               <h3
-                className="text-sm font-medium truncate cursor-default text-[var(--app-fg)]"
+                className="truncate cursor-default text-sm font-semibold text-[var(--app-fg)]"
                 title={item.title || "Untitled Resume"}
               >
                 {item.title || "Untitled Resume"}
               </h3>
             )}
             {formattedDate && (
-              <p className="text-xs text-[var(--app-fg-soft)] mt-1">Updated {formattedDate}</p>
+              <p className="mt-1 text-[11px] text-[var(--app-fg-soft)]">Updated {formattedDate}</p>
             )}
           </div>
 
@@ -253,7 +280,8 @@ function ResumeCard({
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="p-1 rounded-md text-[var(--app-fg-soft)] hover:text-[var(--app-fg)] hover:bg-[var(--app-surface-2)] transition-colors"
+              className="rounded-lg p-1.5 text-[var(--app-fg-soft)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
+              aria-label={`More options for ${item.title || "Untitled Resume"}`}
             >
               <MoreVertical className="size-4" />
             </button>
@@ -281,21 +309,20 @@ function ResumeCard({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(`/resumes?id=${item.id}`)}
-            className="flex-1 py-2 text-sm rounded-lg font-medium transition-colors hover:opacity-90"
-            style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
+            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-[var(--btn-primary-bg)] text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
           >
-            Edit
+            Edit resume
           </button>
           <button
             title="Download"
-            className="p-2 rounded-lg border border-[var(--app-border-strong)] hover:bg-[var(--app-surface-2)] text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] transition-colors"
+            className="grid size-10 place-items-center rounded-xl border border-[var(--app-border-strong)] text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
             onClick={() => onDownload(item)}
           >
             <Download className="size-4" />
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -481,19 +508,25 @@ export default function MyResumesScreen() {
       )}
 
       <PageWithSidebar activeRoute="my-resumes">
-        <main className="px-6 py-4">
+        <main className="px-5 py-7 sm:px-6 sm:py-9">
           <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="flex flex-col justify-between gap-6 border-b border-[var(--app-border)] pb-7 md:flex-row md:items-end">
               <div>
-                <div className="text-xs font-medium tracking-[0.16em] uppercase text-[var(--accent-text)]">Library</div>
-                <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
+                  Resume library
+                  {!loading && hasResumes ? (
+                    <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] tracking-normal text-[var(--accent-text)]">{resumes.length}</span>
+                  ) : null}
+                </div>
+                <h1 className="mt-2 font-display text-4xl font-light tracking-tight text-[var(--app-fg)] md:text-5xl">
                   My <span className="italic">resumes</span>
                 </h1>
+                <p className="mt-2 max-w-lg text-sm text-[var(--app-fg-muted)]">Manage, edit, and download every version of your resume in one place.</p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
                 {/* Search Bar */}
-                <div className="relative w-full md:w-72 group">
+                <div className="group relative w-full sm:w-72">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="size-4 text-[var(--app-fg-soft)] group-focus-within:text-[var(--accent)] transition-colors" />
                   </div>
@@ -502,27 +535,20 @@ export default function MyResumesScreen() {
                     placeholder="Search resumes…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none transition-all"
-                    style={{
-                      backgroundColor: "var(--app-surface)",
-                      borderWidth: 1,
-                      borderStyle: "solid",
-                      borderColor: "var(--app-border-strong)",
-                      color: "var(--app-fg)",
-                    }}
+                    className="block h-11 w-full rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface)] pl-10 pr-4 text-sm text-[var(--app-fg)] outline-none transition-all placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15"
                   />
                 </div>
                 <button
                   onClick={() => navigate("/templates")}
-                  className="shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
                 >
-                  + New resume
+                  <Plus className="size-4" />
+                  New resume
                 </button>
               </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-7">
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
@@ -555,7 +581,7 @@ export default function MyResumesScreen() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {filteredResumes.map((item) => (
                     <ResumeCard
                       key={item.id}

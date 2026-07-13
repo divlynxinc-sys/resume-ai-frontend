@@ -23,14 +23,6 @@ function Textarea({ placeholder }: { placeholder: string }) {
   );
 }
 
-function IconButton({ children }: { children: ReactNode }) {
-  return (
-    <button className="size-9 rounded-full bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 flex items-center justify-center">
-      {children}
-    </button>
-  );
-}
-
 export default function ContactUsModal() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-white">
@@ -48,46 +40,13 @@ export default function ContactUsModal() {
               <h3 className="text-lg font-semibold">Contact Information</h3>
               <div className="mt-4 space-y-3 text-white/80">
                 <div className="flex items-center gap-3">
-                  <span className="text-white/50">✉️</span>
-                  <span>contact@jobsynk.ai</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white/50">📞</span>
-                  <span>+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-white/50">📍</span>
-                  <span>123 Innovation Drive, Tech City, USA</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-white/90">Office Hours</h4>
-                <p className="mt-2 text-white/80">Monday - Friday: 9:00 AM - 5:00 PM (EST)</p>
-                <p className="text-white/50 text-sm">Closed on weekends and public holidays.</p>
-              </div>
-
-              <div className="mt-8">
-                <h4 className="text-sm font-semibold text-white/90">Follow Us</h4>
-                <div className="mt-3 flex items-center gap-3">
-                  <IconButton>
-                    {/* Facebook */}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                    </svg>
-                  </IconButton>
-                  <IconButton>
-                    {/* Twitter/X */}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4l16 16M20 4L4 20" />
-                    </svg>
-                  </IconButton>
-                  <IconButton>
-                    {/* GitHub */}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2C7 2 4 5.5 4 10c0 3.5 2.3 6.5 5.5 7.5-.4-.3-.5-.8-.5-1.3v-2c-2 .3-2.5-1-2.5-1 .5-.8 1.1-.9 1.1-.9 1 .7 1.6.5 2 .4.1-.7.4-1.1.7-1.4-1.8-.2-3.6-.9-3.6-4 0-.9.3-1.6.8-2.2-.1-.2-.3-1 .1-2.1 0 0 .7-.2 2.3.8.7-.2 1.5-.3 2.3-.3s1.6.1 2.3.3c1.6-1 2.3-.8 2.3-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.2 0 3.1-1.8 3.8-3.6 4 .4.3.8.9.8 1.8v2.7c0 .5-.1 1.1-.5 1.4C17.7 16.5 20 13.5 20 10c0-4.5-3-8-8-8z" />
-                    </svg>
-                  </IconButton>
+                  <svg className="size-5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                  <a href="mailto:divlynx.inc@gmail.com" className="text-[var(--accent-text)] underline underline-offset-4 hover:text-[var(--accent-hover)]">
+                    divlynx.inc@gmail.com
+                  </a>
                 </div>
               </div>
             </div>
