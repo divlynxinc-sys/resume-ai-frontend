@@ -70,3 +70,6 @@ coverage/
 *.ai
 *.sketch
 *.xcf
+
+# Claude Code local instruction layer (knowledge-base rules) — never commit
+CLAUDE.local.md

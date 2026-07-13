@@ -61,7 +61,7 @@ function Column({
 export default function SiteFooter() {
   return (
     <footer className="text-white border-t border-white/10 bg-[var(--app-bg)]">
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
         <Brand />
 
         <Column
@@ -71,6 +71,24 @@ export default function SiteFooter() {
             { label: "Pricing", to: "/#pricing" },
             { label: "Templates", to: "/templates" },
             { label: "Dashboard", to: "/dashboard" },
+          ]}
+        />
+
+        <Column
+          title="FREE TOOLS"
+          links={[
+            { label: "ATS Resume Checker", to: "/ats-checker" },
+            { label: "Resume Templates", to: "/templates" },
+          ]}
+        />
+
+        <Column
+          title="RESOURCES"
+          links={[
+            { label: "Blog", to: "/blog" },
+            { label: "ATS Resume Format", to: "/blog/ats-resume-format" },
+            { label: "Tailoring Guide", to: "/blog/tailor-resume-to-job-description" },
+            { label: "Resume Keywords", to: "/blog/resume-keywords-that-matter" },
           ]}
         />
 

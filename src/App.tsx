@@ -13,6 +13,9 @@ import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 
 // ─── Lazy-load every page ─────────────────────────────────────────────────────
 const LandingPage        = lazy(() => import("./components/modal/landing-page"));
+const BlogScreen         = lazy(() => import("./components/modal/blog"));
+const BlogPostScreen     = lazy(() => import("./components/modal/blog-post"));
+const AtsCheckerScreen   = lazy(() => import("./components/modal/ats-checker"));
 const LoginScreen        = lazy(() => import("./components/modal/login"));
 const Signup             = lazy(() => import("./components/modal/signup"));
 const OnboardingScreen   = lazy(() => import("./components/modal/onboarding"));
@@ -60,6 +63,31 @@ function Page({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
 }
 
+// ─── Root layout ──────────────────────────────────────────────────────────────
+/**
+ * Wraps EVERY route so that `<ScrollRestoration/>` runs everywhere.
+ *
+ * It used to live inside `PrivateRoute` only, which meant the whole public surface
+ * had no scroll handling: clicking "Check my resume free" halfway down the landing
+ * page loaded `/ats-checker` still scrolled halfway down. React Router keeps the
+ * scroll offset across a client-side navigation unless something resets it.
+ *
+ * `ScrollRestoration` scrolls to top on a PUSH, restores the saved offset on a POP
+ * (browser back/forward — which is what you actually want), and scrolls to the
+ * element when the URL carries a hash.
+ *
+ * ⚠️ Render exactly ONE of these in the tree. Two instances fight over the scroll
+ * position — which is why it is here and not in the guards.
+ */
+function RootLayout() {
+  return (
+    <>
+      <ScrollRestoration />
+      <Outlet />
+    </>
+  );
+}
+
 // ─── Route guards ─────────────────────────────────────────────────────────────
 function PrivateRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -71,12 +99,7 @@ function PrivateRoute() {
     return <Navigate to={withNextParam("/login", next)} replace />;
   }
 
-  return (
-    <>
-      <ScrollRestoration />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
 
 function PublicOnlyRoute() {
@@ -89,9 +112,26 @@ function PublicOnlyRoute() {
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
+// Everything nests under RootLayout so <ScrollRestoration/> applies to every route,
+// public and private alike. Adding a top-level route OUTSIDE this wrapper would
+// silently lose scroll-to-top on navigation — don't.
 const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
   // Public – always accessible
   { path: "/",               element: <Page><LandingPage /></Page> },
+  // Public content surface. These are ALSO emitted as static HTML by
+  // scripts/prerender.mjs, because AI crawlers (GPTBot, ClaudeBot,
+  // PerplexityBot) fetch JS but never execute it — to them a lazy() route is a
+  // blank page. Vercel serves the prerendered file from the filesystem before
+  // the SPA rewrite in vercel.json ever applies; React then mounts over it.
+  { path: "/blog",           element: <Page><BlogScreen /></Page> },
+  { path: "/blog/:slug",     element: <Page><BlogPostScreen /></Page> },
+  // Free tool. DELIBERATELY ungated — no auth, no backend, no LLM call. It runs
+  // entirely client-side (lib/ats-check.ts + lib/resume-extract.ts), which is what
+  // lets us give the result away without a signup wall. The whole point of it.
+  { path: "/ats-checker",    element: <Page><AtsCheckerScreen /></Page> },
   { path: "/pricing",        element: <Page><PricingScreen /></Page> },
   { path: "/terms",          element: <Page><TermsScreen /></Page> },
   { path: "/privacy",        element: <Page><PrivacyScreen /></Page> },
@@ -139,8 +179,10 @@ const router = createBrowserRouter([
     ],
   },
 
-  // 404
-  { path: "*", element: <Page><NotFound /></Page> },
+      // 404
+      { path: "*", element: <Page><NotFound /></Page> },
+    ],
+  },
 ]);
 
 export default function App() {

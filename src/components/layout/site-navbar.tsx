@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
 import lightLogo from "../../assets/Logo-01.png";
 import lightBrandIcon from "../../assets/Logo-03.png";
@@ -161,7 +161,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
         </div>,
         document.body
       )}
-      <div className="h-full px-6 flex items-center justify-between">
+      <div className="relative h-full px-6 flex items-center justify-between">
 
         {/* Brand */}
         <button
@@ -184,7 +184,39 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
           </span>
         </button>
 
-
+        {/* Marketing nav. Real <Link>s, not navigate() buttons — these are the only
+            crawlable internal links into the content surface from the top of the page. */}
+        {marketingMode && (
+          <nav
+            aria-label="Main"
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex"
+          >
+            <Link
+              to="/#features"
+              className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
+            >
+              Features
+            </Link>
+            <Link
+              to="/ats-checker"
+              className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
+            >
+              ATS Checker
+            </Link>
+            <Link
+              to="/pricing"
+              className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
+            >
+              Pricing
+            </Link>
+            <Link
+              to="/blog"
+              className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
+            >
+              Blog
+            </Link>
+          </nav>
+        )}
 
         {/* Right: actions */}
         <div className="flex items-center gap-4 ml-auto relative">

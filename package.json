@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs",
+    "prerender": "node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:template": "node scripts/render-template-preview.mjs",
@@ -13,6 +14,7 @@
     "placeholder:test": "node scripts/test-placeholder.mjs",
     "broken:test": "node scripts/test-broken-backend.mjs",
     "templates:test": "node scripts/test-all-templates.mjs",
+    "ats:test": "node scripts/test-ats-check.mjs",
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/tw.css",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/tw.css --watch"
   },
@@ -24,6 +26,8 @@
     "clsx": "^2.1.1",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^0.545.0",
+    "mammoth": "^1.12.0",
+    "pdfjs-dist": "^6.1.200",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",

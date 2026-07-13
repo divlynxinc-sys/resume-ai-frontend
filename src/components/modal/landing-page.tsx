@@ -1,12 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Wand2, LayoutGrid, ShieldCheck, Quote, Sparkles, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, Link as LinkIcon, Gauge } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Wand2, LayoutGrid, ShieldCheck, Sparkles, ChevronUp, FileText, ListChecks, BarChart3, UserCheck, BadgeCheck, ArrowRight, Link as LinkIcon, Gauge } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import SiteNavbar from "../layout/site-navbar";
 import LaunchOfferBanner from "../layout/launch-offer-banner";
 import SiteFooter from "../layout/site-footer";
 import { PricingSection } from "./pricing";
 import { TailoringSection } from "./tailoring";
 import { TemplatesShowingSection } from "./templates-showing";
+import { BlogSection } from "./blog";
 
 type ResumePreviewTone = "blue" | "lavender" | "warm";
 
@@ -415,37 +416,137 @@ function FeatureCard({
   );
 }
 
-function Testimonial({
-  name,
-  role,
-  quote,
-  color = "sky",
-}: {
-  name: string;
-  role: string;
-  quote: string;
-  color?: CardColor;
-}) {
-  const styles = pastelStyles[color];
+/**
+ * Replaces the old `Testimonial` cards, which were three invented people with
+ * invented quotes. That was a liability, not an asset:
+ *   • Fabricated reviews are illegal in both target markets — the UK's DMCC Act
+ *     2024 and the FTC's 16 CFR 465 both ban them outright, and this site takes
+ *     live payments.
+ *   • It actively undermines the position we're building. The ATS checker tells
+ *     users, on screen, that no ATS emits a real score. Honesty is the wedge —
+ *     fake five-star reviews on the same page destroy it.
+ *   • It's what our competitors get caught doing. Rezi's loudest Reddit criticism
+ *     is "I suspect most 5-star reviews are fake", and that now follows their brand.
+ *
+ * So: no claims about people. Only things a visitor can verify in about ten
+ * seconds. When we have REAL, consented customer quotes, they belong here — with
+ * a name, a role, a city, and permission.
+ */
+const CHECKER_LOOKS_FOR = [
+  "Contact details a parser can find",
+  "Standard section headings",
+  "Bullets that carry a number",
+  "Duty phrasing vs. real outcomes",
+  "Dates on every role",
+  "Keywords from the job description",
+];
+
+function ProofSection() {
   return (
-    <div data-landing-reveal className="rounded-2xl bg-[var(--app-surface)] border border-[var(--app-border)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]">
-      <Quote className={`size-5 ${styles.iconText} opacity-60`} />
-      <p className="mt-4 text-sm text-[var(--app-fg)] leading-relaxed">
-        "{quote}"
-      </p>
-      <div className="mt-5 flex items-center gap-3">
+    <section className="max-w-[1100px] mx-auto px-6">
+      <SectionTitle
+        eyebrow="Proof, not testimonials"
+        title="Don't take our word for it."
+        subtitle="We're a new product, so we're not going to show you invented five-star reviews. Here's the actual work instead — check it yourself, free, without an account."
+      />
+
+      <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* 1. What tailoring actually does — a real before/after, not a claim. */}
         <div
-          className={`size-9 rounded-full flex items-center justify-center ${styles.iconText}`}
-          style={{ backgroundColor: styles.tint }}
+          data-landing-reveal
+          className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)] sm:p-7"
         >
-          <span className="text-xs font-semibold">{name.charAt(0)}</span>
+          <div
+            className="size-11 rounded-xl flex items-center justify-center text-[#B85F2E]"
+            style={{ backgroundColor: "var(--pastel-peach)" }}
+          >
+            <Sparkles className="size-5" />
+          </div>
+          <h3 className="mt-5 text-base font-medium tracking-tight text-[var(--app-fg)]">
+            What a rewritten bullet looks like
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--app-fg-muted)]">
+            Same job. Same person. One of these gets a call.
+          </p>
+
+          <div className="mt-5 space-y-3">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-4">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--app-fg-soft)]">
+                Before
+              </div>
+              <p className="mt-2 font-mono text-[13px] leading-6 text-[var(--app-fg-muted)]">
+                Responsible for managing the company's social media accounts.
+              </p>
+            </div>
+
+            <div
+              className="rounded-xl border border-[var(--app-border)] p-4"
+              style={{ backgroundColor: "var(--pastel-mint)" }}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#3F8E5C]">
+                After
+              </div>
+              <p className="mt-2 font-mono text-[13px] leading-6 text-[var(--app-fg)]">
+                Grew Instagram from 4k to 27k followers in 11 months by shifting from daily
+                product posts to a weekly customer-story series — now driving ~18% of site
+                traffic.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/blog/resume-bullet-points-that-get-interviews"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)] transition-opacity hover:opacity-75"
+          >
+            How to write these yourself
+            <ArrowRight className="size-4" />
+          </Link>
         </div>
-        <div>
-          <div className="text-sm font-medium text-[var(--app-fg)]">{name}</div>
-          <div className="text-xs text-[var(--app-fg-soft)]">{role}</div>
+
+        {/* 2. The free tool — the strongest "try it" we have. */}
+        <div
+          data-landing-reveal
+          className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 transition-all duration-300 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)] sm:p-7"
+        >
+          <div
+            className="size-11 rounded-xl flex items-center justify-center text-[#3F8E5C]"
+            style={{ backgroundColor: "var(--pastel-mint)" }}
+          >
+            <ShieldCheck className="size-5" />
+          </div>
+          <h3 className="mt-5 text-base font-medium tracking-tight text-[var(--app-fg)]">
+            Check your resume in ten seconds
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--app-fg-muted)]">
+            Upload it and we'll name every formatting choice that would trip a parser. No
+            account, and the file is read in your browser — it's never uploaded anywhere.
+          </p>
+
+          <ul className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {CHECKER_LOOKS_FOR.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-2 text-[13px] leading-6 text-[var(--app-fg-muted)]"
+              >
+                <BadgeCheck className="mt-1 size-3.5 shrink-0 text-[var(--accent-text)]" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            to="/ats-checker"
+            className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-6 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
+          >
+            Check my resume free
+            <ArrowRight className="size-4" />
+          </Link>
+          <p className="mt-3 text-xs text-[var(--app-fg-soft)]">
+            Free forever · no signup · nothing uploaded
+          </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -557,33 +658,10 @@ export default function LandingPageScreen() {
         <TemplatesShowingSection />
       </div>
 
-      {/* Testimonials */}
-      <section className="max-w-[1100px] mx-auto px-6 mt-24">
-        <SectionTitle
-          eyebrow="Testimonials"
-          title="What our users say."
-        />
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Testimonial
-            name="Sarah Miller"
-            role="Software Engineer"
-            quote="Helped me land my dream job at a top tech company. The AI suggestions were spot-on."
-            color="blue"
-          />
-          <Testimonial
-            name="David Chen"
-            role="Marketing Manager"
-            quote="I was struggling to update my resume, but this made it simple. Interviews within a week."
-            color="emerald"
-          />
-          <Testimonial
-            name="Emily Rodriguez"
-            role="Graphic Designer"
-            quote="The templates allowed me to create a resume that truly reflects my personal brand."
-            color="pink"
-          />
-        </div>
-      </section>
+      {/* Proof — replaced three invented testimonials. See ProofSection above. */}
+      <div className="mt-24">
+        <ProofSection />
+      </div>
 
       {/* Tailoring */}
       <div className="mt-24">
@@ -593,6 +671,12 @@ export default function LandingPageScreen() {
       {/* Pricing */}
       <div className="mt-24">
         <PricingSection />
+      </div>
+
+      {/* Blog — sits after pricing so it catches visitors who aren't ready to buy
+          yet, rather than competing with the conversion moment. */}
+      <div className="mt-24">
+        <BlogSection />
       </div>
 
       <div className="mt-24">
