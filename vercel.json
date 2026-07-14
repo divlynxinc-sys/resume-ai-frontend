@@ -1,26 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "//": [
-    "The catch-all rewrite below is what makes the SPA work on deep links. It does NOT",
-    "clobber the prerendered blog pages from scripts/prerender-blog.mjs: Vercel applies",
-    "`rewrites` only AFTER checking the filesystem, so dist/blog/<slug>/index.html wins",
-    "for /blog/<slug> and the rewrite never fires. (Note `vite preview` does NOT behave",
-    "this way — its fallback beats the file — so a local preview is not a valid test of",
-    "this. Verify against a real deployment, see below.)",
-    "",
-    "cleanUrls + trailingSlash:false pin the canonical URL form to /blog/<slug> — no",
-    "trailing slash, no .html — which is exactly what <link rel='canonical'> emits. Left",
-    "to defaults, /blog/foo and /blog/foo/ can both resolve and split the same page.",
-    "",
-    "AFTER DEPLOY, verify the whole point of this actually works:",
-    "  curl -s -A GPTBot https://jobsynk.co/blog/ats-resume-format | wc -w",
-    "  -> want ~1700 words. If you get ~130, you are serving the SPA shell and every AI",
-    "     crawler still sees a blank page.",
-    "Also confirm Cloudflare (or any proxy) is not blocking AI bots at the edge, which",
-    "happens BEFORE robots.txt is ever read:  curl -I -A GPTBot https://jobsynk.co/"
-  ],
-
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
