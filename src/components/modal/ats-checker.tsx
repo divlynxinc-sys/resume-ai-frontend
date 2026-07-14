@@ -3,16 +3,20 @@ import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Check,
+  Copy,
+  Download,
   FileText,
   Loader2,
+  Share2,
   ShieldCheck,
   UploadCloud,
   X,
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
-import { analyzeResume, type AtsCheck, type CheckStatus } from "@/lib/ats-check";
+import { analyzeResume, type AtsCheck, type AtsReport, type CheckStatus } from "@/lib/ats-check";
 import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-extract";
+import { downloadScoreCard, shareText } from "@/lib/share-card";
 import { organizationSchema, SITE_URL } from "@/content/blog/schema";
 import { useSeo } from "@/lib/seo";
 
@@ -115,6 +119,102 @@ function CheckRow({ check }: { check: AtsCheck }) {
         )}
       </div>
     </li>
+  );
+}
+
+/**
+ * The share row. This is the growth loop: someone checks their resume, gets a
+ * number they're pleased (or annoyed) with, and posts it — carrying the URL to the
+ * next person. The card is deliberately a *challenge* ("think yours scores higher?
+ * prove it"), because that's what makes a score worth posting.
+ *
+ * Web Share is used where it exists (every mobile browser), because a native share
+ * sheet posts straight to WhatsApp/LinkedIn — which is where this actually spreads.
+ * Desktop falls back to copy-to-clipboard.
+ */
+function ShareRow({ report }: { report: AtsReport }) {
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const handleDownload = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await downloadScoreCard(report);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const text = shareText(report);
+    const url = `${SITE_URL}/ats-checker`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "My ATS resume score", text, url });
+        return;
+      } catch {
+        // User dismissed the sheet, or the browser refused. Fall through to copy.
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <div className="mt-7 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-5">
+      <h3 className="text-sm font-medium text-[var(--app-fg)]">Share your score</h3>
+      <p className="mt-1.5 text-xs leading-6 text-[var(--app-fg-soft)]">
+        Downloads a one-page card with your score and what we found. It contains no
+        personal details and none of your resume text — and if you added a job description,
+        those keywords are left off it too.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={busy}
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)] disabled:cursor-wait disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          {busy ? "Building your card…" : "Download score card"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleShare}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]"
+        >
+          {copied ? <Check className="size-4 text-[#3F8E5C]" /> : <Share2 className="size-4" />}
+          {copied ? "Copied" : "Share link"}
+        </button>
+
+        {copied && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-[var(--app-fg-soft)]">
+            <Copy className="size-3.5" />
+            Message copied to your clipboard
+          </span>
+        )}
+      </div>
+
+      {failed && (
+        <p className="mt-3 text-xs leading-6 text-[#B85273]">
+          Couldn't build the card in this browser. Your result is still on screen — try
+          taking a screenshot instead.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -476,6 +576,8 @@ export default function AtsCheckerScreen() {
                   )}
                 </div>
               )}
+
+              <ShareRow report={report} />
 
               <div className="mt-7 rounded-xl border border-[var(--app-border)] bg-[var(--accent-soft)] p-5 text-center">
                 <p className="text-sm leading-7 text-[var(--app-fg-muted)]">

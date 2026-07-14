@@ -285,11 +285,11 @@ try {
     logLevel: "warning",
     alias: { "@": srcDir },
     plugins: [assetPlugin(), viteUrlSuffixPlugin()],
-    // Browser-only, and only ever reached from a user's file-drop handler on
-    // /ats-checker. `lib/resume-extract.ts` imports them dynamically, so leaving
-    // them external means esbuild neither bundles nor executes them here — the
-    // server render just never takes that code path.
-    external: ["pdfjs-dist", "mammoth"],
+    // Browser-only, and only ever reached from a user's click on /ats-checker
+    // (file drop → resume-extract; Share → share-card). All three are imported
+    // dynamically, so leaving them external means esbuild neither bundles nor
+    // executes them here — the server render simply never takes those code paths.
+    external: ["pdfjs-dist", "mammoth", "html2pdf.js"],
     // react-dom/server is CommonJS and calls require("util"). Bundling CJS into an
     // ESM output leaves a bare `require`, which ESM has no definition for
     // ("Dynamic require of util is not supported"). Re-create it from import.meta.
