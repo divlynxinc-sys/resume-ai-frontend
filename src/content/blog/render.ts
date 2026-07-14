@@ -208,6 +208,58 @@ function renderBlock(block: Block, tone: CalloutTone): string {
         }
       </figure>`;
 
+    case "doc": {
+      const sections = block.sections
+        .map(
+          (section) => `<section class="mt-5 first:mt-0">
+            <h4 class="border-b border-[var(--app-border)] pb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--app-fg)]">${inline(
+              section.heading
+            )}</h4>
+            <div class="mt-2.5 space-y-1.5">
+              ${section.lines
+                .map((line) =>
+                  line.trim() === ""
+                    ? `<div aria-hidden="true" class="h-3"></div>`
+                    : `<p class="text-[13px] leading-6 text-[var(--app-fg-muted)]">${inline(
+                        line
+                      )}</p>`
+                )
+                .join("")}
+            </div>
+          </section>`
+        )
+        .join("");
+
+      return `<figure class="my-10">
+        <div class="overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-soft)]">
+          <div class="border-b border-[var(--app-border)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--app-fg-soft)]" style="background-color:${
+            TONE_BG[tone]
+          }">
+            Example résumé — copy the structure, not the words
+          </div>
+          <div class="px-6 py-7 sm:px-9 sm:py-9">
+            <header class="border-b-2 border-[var(--app-fg)] pb-3">
+              <h3 class="text-xl font-bold tracking-tight text-[var(--app-fg)]">${inline(
+                block.name
+              )}</h3>
+              <p class="mt-1 text-[13px] font-semibold uppercase tracking-[0.1em] text-[var(--accent-text)]">${inline(
+                block.role
+              )}</p>
+              <p class="mt-1.5 text-[11px] text-[var(--app-fg-soft)]">${inline(block.contact)}</p>
+            </header>
+            ${sections}
+          </div>
+        </div>
+        ${
+          block.caption
+            ? `<figcaption class="mt-3 text-xs leading-6 text-[var(--app-fg-soft)]">${inline(
+                block.caption
+              )}</figcaption>`
+            : ""
+        }
+      </figure>`;
+    }
+
     case "sample":
       return `<figure class="my-6 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-2)]">
         ${
@@ -288,6 +340,10 @@ export function countWords(post: Post): number {
     if (block.type === "quote" || block.type === "sample") parts.push(block.text);
     if (block.type === "callout") parts.push(`${block.title} ${block.text}`);
     if (block.type === "table") parts.push([...block.head, ...block.rows.flat()].join(" "));
+    if (block.type === "doc")
+      parts.push(
+        [block.name, block.role, ...block.sections.flatMap((s) => [s.heading, ...s.lines])].join(" ")
+      );
   }
   for (const item of post.faq) parts.push(`${item.q} ${item.a}`);
   return toPlainText(parts.join(" ")).split(/\s+/).filter(Boolean).length;

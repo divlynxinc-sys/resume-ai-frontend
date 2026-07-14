@@ -920,6 +920,650 @@ export const POSTS: Post[] = [
       },
     ],
   },
+ {
+    slug: "software-engineer-resume-template",
+    title: "The Software Engineer Resume Template That Survives Six Seconds",
+    seoTitle: "Software Engineer Resume Template (2026) — With a Full Example",
+    description:
+      "A hiring manager gives your resume about six seconds. Here's what they're actually looking for in that time, a template built around it, and a full worked example.",
+    excerpt:
+      "It's Friday afternoon. There are 180 applications in the folder and one hiring manager. Here's what actually happens to your resume in the six seconds it gets — and how to build one that survives it.",
+    publishedAt: "2026-07-14",
+    updatedAt: "2026-07-14",
+    author: TEAM,
+    tags: ["Templates", "Engineering", "Resume basics"],
+    readingMinutes: 8,
+    hero: "stack",
+    tone: "accent",
+    faq: [
+      {
+        q: "What should a software engineer's resume look like in 2026?",
+        a: "One page if you have under ten years of experience, single column, standard section headings, and a top third that makes your stack and your seniority obvious without scrolling. The single biggest differentiator is not design — it is whether your bullets describe outcomes or duties.",
+      },
+      {
+        q: "Should a software engineer's resume be one page or two?",
+        a: "One page under about ten years of experience, and honestly one page for most people beyond it. A second page is not extra room to say more — it is a second page nobody reads. If you cannot fit it, you are including things that are not earning their space.",
+      },
+      {
+        q: "Do I need a GitHub link on my resume?",
+        a: "Only if there is something on it. A GitHub with three forked tutorials is worse than no link, because a recruiter will click it and the click will hurt you. If your best work is private or at an employer, describe it in a bullet instead.",
+      },
+      {
+        q: "Where does the skills section go?",
+        a: "Near the top if you are early-career and your stack is the main thing you are selling; near the bottom if you have five-plus years and your experience is the main thing. Either way it is a flat, scannable list — never a grid of five-star proficiency ratings, which parse as nothing and mean nothing.",
+      },
+    ],
+    body: [
+      {
+        type: "takeaways",
+        items: [
+          "The **top third of page one** decides everything. Stack, seniority and one number, before any scrolling.",
+          "**Single column, one page, standard headings.** Every clever layout you've seen is a risk with no upside.",
+          "Bullets describe **what changed**, not what you were assigned. `Cut p99 latency 6×` beats `Responsible for backend services`.",
+          "**Name the stack in the work, not just the skills list.** A tool inside a bullet with a number attached is proof; the same word in a list is a claim.",
+        ],
+      },
+      {
+        type: "p",
+        text: "It's four o'clock on a Friday. The req has been open for eleven days, there are 180 applications in the folder, and the hiring manager — who also has a sprint review on Monday and a production incident from Tuesday still open in another tab — has an hour before they leave.",
+      },
+      {
+        type: "p",
+        text: "They are not going to read your resume. Nobody is going to read your resume. What is going to happen is that someone scrolls a list, opens yours, spends **about six seconds** in the top third of page one, and makes one of two decisions: *maybe* or *next*. Everything you write below that fold is only ever read by someone who has already decided you might be worth it.",
+      },
+      {
+        type: "p",
+        text: "That's not cynicism. It's the constraint. And once you accept it, building a software engineer's resume gets a lot simpler — because you stop trying to be comprehensive and start trying to be **legible**.",
+      },
+      { type: "h2", id: "the-six-seconds", text: "What happens in the six seconds?" },
+      {
+        type: "p",
+        text: "They're answering three questions, in this order, and they're doing it almost pre-verbally:",
+      },
+      {
+        type: "ol",
+        items: [
+          "**What kind of engineer is this?** Backend, frontend, infra, ML, mobile. If they can't tell, you're already in trouble — a generalist reads as *unplaceable*, not *versatile*.",
+          "**How senior?** Not your title — your *scope*. Did you own a system, a feature, or a ticket?",
+          "**Is there anything here I couldn't get from the other 179?** One number. One specific system. One thing only you did.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Notice what isn't on that list. Not your font. Not your two-column layout. Not the little skill bars showing you at 80% Python. Those things don't get you rejected — they just don't do anything, while costing you the space and the parseability that would.",
+      },
+      {
+        type: "figure",
+        art: "stack",
+        caption: "The top third of page one is the entire resume. Everything below it is documentation for a decision already made.",
+      },
+      { type: "h2", id: "the-template", text: "So what's the template?" },
+      {
+        type: "p",
+        text: "Boring. Deliberately, aggressively boring. Single column, standard headings, real text, one page. Every deviation from this is a risk you're taking for no upside — and the parser that reads you first has never once been impressed by a sidebar.",
+      },
+      {
+        type: "doc",
+        name: "Jordan Ellis",
+        role: "Senior Backend Engineer",
+        contact: "jordan.ellis@email.com · +1 (555) 240-1187 · Austin, TX · github.com/jellis",
+        sections: [
+          {
+            heading: "Summary",
+            lines: [
+              "Backend engineer, 6 years, focused on payments and high-throughput APIs. Built the ledger service behind ~40k transactions/week and cut checkout failures by a third. Comfortable owning PCI-scoped systems end to end.",
+            ],
+          },
+          {
+            heading: "Experience",
+            lines: [
+              "**Senior Backend Engineer** — Northstar Systems, Austin · Mar 2022 – Present",
+              "• Cut checkout drop-off from 34% to 21% in one quarter by rebuilding the payment step; shipped with two engineers and a designer.",
+              "• Built the ledger service that now handles ~40,000 transactions/week, with idempotency that eliminated ~1,200 duplicate charges a month.",
+              "• Migrated 40 services to Kubernetes, taking deploy time from 25 minutes to 4 and removing the weekly release freeze.",
+              "• Mentored two juniors; both shipped to production independently within a quarter.",
+              "",
+              "**Backend Engineer** — BrightWorks Studio, Remote · Jun 2019 – Feb 2022",
+              "• Reduced p99 API latency 6× by adding a read-through cache and killing an N+1 in the orders path.",
+              "• Owned the on-call rotation redesign; paged incidents dropped from ~9/week to under 2.",
+            ],
+          },
+          {
+            heading: "Skills",
+            lines: [
+              "**Languages:** Go, Python, TypeScript, SQL",
+              "**Infrastructure:** Kubernetes, Terraform, AWS (ECS, RDS, SQS), Postgres, Kafka",
+              "**Practices:** Distributed tracing, load testing, PCI-DSS scope, incident command",
+            ],
+          },
+          {
+            heading: "Projects",
+            lines: [
+              "**Ledger** — open-source double-entry accounting library in Go. 900+ stars, used in production by three companies. github.com/jellis/ledger",
+            ],
+          },
+          {
+            heading: "Education",
+            lines: ["BSc Computer Science — University of Texas at Austin, 2019"],
+          },
+        ],
+        caption: "One page. One column. Standard headings. The interesting part is the bullets, not the layout — which is exactly the point.",
+      },
+      { type: "h2", id: "the-bullets", text: "How do you write the bullets?" },
+      {
+        type: "p",
+        text: "This is the whole game, and it's where almost every engineering resume dies. Look at the difference:",
+      },
+      {
+        type: "sample",
+        label: "What most engineers write",
+        text: "• Responsible for backend services and API development.\n• Worked on migrating our infrastructure to Kubernetes.\n• Helped improve system performance and reliability.",
+      },
+      {
+        type: "sample",
+        label: "The same work, as a change",
+        text: "• Migrated 40 services to Kubernetes, taking deploy time from 25 min to 4\n  and removing the weekly release freeze.\n• Reduced p99 API latency 6x by adding a read-through cache and killing an\n  N+1 in the orders path.",
+      },
+      {
+        type: "p",
+        text: "Same person. Same job. The first version tells you what the org chart said they were assigned. The second tells you **what was different because they were there** — and that is the only thing a hiring manager is actually reading for.",
+      },
+      {
+        type: "p",
+        text: "The formula that forces it — popularised as a Google recruiting guideline — is *accomplished [X], as measured by [Y], by doing [Z]*. It works not because it's magic but because you cannot finish the sentence without naming an outcome, a measurement and a method. Which happens to be exactly the three things you'll be asked about in the interview anyway. A bullet written this way is a **pre-answered interview question**.",
+      },
+      {
+        type: "callout",
+        tone: "butter",
+        title: "\"But I don't have metrics\"",
+        text: "You have more than you think, and none of them have to be revenue. Latency, deploy frequency, incident count, request volume, build time, error rate, team size, number of services, time-to-first-response. \"25 minutes → 4 minutes\" is a metric. So is \"9 pages a week → under 2\". Go looking; they're in your dashboards.",
+      },
+      { type: "h2", id: "the-stack", text: "Where does the tech stack actually belong?" },
+      {
+        type: "p",
+        text: "Both places, doing different jobs.",
+      },
+      {
+        type: "table",
+        head: ["Placement", "What it does", "Worth"],
+        rows: [
+          [
+            "**Inside a bullet, with a number**",
+            "*\"Migrated 40 services to Kubernetes, deploy 25min → 4min.\"* Proves you've used it under real conditions.",
+            "Very high",
+          ],
+          [
+            "**In the summary**",
+            "Read by everyone, so it does real work — but it's a claim, not evidence.",
+            "Medium",
+          ],
+          [
+            "**In the skills list**",
+            "Necessary so a recruiter's keyword search returns you at all. Carries almost no persuasive weight on its own.",
+            "A checkbox, not an argument",
+          ],
+          [
+            "**As a five-star proficiency bar**",
+            "Parses as nothing. Means nothing — nobody agrees what four stars in Python is.",
+            "Actively negative",
+          ],
+        ],
+      },
+      {
+        type: "p",
+        text: "The practical rule: **every technology you'd be sad not to be asked about should appear inside a bullet at least once.** The skills list is there so the database search finds you. The bullets are there so the human keeps reading.",
+      },
+      { type: "h2", id: "projects", text: "Do side projects count?" },
+      {
+        type: "p",
+        text: "Yes — under one condition. A project counts when **someone other than you has used it**. Stars, downloads, a company running it, teammates depending on it, users. *\"Open-source double-entry accounting library, 900+ stars, used in production by three companies\"* is a real credential.",
+      },
+      {
+        type: "p",
+        text: "A project does not count when it's a tutorial you followed. A to-do app, a weather dashboard, a clone of an existing product with no users — a hiring manager has seen four hundred of these and they read as *\"has completed a course\"*, which they already assumed. If you're early-career and that's all you have, **one** of them, described in terms of a real technical decision you made and defended, beats three of them listed as titles.",
+      },
+      {
+        type: "quote",
+        text: "A GitHub link with nothing on it is worse than no GitHub link. They will click it, and the click will cost you.",
+      },
+      { type: "h2", id: "what-to-cut", text: "What should you cut?" },
+      {
+        type: "ul",
+        items: [
+          "**The objective statement.** *\"Seeking a challenging role where I can leverage my skills.\"* Everyone is. Replace it with a summary that says what you do and how well.",
+          "**Every soft-skill adjective.** \"Team player\", \"detail-oriented\", \"passionate\". Nobody has ever searched an ATS for *team player*, and nobody has ever believed one.",
+          "**Coursework, if you're more than two years out.** It was relevant once.",
+          "**Any technology you'd panic about being asked to whiteboard.** Every term on your resume is an implicit offer to discuss it for five minutes.",
+          "**The second page**, if you're under ten years in. It isn't extra room; it's a page nobody reaches.",
+        ],
+      },
+      {
+        type: "callout",
+        tone: "mint",
+        title: "Do this next",
+        text: "Take your current resume and cover everything below the top third of page one. Can a stranger tell, from what's left, what kind of engineer you are and how senior? If not, that's the whole problem — and it's fixable in twenty minutes. Then run it through our [free ATS checker](/ats-checker) to catch what a parser would drop.",
+      },
+    ],
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    slug: "fresh-graduate-resume-template",
+    title: "The Fresh Graduate Resume Template (When the Page Is Mostly Empty)",
+    seoTitle: "Fresh Graduate Resume Template (2026) — Full Example Included",
+    description:
+      "You have one page and almost nothing to put on it. The fix isn't padding — it's reordering. A graduate resume template built around what you actually have, with a full example.",
+    excerpt:
+      "The cursor is blinking under EXPERIENCE and you have nothing to type. Here's the thing nobody tells you: the problem isn't that you have no experience. It's that you're filling in the wrong section first.",
+    publishedAt: "2026-07-14",
+    updatedAt: "2026-07-14",
+    author: TEAM,
+    tags: ["Templates", "Graduates", "Resume basics"],
+    readingMinutes: 8,
+    hero: "sprout",
+    tone: "mint",
+    faq: [
+      {
+        q: "What should a fresh graduate's resume include?",
+        a: "Education near the top, then projects, then any work at all — including part-time and unrelated jobs — then skills. The order matters more than the content: you lead with the strongest true thing you have, and for a recent graduate that is usually the degree and the work you did during it.",
+      },
+      {
+        q: "Should I include my GPA?",
+        a: "Include it if it's strong (roughly 3.5+ / 2:1 or above) and you graduated within the last two years. Otherwise leave it off — an absent GPA is unremarkable, while a mediocre one is a number you've volunteered against yourself.",
+      },
+      {
+        q: "How long should a graduate resume be?",
+        a: "One page, and this is not negotiable. If you are struggling to fill it, the answer is never to pad — it is to describe what you did do in more detail, with specifics and numbers.",
+      },
+      {
+        q: "Do part-time jobs belong on a graduate resume?",
+        a: "Yes, and they are worth far more than graduates think. Two years of retail while carrying a full course load is evidence of reliability, time management and working with difficult people under pressure — all of which are things employers genuinely worry about in a first hire, and none of which your degree proves.",
+      },
+    ],
+    body: [
+      {
+        type: "takeaways",
+        items: [
+          "You don't have an experience problem — you have an **order** problem. Lead with **Education**, then **Projects**, then any work at all.",
+          "**Projects are experience.** Describe them like a job: what you built, what decisions you made, what happened.",
+          "**Your part-time job counts.** Retail during a full course load is evidence of things a degree can't prove.",
+          "**One page. Never pad.** Empty space beats filler — filler is what makes a resume look junior.",
+        ],
+      },
+      {
+        type: "p",
+        text: "It's the same scene every year, in every country, in a few million bedrooms. You've opened a resume template. You've typed your name. You've typed your degree. And now the cursor is blinking under a heading that says **EXPERIENCE**, and you have nothing to put under it, and the whole exercise suddenly feels like an elaborate way of proving you shouldn't be hired.",
+      },
+      {
+        type: "p",
+        text: "So you start reaching. You add a line about being a *fast learner*. You describe the group project as though it were a startup. You put *Microsoft Word* under skills. And the document that comes out the other end is the specific, recognisable genre of **a resume that is embarrassed about itself** — and a recruiter can smell that in about a second and a half.",
+      },
+      {
+        type: "p",
+        text: "Here is the reframe that fixes it, and it is genuinely just a reordering problem.",
+      },
+      { type: "h2", id: "the-order", text: "Why is the order the whole problem?" },
+      {
+        type: "p",
+        text: "A resume is read top to bottom, and the top is worth vastly more than the bottom. The standard template — Summary, Experience, Education, Skills — was designed for someone whose **strongest asset is their last job**.",
+      },
+      {
+        type: "p",
+        text: "That is not you. Your strongest asset is your degree and the work you did during it. So you move that to the top, and suddenly you are not a person with an empty Experience section — you are a person leading with your best material, which is what every good resume does.",
+      },
+      {
+        type: "table",
+        head: ["Standard order", "Graduate order", "Why"],
+        rows: [
+          ["Summary", "**Summary**", "Two lines. Still first — it's the only part guaranteed to be read."],
+          ["Experience", "**Education**", "Your strongest true thing. Lead with it. Add relevant coursework, honours, thesis."],
+          ["Education", "**Projects**", "This *is* your experience section. It's just not called that."],
+          ["Skills", "**Experience**", "Whatever you have — internships, part-time, campus roles, volunteering. All of it."],
+          ["—", "**Skills**", "Flat list. Real tools only."],
+        ],
+        caption: "Two years after your first job, flip it back. Until then, this is the order.",
+      },
+      {
+        type: "figure",
+        art: "sprout",
+        caption: "You're not starting from nothing. You're starting from one thing, and you're leading with it.",
+      },
+      { type: "h2", id: "projects-are-experience", text: "Why are projects experience?" },
+      {
+        type: "p",
+        text: "Because a hiring manager isn't reading for *employment*. They're reading for **evidence that you can do the work**. Employment is just the most common way people acquire that evidence. It is not the only way, and it's not even the best way for an entry-level hire — a first job teaches you a company, but a project you designed and shipped teaches you the thing they're actually hiring for.",
+      },
+      {
+        type: "p",
+        text: "So describe your projects **exactly like a job**. What was the problem? What did you build? What decision did you make that someone else would have made differently? What happened?",
+      },
+      {
+        type: "sample",
+        label: "How most graduates list a project",
+        text: "• Final Year Project — built a web application using React and Node.js.\n• Group Project — created a database system for a local business.",
+      },
+      {
+        type: "sample",
+        label: "The same projects, as evidence",
+        text: "• Built a route-planning app for the campus shuttle after realising the\n  timetable was wrong most mornings. Scraped the live GPS feed, cached it,\n  and shipped it to ~400 students in a term. Learned the hard way that the\n  GPS feed lies for the first 90 seconds after a bus starts moving.\n• Designed the schema for a local bakery's ordering system, then rewrote it\n  when we realised the original couldn't handle a customer changing an order\n  after it was placed. That rewrite is the thing I'd do differently first.",
+      },
+      {
+        type: "p",
+        text: "Read those again. Neither of them is a job. Both of them are unmistakably the work of someone who has actually built something, hit a wall, and thought about it. **That is what the reader is looking for**, and it beats *\"Responsible for social media\"* at a real internship every single time.",
+      },
+      {
+        type: "callout",
+        tone: "butter",
+        title: "The detail that proves it's real",
+        text: "Notice the thing that makes those bullets land: they both include something that went wrong. \"The GPS feed lies for the first 90 seconds.\" \"We rewrote it when we realised…\" Nobody who hadn't built the thing would know that. Specific, slightly awkward truths are the most credible thing you can put on a page — and they're the thing an AI-written resume can never fake, because it doesn't know them.",
+      },
+      { type: "h2", id: "the-template", text: "What does it look like assembled?" },
+      {
+        type: "doc",
+        name: "Amara Osei",
+        role: "Graduate Software Engineer",
+        contact: "amara.osei@email.com · +44 7700 900412 · Manchester, UK · github.com/amaraosei",
+        sections: [
+          {
+            heading: "Summary",
+            lines: [
+              "Computer Science graduate (First Class) with a focus on backend systems. Built and shipped a route-planning app used by ~400 students, and spent two years working retail alongside a full course load. Looking for a first backend role where I can own something small end to end.",
+            ],
+          },
+          {
+            heading: "Education",
+            lines: [
+              "**BSc Computer Science, First Class Honours** — University of Manchester · 2022 – 2026",
+              "• Dissertation: caching strategies for real-time transit data (graded 78).",
+              "• Relevant coursework: Distributed Systems, Databases, Algorithms, Software Engineering.",
+            ],
+          },
+          {
+            heading: "Projects",
+            lines: [
+              "**Campus Shuttle Tracker** — Python, FastAPI, Postgres, React",
+              "• Built a route-planning app after noticing the published shuttle timetable was wrong most mornings. Scraped the live GPS feed, cached it, and shipped to ~400 students over one term.",
+              "• Discovered the GPS feed reports garbage for the first ~90 seconds after a bus departs; added a smoothing window that cut false arrival times by roughly half.",
+              "",
+              "**Bakery Ordering System** — team of 3, PostgreSQL, Django",
+              "• Designed the schema, then rewrote it mid-project when we found it couldn't handle an order being amended after placement. Shipped a working system the client still uses.",
+            ],
+          },
+          {
+            heading: "Experience",
+            lines: [
+              "**Sales Assistant (part-time, 16 hrs/week)** — Waterstones, Manchester · Sep 2023 – Jun 2026",
+              "• Worked 16 hours a week alongside a full course load for three years, including every Christmas period.",
+              "• Trained four new starters on the till and stock systems.",
+              "",
+              "**Course Representative** — School of Computer Science · 2024 – 2025",
+              "• Elected by ~120 students; took their feedback to staff meetings and got the lab session times changed after two terms of arguing for it.",
+            ],
+          },
+          {
+            heading: "Skills",
+            lines: [
+              "**Languages:** Python, TypeScript, SQL, Java",
+              "**Tools:** FastAPI, Django, PostgreSQL, React, Docker, Git",
+            ],
+          },
+        ],
+        caption: "Education first, projects as experience, and the retail job included on purpose — see below.",
+      },
+      { type: "h2", id: "the-retail-job", text: "Why is the retail job on there?" },
+      {
+        type: "p",
+        text: "Because graduates cut it, and they are wrong to. It's the section people are most embarrassed by and it's doing more work than they realise.",
+      },
+      {
+        type: "p",
+        text: "Read it again: *sixteen hours a week alongside a full course load, for three years, including every Christmas.* That is not a line about selling books. It is evidence of **reliability, time management, and dealing with difficult people under pressure without falling apart** — and those are exactly the three things a manager quietly worries about when hiring someone with no professional history. Your degree proves none of them.",
+      },
+      {
+        type: "p",
+        text: "It also proves something subtler and more valuable: you have held down a commitment you didn't enjoy, for years, because you'd said you would. Nobody puts that in a bullet. Everybody reads it.",
+      },
+      { type: "h2", id: "never-pad", text: "What should you never do?" },
+      {
+        type: "ul",
+        items: [
+          "**Never pad.** A short, honest, one-page resume with white space on it reads as *confident*. A page stuffed with \"Proficient in Microsoft Word\" and \"Excellent communication skills\" reads as *nervous* — and nervous is the impression you can least afford.",
+          "**Never inflate a title.** You were not \"Project Manager\" of a group assignment. You were a student, and everyone reading knows it.",
+          "**Never list a skill you'd panic about.** \"Java\" on a resume is an offer to be asked about Java.",
+          "**Never write \"references available on request.\"** It has been assumed since about 1994, and it's a whole line you could have used for something true.",
+        ],
+      },
+      {
+        type: "quote",
+        text: "The empty page isn't the problem. Being embarrassed by it is — because that's what makes people pad, and padding is the only thing on a graduate resume that a recruiter can spot from across the room.",
+      },
+      {
+        type: "callout",
+        tone: "mint",
+        title: "Do this next",
+        text: "Move Education above Experience. Rewrite one project so it includes something that went wrong. Put the part-time job back in. That's twenty minutes and it will be a visibly different document. Then check it with our [free ATS checker](/ats-checker) — no signup — and read [how to write bullets that get interviews](/blog/resume-bullet-points-that-get-interviews).",
+      },
+    ],
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    slug: "internship-resume-no-experience",
+    title: "How to Write an Internship Resume When You Have No Experience",
+    seoTitle: "Resume for an Internship With No Experience (Template + Example)",
+    description:
+      "You need experience to get experience. Here's the way out of that loop: you already have more evidence than you think — and it isn't in your job history.",
+    excerpt:
+      "You need experience to get the internship, and the internship is how you get experience. Everybody hits this wall. Here's what's actually on the other side of it — and it isn't a job history.",
+    publishedAt: "2026-07-15",
+    updatedAt: "2026-07-15",
+    author: TEAM,
+    tags: ["Templates", "Internships", "Graduates"],
+    readingMinutes: 8,
+    hero: "bridge",
+    tone: "sky",
+    faq: [
+      {
+        q: "How do I write a resume for an internship with no experience?",
+        a: "Stop looking for jobs to list and start looking for evidence. Coursework you did well, anything you built, a part-time job, volunteering, a society you ran, a competition you entered. An internship recruiter is not expecting a work history — they are looking for signs you are curious, reliable and able to finish things.",
+      },
+      {
+        q: "What do internship recruiters actually look for?",
+        a: "Three things: that you can be taught, that you will show up, and that you actually want this field rather than any field. Nobody expects an intern to already be able to do the job. They are hiring potential, and every line of your resume should be evidence for one of those three.",
+      },
+      {
+        q: "Can I put coursework on an internship resume?",
+        a: "Yes, but only if it's specific. 'Relevant coursework: Databases, Algorithms' is a list of module names and carries almost nothing. 'Built a query planner in the Databases module; it was the only one in the cohort to handle nested joins' is a real signal.",
+      },
+      {
+        q: "Should I apply if I don't meet all the requirements?",
+        a: "Yes. Internship postings are written as wish lists by people who know they are hiring people who have not done the job before. Meeting most of the listed requirements is normal, and treating the list as a gate is the single most common reason good candidates never apply.",
+      },
+    ],
+    body: [
+      {
+        type: "takeaways",
+        items: [
+          "**Nobody expects an intern to have experience.** They are hiring for *teachability, reliability, and genuine interest* — write for those three.",
+          "You have more evidence than you think: **coursework, anything you built, part-time work, volunteering, societies, competitions.**",
+          "**Specificity is the entire trick.** \"Relevant coursework: Databases\" is nothing. \"Built a query planner that handled nested joins\" is something.",
+          "Apply anyway. The requirements list is a **wish list**, not a gate.",
+        ],
+      },
+      {
+        type: "p",
+        text: "There's a moment, somewhere around your second year, when you notice the trap. Every internship you'd actually want lists *prior experience* under requirements. And the only way to get prior experience is an internship. You read that sentence twice, close the tab, and go and do something else for a while, feeling slightly worse about yourself than you did an hour ago.",
+      },
+      {
+        type: "p",
+        text: "Almost everyone hits this wall. Almost everyone gets past it. And the way through isn't a hack or a better template — it's noticing that **you have been answering the wrong question.**",
+      },
+      { type: "h2", id: "the-wrong-question", text: "What are they actually asking?" },
+      {
+        type: "p",
+        text: "You think the question is *\"where have you worked?\"* It isn't. Nobody hiring an intern believes you've worked anywhere. That's the entire premise of the word *intern*.",
+      },
+      {
+        type: "p",
+        text: "The question is: **\"if we give this person a desk and three months, will it have been worth it?\"** And that resolves into three sub-questions, all of which you can answer today, with no job history at all:",
+      },
+      {
+        type: "ol",
+        items: [
+          "**Can you be taught?** Is there evidence you've learned something hard, on purpose, and stuck with it past the point where it stopped being fun?",
+          "**Will you show up?** Have you held a commitment — any commitment — over time, including on the days you didn't feel like it?",
+          "**Do you actually want *this*?** Or did you apply to 200 postings with the same document? They can tell. They can always tell.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Every line on your resume should be evidence for one of those three. That's the whole strategy. Nothing else earns its space.",
+      },
+      {
+        type: "figure",
+        art: "bridge",
+        caption: "You're not crossing the gap with a job history. You're crossing it with evidence — and you already have some.",
+      },
+      { type: "h2", id: "what-you-have", text: "What counts as evidence?" },
+      {
+        type: "p",
+        text: "Far more than you're currently giving yourself credit for. Go through this list honestly and write down everything that applies — you'll find four or five things you'd written off:",
+      },
+      {
+        type: "table",
+        head: ["What you have", "What it's evidence of", "How to write it"],
+        rows: [
+          [
+            "**A module you did unusually well in**",
+            "Teachability. Genuine interest.",
+            "Name the thing you built or solved in it, not the module title.",
+          ],
+          [
+            "**Anything you built**",
+            "You can finish things. You've hit a real wall.",
+            "Describe the problem, the decision, and what went wrong.",
+          ],
+          [
+            "**A part-time job — any job**",
+            "Reliability. Pressure. Difficult people.",
+            "Hours per week alongside study. That number is the point.",
+          ],
+          [
+            "**Volunteering / a society / a team**",
+            "Commitment over time without being paid.",
+            "How long, and what changed because you were there.",
+          ],
+          [
+            "**A competition, hackathon, or society you ran**",
+            "Initiative. You do things unprompted.",
+            "What you organised, and how many people it reached.",
+          ],
+          [
+            "**A thing you taught yourself**",
+            "Curiosity — the single most valued intern trait.",
+            "What you built with it. Not the certificate.",
+          ],
+        ],
+      },
+      { type: "h2", id: "specificity", text: "Why does specificity matter so much?" },
+      {
+        type: "p",
+        text: "Because generic lines are indistinguishable from lies, and specific ones are indistinguishable from truth. Compare:",
+      },
+      {
+        type: "sample",
+        label: "Generic — could be anyone",
+        text: "• Relevant coursework: Databases, Algorithms, Software Engineering.\n• Strong problem-solving skills and a passion for technology.\n• Volunteered at a local charity.",
+      },
+      {
+        type: "sample",
+        label: "Specific — could only be you",
+        text: "• Built a query planner for the Databases module. Mine was the only one in\n  the cohort that handled nested joins, because I'd misread the spec and\n  built the harder version by accident, then couldn't bring myself to\n  simplify it.\n• Taught myself enough Rust over one summer to rewrite my dissertation's\n  hot loop; it went from 40 seconds to 1.2.\n• Ran the weekly homework club at a local youth centre for 14 months.\n  Turned up every Tuesday, including the ones where nobody else did.",
+      },
+      {
+        type: "p",
+        text: "The second version is not from a better candidate. It's the **same candidate, written down honestly**. And every one of those three lines answers one of the three real questions — teachable, reliable, genuinely interested — without ever claiming to have had a job.",
+      },
+      {
+        type: "quote",
+        text: "\"I'd misread the spec and built the harder version by accident.\" No model writes that. No liar writes that. That's why it works.",
+      },
+      { type: "h2", id: "the-template", text: "What does the finished thing look like?" },
+      {
+        type: "doc",
+        name: "Daniel Okonkwo",
+        role: "Software Engineering Intern — Summer 2027",
+        contact: "d.okonkwo@email.com · +44 7700 900318 · Leeds, UK · github.com/dokonkwo",
+        sections: [
+          {
+            heading: "Summary",
+            lines: [
+              "Second-year Computer Science student looking for a summer software engineering internship. I taught myself Rust to make my own code faster, and I've run a homework club every Tuesday for over a year. No professional experience yet — that's what this is for.",
+            ],
+          },
+          {
+            heading: "Education",
+            lines: [
+              "**BSc Computer Science** — University of Leeds · 2025 – 2028 (expected)",
+              "• Current average: 74. Best modules: Databases (82), Algorithms (79).",
+              "• Built a query planner for the Databases coursework — the only submission in the cohort that handled nested joins.",
+            ],
+          },
+          {
+            heading: "Projects",
+            lines: [
+              "**Dissertation hot-loop rewrite** — Rust",
+              "• Taught myself enough Rust over one summer to rewrite the slowest part of my own project. Runtime went from ~40s to ~1.2s.",
+              "• The interesting part was discovering most of the time wasn't in the loop at all — it was in the allocation I'd hidden inside it.",
+              "",
+              "**Study-group scheduler** — Python, Flask, SQLite",
+              "• Built it because coordinating six people over WhatsApp was worse than the coursework. About 30 people on my course ended up using it.",
+            ],
+          },
+          {
+            heading: "Experience",
+            lines: [
+              "**Volunteer Tutor** — Hillside Youth Centre, Leeds · Mar 2025 – Present",
+              "• Ran the weekly homework club for 14 months. Turned up every Tuesday, including the ones where nobody else did.",
+              "• Worked with 8–12 students aged 11–14 on maths and basic computing.",
+              "",
+              "**Barista (part-time, 12 hrs/week)** — Grind Coffee, Leeds · Jun 2025 – Present",
+              "• 12 hours a week alongside a full course load, including every weekend of exam term.",
+            ],
+          },
+          {
+            heading: "Skills",
+            lines: [
+              "**Languages:** Python, Java, SQL, Rust (learning)",
+              "**Tools:** Git, Flask, SQLite, Postgres, Linux",
+            ],
+          },
+        ],
+        caption: "No professional experience anywhere on this page — and it still answers all three questions a recruiter is actually asking.",
+      },
+      {
+        type: "callout",
+        tone: "rose",
+        title: "The line most people are afraid to write",
+        text: "Look at the last sentence of that summary: \"No professional experience yet — that's what this is for.\" It's honest, it's slightly disarming, and it does something clever: it names the objection before the reader does, which takes all the power out of it. You are applying for an internship. Not having done the job is the reason you qualify.",
+      },
+      { type: "h2", id: "apply-anyway", text: "One last thing: apply anyway." },
+      {
+        type: "p",
+        text: "The requirements list on an internship posting is a **wish list**, assembled by a recruiter who is fully aware they're hiring people who have not done the job. It is not a gate, and treating it as one is the single most common reason good candidates never apply at all.",
+      },
+      {
+        type: "p",
+        text: "If you match most of it and you can write three honest, specific lines that say *I can be taught, I show up, and I want this one* — send it. The worst realistic outcome is silence, and silence costs you nothing but the twenty minutes you already spent.",
+      },
+      {
+        type: "callout",
+        tone: "mint",
+        title: "Do this next",
+        text: "Open a blank document and list every single thing from the evidence table above that applies to you — no editing, no judging. Most people find five or six. Then pick the three most specific and write them out properly. That's your resume. Check it free with our [ATS checker](/ats-checker), and if you're graduating soon, read the [fresh graduate template](/blog/fresh-graduate-resume-template) next.",
+      },
+    ],
+  },
 ];
 
 /** Newest first. Used by the index page, the landing strip, and the sitemap. */

@@ -20,6 +20,14 @@ export type Block =
   | { type: "figure"; art: ArtKey; caption?: string }
   /** Renders as <pre>. Used for JD/bullet before-after samples. */
   | { type: "sample"; label?: string; text: string }
+  | {
+      type: "doc";
+      name: string;
+      role: string;
+      contact: string;
+      sections: Array<{ heading: string; lines: string[] }>;
+      caption?: string;
+    }
   /** The "answer box" at the top of every post — the chunk an LLM quotes. */
   | { type: "takeaways"; items: string[] };
 
@@ -34,7 +42,10 @@ export type ArtKey =
   | "voice"
   | "funnel"
   | "grid"
-  | "layers";
+  | "layers"
+  | "stack"
+  | "sprout"
+  | "bridge";
 
 export interface FaqItem {
   q: string;

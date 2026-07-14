@@ -185,6 +185,50 @@ function layers(): string {
   `;
 }
 
+/** Nested brackets — a software engineer's résumé. */
+function stack(): string {
+  return `
+    <rect x="128" y="56" width="144" height="128" rx="10" fill="${SHEET}" stroke="${LINE}" stroke-width="1.5"/>
+    <path d="M118 96 L100 120 L118 144" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M282 96 L300 120 L282 144" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="146" y="76" width="56" height="7" rx="3.5" fill="${ACCENT}" opacity="0.8"/>
+    <rect x="146" y="94" width="90" height="5" rx="2.5" fill="${SOFT}" opacity="0.3"/>
+    <rect x="146" y="108" width="72" height="5" rx="2.5" fill="${SOFT}" opacity="0.3"/>
+    <rect x="146" y="128" width="100" height="5" rx="2.5" fill="${SOFT}" opacity="0.3"/>
+    <rect x="146" y="142" width="60" height="5" rx="2.5" fill="${ACCENT}" opacity="0.55"/>
+    <rect x="146" y="156" width="84" height="5" rx="2.5" fill="${SOFT}" opacity="0.3"/>
+    <line x1="188" y1="196" x2="212" y2="196" stroke="${ACCENT}" stroke-width="2.5" stroke-linecap="round"/>
+  `;
+}
+
+/** A shoot rising from a single seed — the graduate with one line of history. */
+function sprout(): string {
+  return `
+    <line x1="128" y1="188" x2="272" y2="188" stroke="${LINE}" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M200 188 V104" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M200 148 q-34 -6 -40 -40 q34 4 40 40 z" fill="${ACCENT}" opacity="0.28" stroke="${ACCENT}" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M200 128 q34 -6 40 -40 q-34 4 -40 40 z" fill="${ACCENT}" opacity="0.5" stroke="${ACCENT}" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="200" cy="96" r="7" fill="${SHEET}" stroke="${ACCENT}" stroke-width="2.5"/>
+    <circle cx="152" cy="188" r="3" fill="${SOFT}" opacity="0.4"/>
+    <circle cx="248" cy="188" r="3" fill="${SOFT}" opacity="0.4"/>
+  `;
+}
+
+/** Planks laid across a gap — building experience when you have none. */
+function bridge(): string {
+  return `
+    <path d="M118 92 V172 H160" fill="none" stroke="${LINE}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M282 92 V172 H240" fill="none" stroke="${LINE}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="118" y="112" width="42" height="10" rx="5" fill="${ACCENT}" opacity="0.85"/>
+    <rect x="170" y="112" width="26" height="10" rx="5" fill="${ACCENT}" opacity="0.55"/>
+    <rect x="206" y="112" width="26" height="10" rx="5" fill="${ACCENT}" opacity="0.35"/>
+    <rect x="242" y="112" width="40" height="10" rx="5" fill="${SOFT}" opacity="0.2" stroke="${LINE}" stroke-width="1" stroke-dasharray="3 3"/>
+    <circle cx="128" cy="92" r="5" fill="${ACCENT}"/>
+    <circle cx="272" cy="92" r="5" fill="${SHEET}" stroke="${ACCENT}" stroke-width="2"/>
+    <path d="M148 152 h104" stroke="${SOFT}" stroke-width="1.5" opacity="0.25" stroke-dasharray="5 6" stroke-linecap="round"/>
+  `;
+}
+
 const ART: Record<ArtKey, () => string> = {
   scanner,
   signal,
@@ -195,6 +239,9 @@ const ART: Record<ArtKey, () => string> = {
   funnel,
   grid,
   layers,
+  stack,
+  sprout,
+  bridge,
 };
 
 /**
