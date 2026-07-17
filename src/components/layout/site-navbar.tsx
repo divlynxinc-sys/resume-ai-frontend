@@ -204,7 +204,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
               ATS Checker
             </Link>
             <Link
-              to="/pricing"
+              to="/#pricing"
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               Pricing
