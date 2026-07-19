@@ -87,7 +87,6 @@ export function TailoringSection() {
     <>
       <Hero />
       <div className="mx-auto max-w-[1100px] px-6 pb-16">
-        {/* Steps */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           <StepCard
             n={1}
@@ -115,7 +114,6 @@ export function TailoringSection() {
           />
         </div>
 
-        {/* Info Panels */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
           <InfoPanel
             title="Why tailoring matters"

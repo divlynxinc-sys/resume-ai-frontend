@@ -111,8 +111,8 @@ export default function LoginScreen() {
     return "";
   };
 
-  const onSubmit = async (e?: FormEvent) => {
-    if (e) e.preventDefault();
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     setError("");
     const eErr = validateEmailField(email);
     const pErr = validatePasswordField(password);

@@ -45,9 +45,8 @@ export default function DocumentationScreen() {
   const js = `function greet(name) {\n  console.log('Hello, ${name}!');\n}`;
 
   return (
-    <div className="min-h-svh bg-[var(--app-bg)] text-white grid grid-cols-[16rem_1fr]">
-      {/* Sidebar */}
-      <aside className="bg-[#0f162a] border-r border-white/10 p-4">
+    <div className="min-h-svh bg-[var(--app-bg)] text-white grid grid-cols-1 md:grid-cols-[16rem_1fr]">
+      <aside className="hidden md:block bg-[#0f162a] border-r border-white/10 p-4">
         <div className="text-white/80 text-xs">Docs <span className="text-white/50">v1.0.0</span></div>
         <nav className="mt-4 space-y-1">
           <SidebarLink label="Getting Started" active />
@@ -58,14 +57,12 @@ export default function DocumentationScreen() {
         </nav>
       </aside>
 
-      {/* Main */}
-      <main className="px-8 py-10">
+      <main className="px-4 py-8 md:px-8 md:py-10">
         <h1 className="text-4xl sm:text-5xl font-bold text-center">Resume Builder Documentation</h1>
         <p className="text-white/70 text-center mt-2">Your guide to creating the perfect resume with AI.</p>
         <div className="max-w-[960px] mx-auto mt-8">
           <SearchBar />
 
-          {/* Introduction */}
           <section className="mt-8">
             <h2 className="text-2xl font-semibold">Introduction</h2>
             <p className="text-white/70 mt-2">
@@ -73,7 +70,6 @@ export default function DocumentationScreen() {
             </p>
           </section>
 
-          {/* Getting Started */}
           <section className="mt-10">
             <h2 className="text-2xl font-semibold">Getting Started</h2>
             <p className="text-white/70 mt-2">
@@ -81,7 +77,6 @@ export default function DocumentationScreen() {
             </p>
           </section>
 
-          {/* Code Snippets */}
           <section className="mt-10">
             <h2 className="text-2xl font-semibold">Code Snippets</h2>
             <p className="text-white/70 mt-2">Here are some code snippets that might be helpful. Use the <span className="px-1 rounded bg-white/8 border border-white/12 text-white/80">Copy</span> button to get the code.</p>

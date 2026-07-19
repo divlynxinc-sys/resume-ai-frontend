@@ -5,9 +5,7 @@ function Halo() {
   return (
     <div className="mx-auto mb-6 flex items-center justify-center">
       <div className="relative">
-        {/* outer glow */}
         <div className="absolute -inset-10 rounded-full bg-blue-600/10 blur-2xl" aria-hidden />
-        {/* concentric rings */}
         <div className="flex items-center justify-center rounded-full border border-blue-500/30 bg-blue-600/10 size-28">
           <div className="flex items-center justify-center rounded-full border border-blue-500/40 bg-blue-600/20 size-20">
             <div className="flex items-center justify-center rounded-full bg-blue-600 size-12 shadow-[0_12px_30px_rgba(56,189,248,0.35)]">
@@ -70,8 +68,7 @@ export default function ResumeGeneratedScreen() {
   return (
     <div className="min-h-screen w-full bg-[var(--app-bg)] text-white flex items-center justify-center px-4">
       <div className="relative w-full max-w-xl">
-        {/* card glow */}
-        <div className="absolute -inset-6 rounded-[32px] bg-blue-600/10 blur-2xl" aria-hidden />
+        <div className="absolute -inset-2 sm:-inset-6 rounded-[32px] bg-blue-600/10 blur-2xl" aria-hidden />
 
         <div className="relative rounded-3xl border border-white/10 bg-[#0F1629]/80 p-8 sm:p-10 text-center shadow-xl backdrop-blur">
           <Halo />

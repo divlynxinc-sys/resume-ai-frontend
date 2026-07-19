@@ -7,9 +7,7 @@ import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
  * + 70% white main area (summary, experience, projects).
  */
 export function leftSidebar(data: TemplateInput): string {
-  /* ── candidate_info fields ── */
   const c = data.candidate_info;
-  /* ── resume fields ── */
   const r = data.resume;
 
   const css = `
@@ -96,7 +94,6 @@ export function leftSidebar(data: TemplateInput): string {
     }
   `;
 
-  /* ── Sidebar content ── */
   const sidebarHtml = `
     <div class="sidebar">
       <!-- candidate_info.name -->
@@ -146,7 +143,6 @@ export function leftSidebar(data: TemplateInput): string {
     </div>
   `;
 
-  /* ── Main content ── */
   const mainHtml = `
     <div class="main">
       <!-- Summary: resume.summary -->

@@ -22,7 +22,7 @@ export const settingsService = {
   exportData: async () => {
     const token = localStorage.getItem("accessToken");
     const res = await fetch(
-      `${(import.meta as any).env?.VITE_API_URL ?? "https://resumeai-api-0df7.onrender.com"}/settings/account/export`,
+      `${import.meta.env?.VITE_API_URL ?? "https://resumeai-api-0df7.onrender.com"}/settings/account/export`,
       { headers: token ? { Authorization: `Bearer ${token}` } : {} }
     );
     if (!res.ok) throw new Error("Export failed");

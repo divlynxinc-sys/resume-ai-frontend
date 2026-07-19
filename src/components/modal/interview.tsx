@@ -50,8 +50,7 @@ function FeatureCard({
 function Hero() {
   return (
     <section className="relative">
-      {/* Decorative glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-6 -translate-x-1/2 size-[540px] rounded-full bg-[radial-gradient(closest-side,rgba(59,130,246,0.20),transparent_70%)]" />
       </div>
 
@@ -82,7 +81,6 @@ export default function InterviewScreen() {
       <PageWithSidebar activeRoute="interview" mainClassName="mx-auto max-w-[1100px] pb-16">
         <Hero />
 
-        {/* Features Grid */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <FeatureCard
             title="AI‑Powered Interview Simulation"

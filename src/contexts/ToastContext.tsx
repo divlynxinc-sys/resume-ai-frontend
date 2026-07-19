@@ -36,11 +36,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+      <div className="fixed bottom-6 left-4 right-4 z-50 flex flex-col items-end gap-3 sm:left-auto sm:right-6">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 rounded-xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 ${
+            className={`flex max-w-full items-center gap-3 rounded-xl border px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 sm:max-w-sm ${
               toast.visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
             } ${
               toast.type === "success"
@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 </svg>
               )}
             </span>
-            <span className={`text-sm font-medium ${toast.type === "success" ? "text-green-300" : "text-red-300"}`}>
+            <span className={`min-w-0 break-words text-sm font-medium ${toast.type === "success" ? "text-green-300" : "text-red-300"}`}>
               {toast.message}
             </span>
           </div>

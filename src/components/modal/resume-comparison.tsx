@@ -3,7 +3,7 @@ import { FiHome, FiFileText, FiMail, FiLayers, FiSettings, FiCheckCircle, FiXCir
 
 function Sidebar() {
   return (
-    <aside className="flex h-screen flex-col justify-between bg-[#0A111D] px-4 py-4 border-r border-white/10">
+    <aside className="hidden md:flex h-screen flex-col justify-between bg-[#0A111D] px-4 py-4 border-r border-white/10">
       <div>
         <div className="flex items-center gap-2 px-2">
           <span className="size-2 rounded-full bg-emerald-400" />

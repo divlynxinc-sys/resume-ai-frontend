@@ -89,7 +89,6 @@ function extractObjectLiteral(src, name) {
     const ch = src[i];
     if (ch === '{') { depth++; started = true; }
     else if (ch === '}') { depth--; if (started && depth === 0) {
-      // eval the object literal in a JS context
       const literal = src.slice(start, i + 1);
       // eslint-disable-next-line no-new-func
       return new Function(`return (${literal});`)();

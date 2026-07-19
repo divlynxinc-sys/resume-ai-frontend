@@ -47,7 +47,7 @@ function SectionCard({ title, children, rightAction }: { title: string; children
 
 function InfoRow({ label, value }: { label: string; value?: ReactNode }) {
   return (
-    <div className="grid grid-cols-[10rem_1fr] gap-4 py-1">
+    <div className="grid grid-cols-[7rem_1fr] gap-3 sm:grid-cols-[10rem_1fr] sm:gap-4 py-1">
       <div className="text-white/50 text-xs sm:text-sm">{label}</div>
       <div className="text-white/90 text-sm break-words">{value || <span className="text-white/40">—</span>}</div>
     </div>

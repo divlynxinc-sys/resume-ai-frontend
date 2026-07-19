@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -83,14 +82,9 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [usageResetsAt, setUsageResetsAt] = useState<string | null>(null);
   const [usageHits, setUsageHits] = useState<Record<string, UsageLimitHit>>(loadUsageHits);
 
-  // Track in a ref so the global `upgrade-required` listener (defined once) always
-  // sees the latest value without re-binding on every isPaid change.
-  const isPaidRef = useRef(false);
-
   const fetchPlan = useCallback(() => {
     if (!isAuthenticated) {
       setCurrentPlan(null);
-      isPaidRef.current = false;
       return;
     }
     setIsLoading(true);
@@ -98,7 +92,6 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       .getAccountSummary()
       .then((res) => {
         setCurrentPlan(res.current_plan);
-        isPaidRef.current = !!res.current_plan;
 
         // Self-heal: if the account looks unpaid, reconcile against Polar once
         // per session. Polar webhooks can't reach localhost in dev, and even in
@@ -113,7 +106,6 @@ export function PlanProvider({ children }: { children: ReactNode }) {
             .then((sync) => {
               if (sync.synced && sync.current_plan) {
                 setCurrentPlan(sync.current_plan);
-                isPaidRef.current = true;
                 window.dispatchEvent(new CustomEvent("plan-updated"));
               }
             })
@@ -282,7 +274,7 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
       aria-modal="true"
     >
       <div
-        className="w-full max-w-md rounded-2xl p-6 text-left"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl p-6 text-left"
         style={{
           backgroundColor: "var(--app-surface)",
           border: "1px solid var(--app-border)",
@@ -426,7 +418,7 @@ function UsageLimitModal({
       aria-modal="true"
     >
       <div
-        className="w-full max-w-md rounded-2xl p-6 text-left"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl p-6 text-left"
         style={{
           backgroundColor: "var(--app-surface)",
           border: "1px solid var(--app-border)",

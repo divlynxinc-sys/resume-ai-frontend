@@ -59,7 +59,6 @@ function useConfettiBurst() {
     if (!canvas) return;
 
     const prefersReducedMotion =
-      typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
@@ -372,7 +371,7 @@ export default function PaymentSuccessScreen() {
       </main>
 
       {/* Decorative glows — subtle in both themes */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-24 -top-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(16,185,129,0.10),transparent_70%)]" />
         <div className="absolute -right-24 -bottom-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(56,189,248,0.10),transparent_70%)]" />
       </div>

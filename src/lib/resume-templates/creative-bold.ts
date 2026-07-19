@@ -1,5 +1,5 @@
 import type { TemplateInput } from './types';
-import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
+import { formatDate, dateRange, esc, linkParts } from './utils';
 
 /**
  * Template 5 — Creative Bold Design
@@ -7,16 +7,13 @@ import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
  * on sections, colored skill badges, and card-style projects.
  */
 export function creativeBold(data: TemplateInput): string {
-  /* ── candidate_info fields ── */
   const c = data.candidate_info;
-  /* ── resume fields ── */
   const r = data.resume;
 
   const ACCENT = '#2563eb';
   const ACCENT_LIGHT = '#dbeafe';
   const ICON_COLOR = '#94a3b8';
 
-  /* ── Inline SVG icons for the dark banner (light coloured) ── */
   const emailIcon    = `<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="${ICON_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>`;
   const phoneIcon    = `<svg class="bi" viewBox="0 0 24 24" fill="${ICON_COLOR}"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.21a1 1 0 0 0 .24-1.02A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/></svg>`;
   const linkedinIcon = `<svg class="bi" viewBox="0 0 24 24" fill="${ICON_COLOR}"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.28V1.72C24 .77 23.2 0 22.22 0z"/></svg>`;
@@ -106,7 +103,6 @@ export function creativeBold(data: TemplateInput): string {
     }
   `;
 
-  /* ── Banner: candidate_info.name + contact with icons ── */
   const banner = `
     <div class="banner">
       <h1>${esc(c.name)}</h1>
@@ -119,7 +115,6 @@ export function creativeBold(data: TemplateInput): string {
     </div>
   `;
 
-  /* ── Summary: resume.summary ── */
   const summary = r.summary ? `
     <div class="section">
       <div class="section-title">Profile</div>
@@ -127,7 +122,6 @@ export function creativeBold(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Experience: resume.experiences[] ── */
   const experience = r.experiences.length ? `
     <div class="section">
       <div class="section-title">Experience</div>
@@ -148,7 +142,6 @@ export function creativeBold(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Projects: resume.projects[] as cards ── */
   const projects = r.projects.length ? `
     <div class="section">
       <div class="section-title">Projects</div>
@@ -166,7 +159,6 @@ export function creativeBold(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Education: resume.education[] ── */
   const education = r.education.length ? `
     <div class="section">
       <div class="section-title">Education</div>
@@ -185,7 +177,6 @@ export function creativeBold(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Skills: resume.skills[] as colored badges ── */
   const skills = r.skills.length ? `
     <div class="section">
       <div class="section-title">Skills</div>

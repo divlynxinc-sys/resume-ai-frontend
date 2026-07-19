@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Moon, Sun, LayoutGrid, Sparkles } from "lucide-react";
+import { ArrowRight, Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Menu, Moon, Sun, LayoutGrid, Sparkles, X } from "lucide-react";
 import lightLogo from "../../assets/Logo-01.png";
 import lightBrandIcon from "../../assets/Logo-03.png";
 import darkLogo from "../../assets/Logo-04.png";
@@ -18,7 +18,7 @@ import {
 } from "@/services/notifications";
 import { settingsService } from "@/services/settings";
 
-function notificationIcon(type: AppNotification["type"]): JSX.Element {
+function notificationIcon(type: AppNotification["type"]) {
   if (type === "resume-draft") {
     return <FileText className="size-4 text-amber-400" />;
   }
@@ -82,12 +82,12 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
     };
   }, [isAuthenticated, marketingMode]);
 
-  // Profile dropdown state & refs
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
-  // Notifications dropdown state & ref
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => getNotifications());
   const [notifCount, setNotifCount] = useState(() => getUnreadNotificationCount());
@@ -103,6 +103,9 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
       }
       if (notifRef.current && !notifRef.current.contains(target)) {
         setNotifOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener("click", onDocClick);
@@ -163,7 +166,6 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
       )}
       <div className="relative h-full px-6 flex items-center justify-between">
 
-        {/* Brand */}
         <button
           type="button"
           onClick={() => navigate(isAuthenticated && !marketingMode ? "/dashboard" : "/")}
@@ -218,21 +220,20 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
           </nav>
         )}
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-4 ml-auto relative">
+        <div className="flex items-center gap-2 sm:gap-4 ml-auto relative">
           {marketingMode && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
+                className="hidden sm:block h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
               >
                 Login
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/signup")}
-                className="h-9 rounded-lg bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
+                className="h-9 rounded-lg bg-[var(--btn-primary-bg)] px-3 sm:px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/35"
               >
                 Sign up
               </button>
@@ -249,10 +250,53 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
 
+          {/* Mobile menu — surfaces the marketing nav links hidden below md */}
+          {marketingMode && (
+            <div ref={menuRef} className="md:hidden">
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className="size-8 rounded-full bg-white/10 border border-white/20 text-white/70 hover:text-white grid place-items-center transition"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              </button>
+              {menuOpen && (
+                <nav
+                  aria-label="Main menu"
+                  className="fixed inset-x-0 top-16 z-40 flex flex-col border-b border-[var(--app-border)] bg-[var(--app-bg)]/95 px-4 py-3 shadow-[var(--shadow-pop)] backdrop-blur"
+                >
+                  {[
+                    { to: "/#features", label: "Features" },
+                    { to: "/ats-checker", label: "ATS Checker" },
+                    { to: "/pricing", label: "Pricing" },
+                    { to: "/blog", label: "Blog" },
+                  ].map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMenuOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <div className="my-1 h-px bg-[var(--app-border)] sm:hidden" />
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)] sm:hidden"
+                  >
+                    Login
+                  </Link>
+                </nav>
+              )}
+            </div>
+          )}
+
           {showAuthControls && (
           <>
 
-          {/* Notifications — before profile */}
           <div ref={notifRef} className="relative">
             <button
               onClick={() => setNotifOpen((o) => !o)}
@@ -267,7 +311,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
               )}
             </button>
             {notifOpen && (
-              <div className="absolute right-0 top-10 w-80 rounded-xl bg-[#0f1629] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+              <div className="absolute right-0 top-10 w-80 max-w-[calc(100vw-2rem)] rounded-xl bg-[#0f1629] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
                 <div className="px-3 py-2.5 flex items-center justify-between">
                   <div className="text-sm text-white/80">Notifications</div>
                   <div className="flex items-center gap-3">
@@ -319,7 +363,6 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
             )}
           </div>
 
-          {/* Profile — after notifications */}
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen((o) => !o)}
@@ -336,7 +379,6 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
             {profileOpen && (
               <div className="absolute right-0 top-11 w-64 overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 shadow-[var(--shadow-pop)]">
                 <span className="absolute right-3.5 top-0 size-3 -translate-y-1/2 rotate-45 border-l border-t border-[var(--app-border)] bg-[var(--app-surface)]" aria-hidden="true" />
-                {/* User info */}
                 <div className="flex items-center gap-2.5 px-2 py-2">
                   <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-[var(--app-border)] bg-[var(--accent-soft)] text-[var(--accent-text)]">
                     <User2 className="size-4" />

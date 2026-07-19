@@ -311,12 +311,11 @@ function Hero() {
         entered ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}>
       <div className="relative max-w-7xl mx-auto">
-        {/* Soft pastel ambient blobs */}
         <div aria-hidden className="pointer-events-none absolute -top-10 -left-10 size-72 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-60" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-16 -right-10 size-80 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-16 right-0 size-80 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
 
         <div className="relative text-center py-5 lg:py-8">
-          <h1 className="font-display text-5xl md:text-7xl font-light tracking-tight text-[var(--app-fg)] leading-[1.05]">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-light tracking-tight text-[var(--app-fg)] leading-[1.05]">
             Craft a resume that
             <br />
             <span className="italic font-normal">gets you hired.</span>
@@ -603,7 +602,6 @@ export default function LandingPageScreen() {
       <SiteNavbar marketingMode />
       <Hero />
 
-      {/* Key Features */}
       <section id="features" className="max-w-[1100px] mx-auto px-6 mt-20 scroll-mt-24">
         <SectionTitle
           eyebrow="Features"
@@ -620,7 +618,6 @@ export default function LandingPageScreen() {
         </div>
       </section>
 
-      {/* Industry Demands & How We Help */}
       <section className="max-w-[1100px] mx-auto px-6 mt-24">
         <SectionTitle
           eyebrow="The benchmark"
@@ -653,7 +650,6 @@ export default function LandingPageScreen() {
         </div>
       </section>
 
-      {/* Templates Showing */}
       <div className="mt-24">
         <TemplatesShowingSection />
       </div>
@@ -663,12 +659,10 @@ export default function LandingPageScreen() {
         <ProofSection />
       </div>
 
-      {/* Tailoring */}
       <div className="mt-24">
         <TailoringSection />
       </div>
 
-      {/* Pricing */}
       <div className="mt-24">
         <PricingSection />
       </div>
@@ -683,7 +677,6 @@ export default function LandingPageScreen() {
         <SiteFooter />
       </div>
 
-      {/* Back to Top */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"

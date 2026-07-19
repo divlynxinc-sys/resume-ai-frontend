@@ -3,10 +3,6 @@ import { Bot, User, ChevronDown, ChevronUp } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import junoBot from "../../assets/juno.png";
 
-// function SectionHeading({ children }: { children: ReactNode }) {
-//   return <h2 className="text-white/80 font-semibold text-sm">{children}</h2>;
-// }
-
 function Card({
   children,
   className = "",
@@ -81,7 +77,7 @@ function ChatBubble({
 
 function ChatPanel() {
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full max-lg:min-h-[420px] flex flex-col">
       <Card className="relative flex-1 space-y-5 p-6 overflow-y-auto bg-[#0e1830] border-white/10">
         <ChatBubble role="assistant">
           Hi Sarah, how can I help you improve your resume today?
@@ -159,14 +155,13 @@ function ExamplePromptDropdown() {
 
 export default function AIChatModal() {
   return (
-    <div className="h-svh bg-[var(--app-bg)] text-white overflow-hidden relative">
+    <div className="min-h-svh lg:h-svh bg-[var(--app-bg)] text-white lg:overflow-hidden relative">
       <SiteNavbar />
 
-      <main className="max-w-[1100px] mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-56px)] overflow-visible relative">
+      <main className="max-w-[1100px] mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 h-auto lg:h-[calc(100vh-56px)] overflow-visible relative">
         {/* Bot graphic moved into prompts area to avoid overlapping heading */}
         {/* Left Column */}
         <div className="lg:col-span-2 h-full min-h-0 flex flex-col relative z-20">
-          {/* ✅ Heading block creates new stacking context */}
           <div className="relative z-20 inline-block bg-[var(--app-bg)]">
             <h1 className="relative text-4xl md:text-4xl font-extrabold tracking-tight leading-tight text-white z-20 bg-[var(--app-bg)] px-2 py-1">
               Juno AI Assistant
@@ -180,7 +175,7 @@ export default function AIChatModal() {
           <ExamplePromptDropdown />
 
           <div className="mt-8 flex-1 grid grid-rows-[auto_1fr] min-h-0 relative z-20">
-            <Card className="relative min-h-[260px] h-full flex flex-col pb-20">
+            <Card className="relative min-h-[260px] h-full flex flex-col pb-20 max-sm:pb-5">
               <div className="flex items-center justify-end">
                 <button className="h-8 w-8 rounded-md bg-white/6 border border-white/12 flex items-center justify-center">
                   <CopyIcon />
@@ -189,7 +184,7 @@ export default function AIChatModal() {
               <div className="flex-1 text-white/50 text-sm flex items-center px-3">
                 AI suggestions will appear here...
               </div>
-              <div className="absolute bottom-4 left-4 right-4 grid grid-cols-2 gap-4">
+              <div className="static sm:absolute bottom-4 left-4 right-4 mt-4 sm:mt-0 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <button className="h-12 px-5 rounded-xl bg-[#2b5bd9] text-white text-sm flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(43,91,217,0.35)] w-full">
                   <svg
                     width="16"

@@ -17,7 +17,6 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { resumeService, coverLetterService } from "@/services";
 import { usePlan } from "@/contexts/PlanContext";
-import GeneratingLoader from "./generating-loader";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -131,7 +130,7 @@ function ToneSelect({ tone, setTone }: { tone: Tone; setTone: (t: Tone) => void 
   return (
     <div className="space-y-3">
       <div className="text-sm font-medium text-[var(--app-fg)]">Tone</div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {TONES.map((t) => {
           const active = tone === t.value;
           return (
@@ -369,11 +368,9 @@ function OutputPanel({
               Pick a resume, paste the job description, and click Generate. Tokens stream in as the model writes.
             </div>
           </div>
-        ) : streaming && !letter ? (
-          <GeneratingLoader label="Drafting your cover letter…" />
         ) : (
           <div className="min-h-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-5 py-5">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
+            <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-[var(--app-fg)]">
             {letter}
             {streaming && (
               <span className="inline-block w-1.5 h-4 ml-0.5 align-middle bg-[var(--accent)] animate-pulse" />
@@ -412,7 +409,6 @@ export default function CoverLetterScreen() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // Load saved resumes once.
   useEffect(() => {
     setLoadingResumes(true);
     resumeService
@@ -630,7 +626,7 @@ export default function CoverLetterScreen() {
                 </div>
 
                 {/* Optional details */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-[var(--app-fg-muted)]">
                       Company (optional)

@@ -146,7 +146,7 @@ export default function SubscriptionScreen() {
         </div>
       </main>
 
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-24 -top-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(64,196,255,0.08),transparent_70%)]" />
         <div className="absolute -right-24 -bottom-24 size-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(132,94,255,0.08),transparent_70%)]" />
       </div>

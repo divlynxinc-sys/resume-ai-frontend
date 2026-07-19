@@ -250,7 +250,7 @@ const ART: Record<ArtKey, () => string> = {
  * meaning.
  */
 export function renderArt(key: ArtKey, tone: CalloutTone = "accent"): string {
-  const draw = ART[key] ?? grid;
+  const draw = ART[key];
   return `<svg viewBox="0 0 400 240" role="img" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block">
     <rect x="0" y="0" width="400" height="240" rx="16" fill="${TONE_FILL[tone]}" opacity="0.55"/>
     ${draw()}

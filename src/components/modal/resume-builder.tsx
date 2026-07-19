@@ -56,9 +56,6 @@ function PageHeader({ mode, setMode }: { mode: 'preview' | 'ats'; setMode: (m: '
 
 type TabKey = "personal" | "experience" | "education" | "skills" | "summary" | "job" | "custom";
 
-// Re-export types for any other module importing from this file
-export type { Experience, Education, JobDetails, CustomSection, ResumeData };
-
 /** Shape returned from `POST /resumes/:id/ai/optimize` → `ats` */
 interface AtsOptimizeSummary {
   final_ats_score?: number;
@@ -293,13 +290,13 @@ function Tabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => v
   ];
   return (
     <div className="mt-6">
-      <div className="flex items-center gap-6 text-sm">
+      <div className="flex items-center gap-4 sm:gap-6 text-sm overflow-x-auto whitespace-nowrap">
         {items.map((it) => (
           <button
             key={it.key}
             type="button"
             onClick={() => onChange(it.key)}
-            className={`relative ${active === it.key ? "text-white" : "text-white/80 hover:text-white"}`}
+            className={`relative shrink-0 ${active === it.key ? "text-white" : "text-white/80 hover:text-white"}`}
           >
             {it.label}
             {active === it.key && (
@@ -469,7 +466,7 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
               <Label>Location</Label>
               <TextInput value={exp.location ?? ""} onChange={(v) => updateExp(idx, { location: v })} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start Date</Label>
                 <TextInput value={exp.startDate ?? ""} onChange={(v) => updateExp(idx, { startDate: v })} placeholder="Jan 2023" />
@@ -539,7 +536,7 @@ function EducationForm({ resume, setResume, errors }: { resume: ResumeData; setR
               <Label>Location</Label>
               <TextInput value={ed.location ?? ""} onChange={(v) => updateEd(idx, { location: v })} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start Date</Label>
                 <TextInput value={ed.startDate ?? ""} onChange={(v) => updateEd(idx, { startDate: v })} placeholder="Aug 2019" error={itemErr?.startDate} />
@@ -685,21 +682,20 @@ function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r
 
 function hasResumeContent(r: ResumeData): boolean {
   const hasExp = r.experiences.some(
-    (e) => (e.role || e.company || (e.bullets && e.bullets.length > 0))
+    (e) => e.role || e.company || e.bullets.length > 0
   );
   const hasEdu = r.education.some((e) => e.school || e.degree);
   return Boolean(
     r.name ||
       r.email ||
       r.summary ||
-      (r.skills && r.skills.length) ||
+      r.skills.length ||
       hasExp ||
       hasEdu
   );
 }
 
-/** Build resume HTML using the selected template */
-function buildResumeHtmlForPdf(resume: ResumeData, templateSlug = 'modern-minimal'): string {
+function buildResumeHtmlForPdf(resume: ResumeData, templateSlug: string): string {
   return renderTemplate(templateSlug, toTemplateInput(resume));
 }
 
@@ -712,11 +708,10 @@ async function downloadResumePdf(resume: ResumeData, fileName: string, templateS
   await downloadResumeHtmlAsPdf(html, `${resolvedResumeFileName(fileName, resume)}.pdf`);
 }
 
-async function downloadResumeDocx(resume: ResumeData, fileName: string, templateSlug: string): Promise<void> {
+async function downloadResumeDocx(resume: ResumeData, fileName: string): Promise<void> {
   // Real OOXML .docx (with selectable text + real hyperlinks) from the backend,
   // matching the My Resumes export. Replaces the old client-side HTML-as-.doc
   // blob, which Word opened with a format-mismatch warning.
-  void templateSlug;
   await downloadTemplateInputAsDocx(toTemplateInput(resume), `${resolvedResumeFileName(fileName, resume)}.docx`);
 }
 
@@ -748,7 +743,7 @@ function CompletedResumeModal({
   const handleDocx = async () => {
     setBusy("docx");
     try {
-      await downloadResumeDocx(resume, fileName, templateSlug);
+      await downloadResumeDocx(resume, fileName);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not download Word file. Please try again.", "error");
     } finally {
@@ -846,8 +841,13 @@ function ResumePreview({
       noScroll.textContent = "html,body{overflow:hidden!important;margin:0;padding:0;}";
       doc.head.appendChild(noScroll);
     }
-    const scale = container.clientWidth / 794;
-    iframe.style.transform = `scale(${scale})`;
+    const updateScale = () => {
+      iframe.style.transform = `scale(${container.clientWidth / 794})`;
+    };
+    updateScale();
+    const resizeObserver = new ResizeObserver(updateScale);
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
   }, [previewHtml, mode]);
 
   const handleDownloadPdf = async () => {
@@ -862,7 +862,7 @@ function ResumePreview({
   const handleDownloadDocx = async () => {
     setDownloadOpen(false);
     try {
-      await downloadResumeDocx(resume, fileName, templateSlug);
+      await downloadResumeDocx(resume, fileName);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not download Word file. Please try again.", "error");
     }
@@ -1009,7 +1009,7 @@ function ResumePreview({
                 </div>
               </div>
               {initialScore != null && (
-                <div className="relative z-10 mb-5 grid grid-cols-3 gap-3">
+                <div className="relative z-10 mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                     <div className="text-[10px] uppercase tracking-wide text-white/50">Your resume</div>
                     <div className="mt-1 text-2xl font-bold text-white">{initialScore}<span className="text-sm text-white/40">/100</span></div>
@@ -1229,7 +1229,7 @@ export default function ResumeBuilderScreen() {
       setSelectedFile(null);
       addResumeCreatedNotification("complete");
       showToast("Resume uploaded and parsed successfully!");
-    } catch (err: unknown) {
+    } catch (err) {
       const msg = (err as Error).message || "Failed to parse resume. Try a different file.";
       setUploadError(msg);
       showToast(msg, "error");

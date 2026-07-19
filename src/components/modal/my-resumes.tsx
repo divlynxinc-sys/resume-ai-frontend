@@ -140,9 +140,9 @@ function MiniResumePreview({ id }: { id: string }) {
       };
     }
 
-    resumeService.get(Number(id)).then((resume: any) => {
+    resumeService.get(Number(id)).then((resume) => {
       if (cancelled) return;
-      const content = resume?.content as ResumeContent | undefined;
+      const content = resume.content as ResumeContent | undefined;
       if (!content) return;
       renderInto(mapContentToLocal(content, EMPTY_RESUME), slug);
     }).catch(() => { /* keep skeleton on network failure */ });
@@ -340,17 +340,16 @@ export default function MyResumesScreen() {
   useEffect(() => {
     setLoading(true);
     resumeService.list({ limit: 50 })
-      .then((data: any) => {
-        const items = Array.isArray(data) ? data : (data?.items ?? data?.results ?? data?.data ?? []);
+      .then((data) => {
         setResumes(
-          items.map((r: any, idx: number) => ({
-            id: String(r?.id ?? idx),
-            title: r?.title ?? "Untitled Resume",
-            updatedAt: r?.updatedAt ?? r?.updated_at,
+          data.items.map((r) => ({
+            id: String(r.id),
+            title: r.title ?? "Untitled Resume",
+            updatedAt: r.updated_at,
           }))
         );
       })
-      .catch((e: any) => {
+      .catch((e) => {
         console.warn("Failed to load resumes from API", e);
         setResumes([]);
       })
@@ -395,7 +394,7 @@ export default function MyResumesScreen() {
       }
 
       setDownloadTarget(null);
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : "Download failed. Please try again.";
       setDownloadError(message);
     } finally {
@@ -508,9 +507,9 @@ export default function MyResumesScreen() {
       )}
 
       <PageWithSidebar activeRoute="my-resumes">
-        <main className="px-5 py-7 sm:px-6 sm:py-9">
+        <main className="py-7 sm:py-9">
           <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col justify-between gap-6 border-b border-[var(--app-border)] pb-7 md:flex-row md:items-end">
+            <div className="flex flex-col justify-between gap-6 border-b border-[var(--app-border)] pb-7 lg:flex-row lg:items-end">
               <div>
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
                   Resume library
@@ -524,7 +523,7 @@ export default function MyResumesScreen() {
                 <p className="mt-2 max-w-lg text-sm text-[var(--app-fg-muted)]">Manage, edit, and download every version of your resume in one place.</p>
               </div>
 
-              <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+              <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                 {/* Search Bar */}
                 <div className="group relative w-full sm:w-72">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

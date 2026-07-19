@@ -145,16 +145,16 @@ export default function UserProfileScreen() {
           <div className="text-white/80 font-medium mb-3">Subscription</div>
           <SectionCard>
             <div className="text-sm">
-              <div className="flex items-center justify-between py-2">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
+                <div className="min-w-0">
                   <div className="text-white/90">Current Plan</div>
                   <div className="text-white/50">{summary?.current_plan ?? "—"}</div>
                 </div>
                 <div className="text-white/70">{summary?.credits_remaining != null ? `${summary.credits_remaining} credits` : "—"}</div>
               </div>
               <div className="my-3 h-px bg-white/10" />
-              <div className="flex items-center justify-between py-2">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-2">
+                <div className="min-w-0">
                   <div className="text-white/90">Upgrade</div>
                   <div className="text-white/50">Unlock premium templates and more AI credits</div>
                 </div>
@@ -189,8 +189,8 @@ export default function UserProfileScreen() {
         <section className="mt-8">
           <div className="text-white/80 font-medium mb-3">Account</div>
           <div className="rounded-xl border border-red-500/30 bg-red-900/20 p-5 md:p-6 text-white shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <div className="text-white font-medium">Delete Account</div>
                 <div className="text-white/70 text-sm">Permanently delete your account and all data.</div>
               </div>

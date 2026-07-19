@@ -3,13 +3,11 @@ import SiteNavbar from "../layout/site-navbar";
 
 function ArtBoard() {
   return (
-    <div className="mx-auto w-[300px]">
+    <div className="mx-auto w-full max-w-[300px]">
       <div className="rounded-xl bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
         <div className="relative rounded-md bg-[#efe6dc] h-[230px] overflow-hidden">
-          {/* decorative shapes */}
           <div className="absolute left-14 top-14 w-28 h-28 rounded-[40%] rotate-12 bg-[#e0b197]" />
           <div className="absolute right-12 bottom-12 w-28 h-28 rounded-[40%] -rotate-12 bg-[#d69d85]" />
-          {/* centered text */}
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
             <span className="text-5xl font-bold tracking-tight text-[#7b5a4a]">404</span>
             <span className="mt-1 text-sm font-medium tracking-wide text-[#7b5a4a]">ERROR</span>

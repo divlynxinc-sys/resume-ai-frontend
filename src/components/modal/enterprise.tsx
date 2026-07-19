@@ -238,7 +238,7 @@ export default function EnterpriseScreen() {
                 <Sparkles className="size-4" />
                 Jobsynk AI for organizations
               </div>
-              <h1 className="mt-7 max-w-3xl font-display text-5xl font-light leading-[1.04] tracking-tight sm:text-6xl">
+              <h1 className="mt-7 max-w-3xl font-display text-4xl font-light leading-[1.04] tracking-tight sm:text-5xl md:text-6xl">
                 Your people do their best work with the <span className="italic text-[var(--accent-text)]">right tools.</span>
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-[var(--app-fg-muted)] sm:text-lg sm:leading-8">

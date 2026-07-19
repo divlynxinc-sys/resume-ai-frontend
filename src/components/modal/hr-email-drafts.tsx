@@ -152,7 +152,7 @@ function ToneSelect({ tone, setTone }: { tone: Tone; setTone: (t: Tone) => void 
   return (
     <div className="space-y-3">
       <div className="text-sm font-medium text-[var(--app-fg)]">Tone</div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {TONES.map((t) => {
           const active = tone === t.value;
           return (
@@ -291,7 +291,7 @@ function DownloadMenu({
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => !disabled && setOpen((v) => !v)}
+        onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         className={
           "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors " +
@@ -472,7 +472,6 @@ export default function HREmailDraftsScreen() {
     if (primary.length > 0) return primary;
     return parseDraftsFallback(output);
   }, [output, streaming]);
-  const waitingForFirstToken = streaming && !output && !error;
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
@@ -830,8 +829,8 @@ export default function HREmailDraftsScreen() {
                           key={d.index}
                           className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0 break-words">
                               <div className="text-xs font-medium tracking-[0.12em] uppercase text-[var(--app-fg-soft)]">
                                 Draft {d.index}
                               </div>
@@ -866,12 +865,12 @@ export default function HREmailDraftsScreen() {
                           </div>
                           <div className="mt-3 space-y-2">
                             {d.subject && (
-                              <div className="rounded-lg bg-[var(--app-surface-2)] border border-[var(--app-border)] px-3 py-2 text-xs">
+                              <div className="rounded-lg bg-[var(--app-surface-2)] border border-[var(--app-border)] px-3 py-2 text-xs break-words">
                                 <span className="font-medium text-[var(--app-fg-muted)]">Subject: </span>
                                 <span className="text-[var(--app-fg)]">{d.subject}</span>
                               </div>
                             )}
-                            <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[var(--app-fg)]">
+                            <div className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-[var(--app-fg)]">
                               {d.body}
                             </div>
                           </div>

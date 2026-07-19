@@ -186,7 +186,7 @@ function assetPlugin() {
 
   const publicPathFor = (file) => {
     const base = file.replace(/\.[a-z0-9]+$/i, ""); // "Logo-01"
-    const ext = file.slice(base.length + file.lastIndexOf(base) - file.lastIndexOf(base));
+    const ext = file.slice(base.length);
     const match = emitted.find(
       (name) => name.startsWith(`${base}-`) && name.endsWith(ext) && !name.endsWith(".js")
     );

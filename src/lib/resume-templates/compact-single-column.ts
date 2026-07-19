@@ -7,12 +7,9 @@ import { formatDate, dateRange, esc, renderIf, linkParts } from './utils';
  * right-aligned dates, designed to fit maximum content on one A4 page.
  */
 export function compactSingleColumn(data: TemplateInput): string {
-  /* ── candidate_info fields ── */
   const c = data.candidate_info;
-  /* ── resume fields ── */
   const r = data.resume;
 
-  /* ── Contact parts: candidate_info.email, .phone, .linkedin?, .portfolio? ── */
   const contactParts = [
     esc(c.email),
     esc(c.phone),
@@ -74,7 +71,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     }
   `;
 
-  /* ── Header: candidate_info.name + compact contact ── */
   const header = `
     <div class="header">
       <h1>${esc(c.name)}</h1>
@@ -82,7 +78,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     </div>
   `;
 
-  /* ── Summary: resume.summary ── */
   const summary = r.summary ? `
     <div class="section">
       <div class="section-title">Summary</div>
@@ -90,7 +85,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Experience: resume.experiences[] ── */
   const experience = r.experiences.length ? `
     <div class="section">
       <div class="section-title">Experience</div>
@@ -109,7 +103,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Projects: resume.projects[] ── */
   const projects = r.projects.length ? `
     <div class="section">
       <div class="section-title">Projects</div>
@@ -125,7 +118,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Education: resume.education[] ── */
   const education = r.education.length ? `
     <div class="section">
       <div class="section-title">Education</div>
@@ -142,7 +134,6 @@ export function compactSingleColumn(data: TemplateInput): string {
     </div>
   ` : '';
 
-  /* ── Skills: resume.skills[] — one line per category ── */
   const skills = r.skills.length ? `
     <div class="section">
       <div class="section-title">Skills</div>

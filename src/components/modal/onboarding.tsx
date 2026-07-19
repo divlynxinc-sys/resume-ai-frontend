@@ -22,8 +22,8 @@ export default function OnboardingScreen() {
       <SiteNavbar />
 
       <main className="max-w-[960px] mx-auto px-6 py-12">
-        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
-          <div className="flex items-start gap-6">
+        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <div className="size-12 rounded-xl bg-[oklch(0.488_0.243_264.376)]/20 border border-[oklch(0.488_0.243_264.376)]/35 grid place-items-center">
               <span className="text-2xl">✨</span>
             </div>
@@ -36,7 +36,7 @@ export default function OnboardingScreen() {
                 <li className="rounded-xl border border-white/10 bg-white/[0.03] p-4">Track credits and manage your plan under Pricing.</li>
                 <li className="rounded-xl border border-white/10 bg-white/[0.03] p-4">Visit the Help Center for tutorials and FAQs.</li>
               </ul>
-              <div className="mt-8 flex items-center gap-3">
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <button onClick={proceed} className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-white font-medium hover:bg-[oklch(0.488_0.243_264.376)/90]">Continue to Dashboard</button>
                 <button onClick={proceed} className="rounded-xl border border-white/10 px-5 py-2 text-white/80 hover:text-white hover:bg-white/[0.06]">Skip for now</button>
               </div>

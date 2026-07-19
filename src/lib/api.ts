@@ -1,7 +1,4 @@
-// Deployed backend:
-// const DEPLOYED_API_URL = "https://resumeai-api-0df7.onrender.com";
-
-const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "/api";
+const BASE_URL = import.meta.env?.VITE_API_URL ?? "/api";
 
 function getToken() {
   return localStorage.getItem("accessToken");
@@ -148,7 +145,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
       typeof data?.detail === "string"
         ? data.detail
         : Array.isArray(data?.detail)
-        ? (data.detail[0] as any)?.msg ?? fallbackMessage
+        ? data.detail[0]?.msg ?? fallbackMessage
         : fallbackMessage;
     throw new Error(msg);
   }

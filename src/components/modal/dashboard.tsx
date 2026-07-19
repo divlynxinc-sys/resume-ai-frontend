@@ -14,7 +14,6 @@ import {
   Edit2,
   Download,
   Trash,
-  X,
   Crown,
   ChevronRight,
   Plus,
@@ -34,7 +33,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { isPaid, openUpgradeModal } = usePlan();
-  const current = (activeRoute ?? (typeof window !== "undefined" ? window.location.pathname.replace(/^\//, "") : "dashboard")) || "dashboard";
+  const current = (activeRoute ?? window.location.pathname.replace(/^\//, "")) || "dashboard";
   // Sidebar rotating tips
   const tips: { title: string; icon: ReactNode; points: string[]; link?: string }[] = [
     {
@@ -305,7 +304,7 @@ function HeroCard() {
   const { user } = useAuth();
   const displayName = user?.name ?? user?.email ?? "there";
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-7 text-[var(--app-fg)]">
+    <section className="relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-7 text-[var(--app-fg)]">
       <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-60" />
       <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-10 size-48 rounded-full bg-[var(--pastel-peach)] blur-3xl opacity-50" />
 
@@ -324,60 +323,6 @@ function HeroCard() {
       </div>
     </section>
   );
-}
-
-function buildResumePrintHtml(resume: any): string {
-  const c = resume.content ?? {};
-  const info = c.info ?? {};
-  const experiences = Array.isArray(c.experience) ? c.experience : [];
-  const education = Array.isArray(c.education) ? c.education : [];
-  const skills = Array.isArray(c.skills) ? c.skills : [];
-  const summary = typeof c.summary === "string" ? c.summary : "";
-  const name = info.full_name ?? resume.title ?? "Resume";
-  const contactBits = [info.email, info.phone, info.location, info.linkedin_url, info.portfolio_url].filter(Boolean);
-
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name} - Resume</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Georgia,serif;color:#1a1a1a;padding:40px 50px;max-width:800px;margin:0 auto;font-size:11pt;line-height:1.5}
-  h1{font-size:18pt;margin-bottom:4px}
-  .contact{font-size:9pt;color:#555;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px}
-  .section-title{font-size:10pt;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#333;border-bottom:1px solid #ccc;padding-bottom:2px;margin:14px 0 6px}
-  .entry-title{font-weight:bold;font-size:10.5pt}
-  .entry-meta{font-size:9pt;color:#666;margin-bottom:2px}
-  ul{padding-left:18px;margin:2px 0 8px}
-  li{margin-bottom:2px}
-  .skills{display:flex;flex-wrap:wrap;gap:6px}
-  .skill{background:#f0f0f0;padding:2px 8px;border-radius:3px;font-size:9pt}
-  @media print{body{padding:20px 30px}}
-</style></head><body>`;
-
-  html += `<h1>${name}</h1>`;
-  if (contactBits.length) html += `<div class="contact">${contactBits.map(b => `<span>${b}</span>`).join("")}</div>`;
-  if (summary) html += `<div class="section-title">Summary</div><p>${summary}</p>`;
-  if (experiences.length) {
-    html += `<div class="section-title">Experience</div>`;
-    for (const e of experiences) {
-      html += `<div class="entry-title">${e.role ?? ""}${e.company ? ` — ${e.company}` : ""}</div>`;
-      const dates = [e.start_date, e.end_date].filter(Boolean).join(" – ");
-      if (dates) html += `<div class="entry-meta">${dates}</div>`;
-      const desc = typeof e.description === "string" ? e.description.split("\n").filter(Boolean) : [];
-      if (desc.length) html += `<ul>${desc.map((d: string) => `<li>${d}</li>`).join("")}</ul>`;
-    }
-  }
-  if (education.length) {
-    html += `<div class="section-title">Education</div>`;
-    for (const e of education) {
-      html += `<div class="entry-title">${e.degree ?? ""}${e.field_of_study ? ` in ${e.field_of_study}` : ""}${e.school ? ` — ${e.school}` : ""}</div>`;
-      const dates = [e.start_date, e.end_date].filter(Boolean).join(" – ");
-      if (dates || e.location) html += `<div class="entry-meta">${[dates, e.location].filter(Boolean).join(" | ")}</div>`;
-    }
-  }
-  if (skills.length) {
-    html += `<div class="section-title">Skills</div><div class="skills">${skills.map((s: string) => `<span class="skill">${s}</span>`).join("")}</div>`;
-  }
-  html += `</body></html>`;
-  return html;
 }
 
 function RecentActivity() {
@@ -504,9 +449,9 @@ function RecentActivity() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="grid grid-cols-[1fr_160px_160px] px-6 py-3 text-white/60 text-sm">
+        <div className="grid grid-cols-[minmax(0,1fr)_84px] sm:grid-cols-[1fr_160px_160px] px-4 sm:px-6 py-3 text-white/60 text-sm">
           <span>Name</span>
-          <span className="text-right">Last Edited</span>
+          <span className="hidden sm:block text-right">Last Edited</span>
           <span className="text-right">Actions</span>
         </div>
         {filteredActivities.length > 0 ? (
@@ -514,7 +459,7 @@ function RecentActivity() {
             <div
               key={row.id}
               className={
-                "grid grid-cols-[1fr_160px_160px] items-center px-6 py-3 text-white " +
+                "grid grid-cols-[minmax(0,1fr)_84px] sm:grid-cols-[1fr_160px_160px] items-center px-4 sm:px-6 py-3 text-white " +
                 (i % 2 === 0 ? "bg-white/[0.02]" : "")
               }
             >
@@ -540,7 +485,7 @@ function RecentActivity() {
                   {row.name}
                 </span>
               )}
-              <span className="text-right text-white/70">{row.date}</span>
+              <span className="hidden sm:block text-right text-white/70">{row.date}</span>
               <div className="flex items-center justify-end gap-3 text-white/70">
                 <button
                   className="hover:text-white"
@@ -578,14 +523,6 @@ function RecentActivity() {
 }
 
 export default function DashboardModal() {
-  const [_summary, setSummary] = useState<any>(null);
-
-  useEffect(() => {
-    dashboardService.getSummary()
-      .then((data: any) => setSummary(data))
-      .catch(() => {/* summary is optional, fail silently */});
-  }, []);
-
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />

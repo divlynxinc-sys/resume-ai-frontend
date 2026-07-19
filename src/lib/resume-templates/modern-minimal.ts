@@ -45,7 +45,6 @@ export function modernMinimal(data: TemplateInput): string {
   const linkedinIcon = `<svg class="mm-ci" viewBox="0 0 24 24" fill="${META}" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.28V1.72C24 .77 23.2 0 22.22 0z"/></svg>`;
   const githubIcon   = `<svg class="mm-ci" viewBox="0 0 24 24" fill="${META}" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.41-4.04-1.41-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.31-.54-1.53.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5z"/></svg>`;
 
-  /* ── Build contact items with icons ── */
   const contactItems: string[] = [];
   if (c.email)
     contactItems.push(`<span class="mm-ci-item">${emailIcon}<a href="mailto:${esc(c.email)}">${esc(c.email)}</a></span>`);
@@ -198,13 +197,11 @@ export function modernMinimal(data: TemplateInput): string {
     }
   `;
 
-  /* ── Section wrapper ── */
   const section = (title: string, content: string) =>
     content.trim()
       ? `<div class="section"><div class="section-title"><div class="section-label">${title}</div><div class="section-rule"></div></div>${content}</div>`
       : '';
 
-  /* ── Summary ── */
   const summaryHtml = r.summary
     ? `<p class="summary">${esc(r.summary)}</p>`
     : '';
@@ -215,7 +212,6 @@ export function modernMinimal(data: TemplateInput): string {
       .map(b => `<div class="bullet-row">&bull; ${esc(b)}</div>`)
       .join('')}</div>`;
 
-  /* ── Experience ── */
   const experienceHtml = r.experiences
     .map(
       exp => `<div class="exp-block">
@@ -229,7 +225,6 @@ export function modernMinimal(data: TemplateInput): string {
     )
     .join('');
 
-  /* ── Projects ── */
   const projectsHtml = r.projects
     .map(proj => {
       const link = linkParts(proj.link);
@@ -245,7 +240,6 @@ export function modernMinimal(data: TemplateInput): string {
     })
     .join('');
 
-  /* ── Education ── */
   const educationHtml = r.education
     .map(edu => {
       const degreeText = (edu.degree || '').trim();
@@ -269,7 +263,6 @@ export function modernMinimal(data: TemplateInput): string {
     })
     .join('');
 
-  /* ── Skills ── */
   const skillsHtml = r.skills
     .map(
       cat => `<div class="skill-row">

@@ -259,7 +259,7 @@ function OtpVerification({
 
         <main className="max-w-5xl mx-auto px-6 pb-10 flex flex-col items-center justify-center min-h-[calc(100svh-4rem)]">
           <div className="w-full max-w-md">
-            <section className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-8 md:p-10 shadow-[var(--shadow-pop)]">
+            <section className="rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 sm:p-8 md:p-10 shadow-[var(--shadow-pop)]">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="size-16 rounded-2xl bg-[var(--accent-soft)] grid place-items-center">
                   <Mail className="size-8 text-[var(--accent-text)]" />
@@ -271,7 +271,7 @@ function OtpVerification({
                 </p>
               </div>
 
-              <div className="mt-8 flex justify-center gap-2" onPaste={handlePaste}>
+              <div className="mt-8 flex justify-center gap-1.5 sm:gap-2" onPaste={handlePaste}>
                 {otp.map((digit, i) => (
                   <input
                     key={i}
@@ -283,7 +283,7 @@ function OtpVerification({
                     onChange={(e) => handleChange(i, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(i, e)}
                     disabled={status === "verifying"}
-                    className="w-12 h-14 rounded-xl bg-[var(--btn-secondary-bg)] text-center text-xl font-bold outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                    className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-[var(--btn-secondary-bg)] text-center text-xl font-bold outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   />
                 ))}
               </div>
@@ -361,11 +361,11 @@ export default function Signup() {
     }
   };
 
-  const [firstName, setFirstName] = useState("Alex");
-  const [lastName, setLastName] = useState("Morgan");
-  const [email, setEmail] = useState("alex.morgan@example.com");
-  const [password, setPassword] = useState("Demo@1234");
-  const [confirmPassword, setConfirmPassword] = useState("Demo@1234");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "otp" | "completing">("form");
@@ -471,7 +471,7 @@ export default function Signup() {
                         type="text"
                         name="signup-first-name"
                         autoComplete="given-name"
-                        placeholder="Enter your first name"
+                        placeholder="First Name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         disabled={status === "loading"}
@@ -484,7 +484,7 @@ export default function Signup() {
                         type="text"
                         name="signup-last-name"
                         autoComplete="family-name"
-                        placeholder="Enter your last name"
+                        placeholder="Last Name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         disabled={status === "loading"}
@@ -500,7 +500,7 @@ export default function Signup() {
                       name="signup-email-address"
                       autoComplete="off"
                       spellCheck={false}
-                      placeholder="Enter your email"
+                      placeholder="Email Address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setCredentialFieldsUnlocked(true)}
@@ -512,7 +512,7 @@ export default function Signup() {
 
                   <PasswordInput
                     label="Password"
-                    placeholder="Create a password"
+                    placeholder="Password"
                     value={password}
                     onChange={setPassword}
                     onFocus={() => setCredentialFieldsUnlocked(true)}
@@ -524,7 +524,7 @@ export default function Signup() {
 
                   <PasswordInput
                     label="Confirm Password"
-                    placeholder="Confirm your password"
+                    placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={setConfirmPassword}
                     onFocus={() => setCredentialFieldsUnlocked(true)}

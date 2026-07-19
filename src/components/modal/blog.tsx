@@ -20,7 +20,7 @@ function PostCard({ post, featured = false }: { post: Post; featured?: boolean }
       }`}
     >
       <div
-        className={`${featured ? "h-full min-h-[220px] p-5" : "p-4"}`}
+        className={featured ? "h-full min-h-[220px] p-5" : "p-4"}
         dangerouslySetInnerHTML={{ __html: renderArt(post.hero, post.tone) }}
       />
 

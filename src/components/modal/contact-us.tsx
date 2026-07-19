@@ -32,10 +32,8 @@ export default function ContactUsModal() {
           We're here to help! Reach out to us with any questions or feedback.
         </p>
 
-        {/* Modal Card */}
         <div className="mt-8 rounded-2xl bg-white/5 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-6 sm:p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left: Contact Information */}
             <div>
               <h3 className="text-lg font-semibold">Contact Information</h3>
               <div className="mt-4 space-y-3 text-white/80">
@@ -51,7 +49,6 @@ export default function ContactUsModal() {
               </div>
             </div>
 
-            {/* Right: Form */}
             <div>
               <div className="space-y-4">
                 <div>
@@ -78,16 +75,14 @@ export default function ContactUsModal() {
           </div>
         </div>
 
-        {/* Help Center CTA */}
         <section className="mt-12 text-center">
           <h3 className="text-xl font-semibold">Looking for Immediate Answers?</h3>
           <p className="text-white/60 mt-2">Our Help Center is packed with articles and tutorials to guide you.</p>
           <button className="mt-4 rounded-full bg-[oklch(0.488_0.243_264.376)] px-5 py-2.5 text-white shadow-md shadow-[oklch(0.488_0.243_264.376)/30]">Go to Help Center</button>
         </section>
 
-        {/* Footer */}
         <footer className="mt-14 text-center text-white/70">
-          <div className="space-x-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <a href="#" className="hover:text-white">Terms of Service</a>
             <a href="#" className="hover:text-white">Privacy Policy</a>
           </div>

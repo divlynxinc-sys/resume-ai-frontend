@@ -10,9 +10,6 @@ import { pricingService } from "@/services";
 import { settingsService } from "@/services/settings";
 import { LAUNCH_OFFER, isLaunchOfferActive, launchOfferPriceLabel } from "@/lib/launch-offer";
 
-
-
-
 type PlanProps = {
   title: string;
   slug: string;
@@ -48,7 +45,6 @@ function PlanCard({
   hasActiveSubscription,
   onSwitch,
 }: PlanProps & {
-  blurb?: string;
   isCurrent?: boolean;
   hasActiveSubscription?: boolean;
   onSwitch?: (slug: string, title: string, price: string, subtitle?: string) => void;
@@ -58,7 +54,7 @@ function PlanCard({
   return (
     <div data-landing-reveal className="relative group transition-all duration-300">
       <div
-        className="relative rounded-2xl px-7 py-8 h-full flex flex-col text-left transition-all duration-300 bg-[var(--app-surface)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+        className="relative rounded-2xl px-5 py-6 sm:px-7 sm:py-8 h-full flex flex-col text-left transition-all duration-300 bg-[var(--app-surface)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
         style={{
           color: "var(--app-fg)",
           border: isCurrent
@@ -98,7 +94,7 @@ function PlanCard({
               {blurb}
             </p>
           ) : null}
-          <div className="mt-5 flex items-baseline gap-1.5">
+          <div className="mt-5 flex flex-wrap items-baseline gap-1.5">
             {originalPrice && (
               <span
                 className="font-display text-2xl font-light tracking-tight line-through"
@@ -108,7 +104,7 @@ function PlanCard({
               </span>
             )}
             <span
-              className="font-display text-5xl font-light tracking-tight"
+              className="font-display text-4xl sm:text-5xl font-light tracking-tight"
               style={{ color: "var(--app-fg)" }}
             >
               {price}
@@ -243,7 +239,6 @@ export function PricingSection() {
   const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
   const [currentPlanName, setCurrentPlanName] = useState<string | null>(currentPlan);
 
-  // Switch-confirmation modal state
   const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
@@ -335,7 +330,7 @@ export function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-6 pt-4 pb-20 text-center">
+    <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 px-4 sm:px-6 pt-4 pb-20 text-center">
       <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">Pricing</div>
       <h1 className="font-display text-3xl md:text-5xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
         Pick a plan, <span className="italic">land the role.</span>

@@ -228,7 +228,7 @@ export default function AccountManagementScreen() {
     try {
       await profileService.updateMe({ name });
       showToast("Profile updated.");
-    } catch (err: unknown) {
+    } catch (err) {
       showToast(err instanceof Error ? err.message : "Profile update failed.", "error");
     } finally {
       setProfileSaving(false);
@@ -256,7 +256,7 @@ export default function AccountManagementScreen() {
       setNewPw("");
       setConfirmPw("");
       showToast("Password updated.");
-    } catch (err: unknown) {
+    } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to change password.", "error");
     } finally {
       setPwSaving(false);
@@ -285,7 +285,7 @@ export default function AccountManagementScreen() {
     try {
       const res = await pricingService.getPortalUrl();
       window.open(res.portal_url, "_blank", "noopener,noreferrer");
-    } catch (err: unknown) {
+    } catch (err) {
       setSubError(err instanceof Error ? err.message : "Failed to open billing portal.");
     } finally {
       setSubBusy(false);
@@ -305,7 +305,7 @@ export default function AccountManagementScreen() {
           ? "Cancelled and refunded in full."
           : "Cancelled. You can re-subscribe for free until your period ends.",
       );
-    } catch (err: unknown) {
+    } catch (err) {
       setSubError(err instanceof Error ? err.message : "Failed to cancel subscription.");
     } finally {
       setSubBusy(false);
@@ -320,7 +320,7 @@ export default function AccountManagementScreen() {
       refreshSubscriptionState();
       window.dispatchEvent(new CustomEvent("plan-updated"));
       showToast("Your plan is active again until the end of your current period.");
-    } catch (err: unknown) {
+    } catch (err) {
       setSubError(err instanceof Error ? err.message : "Failed to reactivate subscription.");
     } finally {
       setSubBusy(false);
@@ -375,7 +375,7 @@ export default function AccountManagementScreen() {
 
         <div className="mt-8 grid gap-5">
           <Card>
-            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
               <SectionTitle icon={<User className="size-5" />} title="Profile" subtitle="Your visible account details." />
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -392,7 +392,7 @@ export default function AccountManagementScreen() {
           </Card>
 
           <Card>
-            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
               <SectionTitle icon={<Lock className="size-5" />} title="Security" subtitle="Password and extra account protection." />
               <div className="grid gap-5">
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -417,7 +417,7 @@ export default function AccountManagementScreen() {
           </Card>
 
           <Card>
-            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
               <SectionTitle icon={<CreditCard className="size-5" />} title="Billing" subtitle="Plan and payment controls." />
               <div className="grid gap-5">
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -494,7 +494,7 @@ export default function AccountManagementScreen() {
           </Card>
 
           <Card>
-            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
               <SectionTitle icon={<Mail className="size-5" />} title="Preferences" subtitle="Theme and account notifications." />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] px-4 py-3">
@@ -521,7 +521,7 @@ export default function AccountManagementScreen() {
           </Card>
 
           <Card>
-            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
               <SectionTitle icon={<Shield className="size-5" />} title="Data & Privacy" subtitle="Export your data or close the account." />
               <div className="flex flex-wrap gap-3">
                 <SecondaryButton onClick={handleExport} disabled={exporting}>

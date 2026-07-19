@@ -103,7 +103,6 @@ function TemplateCard({ slug, name, html }: { slug: string; name: string; html: 
         onClick={() => navigate(`/templates?selected=${slug}`)}
         className="relative group w-full aspect-[3/4] rounded-2xl bg-white border border-[var(--app-border)] shadow-[var(--shadow-soft)] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-pop)]"
       >
-        {/* Real template preview, scaled down */}
         <iframe
           srcDoc={html}
           title={name}
@@ -118,12 +117,10 @@ function TemplateCard({ slug, name, html }: { slug: string; name: string; html: 
             transform: "scale(0.3333)",
           }}
         />
-        {/* Hover overlay */}
         <div className="absolute inset-0 z-20 flex items-end justify-center pb-5 bg-gradient-to-t from-[rgba(26,26,26,0.55)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button
             type="button"
             className="px-4 py-2 rounded-full bg-white text-[var(--app-fg)] text-xs font-medium shadow-md cursor-pointer"
-            style={{ color: "var(--app-fg)" }}
           >
             Use this template
           </button>
