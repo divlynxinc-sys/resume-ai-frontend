@@ -140,7 +140,7 @@ export default function CookiePolicyScreen() {
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base">
               Learn how Jobsynk AI uses cookies and choose which optional technologies you’re comfortable with.
             </p>
-            <p className="mt-3 text-xs text-[var(--app-fg-soft)]">Last updated: July 3, 2026</p>
+            <p className="mt-3 text-xs text-[var(--app-fg-soft)]">Last updated: July 20, 2026</p>
           </div>
         </section>
 
@@ -217,7 +217,7 @@ export default function CookiePolicyScreen() {
               <PreferenceRow
                 icon={<Megaphone className="size-5" />}
                 title="Targeting cookies"
-                description="Help tailor communications and measure whether campaigns are useful and relevant."
+                description="Used by advertising partners such as Google to show ads that are relevant to you and measure whether campaigns are useful."
                 checked={preferences.targeting}
                 onChange={(checked) => updatePreference("targeting", checked)}
               />
@@ -254,6 +254,23 @@ export default function CookiePolicyScreen() {
               </div>
             )}
           </section>
+
+          <article className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-[var(--shadow-soft)] sm:p-8">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-[var(--pastel-peach)] text-[#C25E3A]">
+                <Megaphone className="size-5" />
+              </span>
+              <h2 className="font-display text-2xl font-light text-[var(--app-fg)]">Advertising cookies</h2>
+            </div>
+            <div className="mt-4 space-y-3 text-sm leading-7 text-[var(--app-fg-muted)]">
+              <p>
+                Some pages on Jobsynk AI display ads served by Google AdSense. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this website or other websites. Google&rsquo;s use of advertising cookies enables it and its partners to show you ads based on your visits to Jobsynk AI and other sites on the internet.
+              </p>
+              <p>
+                You can opt out of personalized advertising in <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--accent-text)] underline underline-offset-4">Google Ads Settings</a>, and opt out of some other third-party vendors&rsquo; advertising cookies at <a href="https://www.aboutads.info/choices" target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--accent-text)] underline underline-offset-4">aboutads.info</a>. If you visit from the European Economic Area, the UK, or Switzerland, a consent message asks for your permission before advertising cookies are used, and you can change your choice there at any time.
+              </p>
+            </div>
+          </article>
         </div>
       </main>
 

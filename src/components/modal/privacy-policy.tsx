@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Cookie, Database, EyeOff, FileText, Gavel, Lock, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { Cookie, Database, EyeOff, FileText, Gavel, Lock, Mail, Megaphone, ShieldCheck, UserCheck } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 
@@ -11,6 +11,7 @@ const SECTIONS = [
   { id: "retention", label: "Data retention" },
   { id: "rights", label: "Your choices and rights" },
   { id: "cookies", label: "Cookies" },
+  { id: "advertising", label: "Advertising" },
   { id: "law", label: "Governing law" },
   { id: "contact", label: "Contact us" },
 ];
@@ -68,7 +69,7 @@ export default function PrivacyPolicyScreen() {
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base">
               This policy explains what information Jobsynk AI handles, why we use it, and the choices available to you.
             </p>
-            <p className="mt-3 text-xs text-[var(--app-fg-soft)]">Last updated: July 3, 2026</p>
+            <p className="mt-3 text-xs text-[var(--app-fg-soft)]">Last updated: July 20, 2026</p>
           </div>
         </section>
 
@@ -124,6 +125,11 @@ export default function PrivacyPolicyScreen() {
             <PolicySection id="cookies" icon={<Cookie className="size-5" />} title="Cookies and similar technologies">
               <p>We use essential technologies to operate and secure the service. Optional cookies may support performance measurement, functionality, and relevant communications.</p>
               <p>You can learn more and manage optional preferences in our <Link to="/cookie-policy" className="font-medium text-[var(--accent-text)] underline underline-offset-4">Cookie Policy</Link>.</p>
+            </PolicySection>
+
+            <PolicySection id="advertising" icon={<Megaphone className="size-5" />} title="Advertising">
+              <p>Some pages on Jobsynk AI display ads served by Google AdSense. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this website or other websites. Google&rsquo;s use of advertising cookies enables it and its partners to show you ads based on your visits to Jobsynk AI and other sites on the internet.</p>
+              <p>You can opt out of personalized advertising in <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--accent-text)] underline underline-offset-4">Google Ads Settings</a>, and opt out of some other third-party vendors&rsquo; advertising cookies at <a href="https://www.aboutads.info/choices" target="_blank" rel="noopener noreferrer" className="font-medium text-[var(--accent-text)] underline underline-offset-4">aboutads.info</a>. Visitors in the European Economic Area, the UK, and Switzerland are asked for consent before advertising cookies are used.</p>
             </PolicySection>
 
             <PolicySection id="law" icon={<Gavel className="size-5" />} title="Governing law">
