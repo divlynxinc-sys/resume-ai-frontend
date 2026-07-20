@@ -100,7 +100,7 @@ export default function TermsOfServiceScreen() {
             </TermSection>
 
             <TermSection number={8} icon={<Mail className="size-5" />} title="Contact us">
-              Questions about these terms can be sent to <a href="mailto:divlynx.inc@gmail.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">divlynx.inc@gmail.com</a>.
+              Questions about these terms can be sent to <a href="mailto:info@divlynx.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">info@divlynx.com</a>.
             </TermSection>
           </section>
 
@@ -108,7 +108,7 @@ export default function TermsOfServiceScreen() {
             <Link to="/privacy" className="inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
               Read Privacy Policy
             </Link>
-            <a href="mailto:divlynx.inc@gmail.com" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
+            <a href="mailto:info@divlynx.com" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
               <Mail className="size-4" />
               Contact Us
             </a>

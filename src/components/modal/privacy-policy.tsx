@@ -118,7 +118,7 @@ export default function PrivacyPolicyScreen() {
 
             <PolicySection id="rights" icon={<UserCheck className="size-5" />} title="Your choices and rights">
               <p>You may review or update account information through available settings. You may also request access, correction, export, or deletion of personal information, subject to identity verification and applicable legal requirements.</p>
-              <p>To submit a privacy request, email <a href="mailto:divlynx.inc@gmail.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">divlynx.inc@gmail.com</a>.</p>
+              <p>To submit a privacy request, email <a href="mailto:info@divlynx.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">info@divlynx.com</a>.</p>
             </PolicySection>
 
             <PolicySection id="cookies" icon={<Cookie className="size-5" />} title="Cookies and similar technologies">
@@ -131,7 +131,7 @@ export default function PrivacyPolicyScreen() {
             </PolicySection>
 
             <PolicySection id="contact" icon={<Mail className="size-5" />} title="Contact us">
-              <p>If you have a privacy question, concern, or data request, contact us by email at <a href="mailto:divlynx.inc@gmail.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">divlynx.inc@gmail.com</a>.</p>
+              <p>If you have a privacy question, concern, or data request, contact us by email at <a href="mailto:info@divlynx.com" className="font-medium text-[var(--accent-text)] underline underline-offset-4">info@divlynx.com</a>.</p>
             </PolicySection>
           </article>
         </div>

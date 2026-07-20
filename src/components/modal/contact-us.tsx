@@ -42,8 +42,8 @@ export default function ContactUsModal() {
                     <rect width="20" height="16" x="2" y="4" rx="2" />
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
-                  <a href="mailto:divlynx.inc@gmail.com" className="text-[var(--accent-text)] underline underline-offset-4 hover:text-[var(--accent-hover)]">
-                    divlynx.inc@gmail.com
+                  <a href="mailto:info@divlynx.com" className="text-[var(--accent-text)] underline underline-offset-4 hover:text-[var(--accent-hover)]">
+                    info@divlynx.com
                   </a>
                 </div>
               </div>

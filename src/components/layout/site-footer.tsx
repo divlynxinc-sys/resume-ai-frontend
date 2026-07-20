@@ -115,6 +115,21 @@ export default function SiteFooter() {
 
       <div className="max-w-7xl mx-auto px-6 border-t border-white/5 py-8 text-center text-sm text-white/40">
         <p>© 2025 Jobsynk AI. All rights reserved.</p>
+        <p className="mt-2">
+          <a href="mailto:info@divlynx.com" className="hover:text-white/70">
+            info@divlynx.com
+          </a>
+          <span className="mx-2" aria-hidden="true">·</span>
+          Powered by{" "}
+          <a
+            href="https://divlynx.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white/70 underline underline-offset-4"
+          >
+            divlynx.com
+          </a>
+        </p>
       </div>
     </footer>
   );
