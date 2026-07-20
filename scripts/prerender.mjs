@@ -239,7 +239,8 @@ writeFileSync(
 export { POSTS_BY_DATE } from "../src/content/blog/posts";
 export { renderPostBodyHtml, renderPostFaqHtml, renderTocHtml, countWords, formatPostDate } from "../src/content/blog/render";
 export { renderArt } from "../src/content/blog/art";
-export { postSchema, blogIndexSchema, organizationSchema, websiteSchema, softwareApplicationSchema } from "../src/content/blog/schema";
+export { postSchema, blogIndexSchema, organizationSchema, websiteSchema, softwareApplicationSchema, faqPageSchema } from "../src/content/blog/schema";
+export { ATS_CHECKER_FAQ, FAQ_PAGE_ITEMS } from "../src/content/site-faq";
 `,
   "utf8"
 );
@@ -267,6 +268,9 @@ const {
   organizationSchema,
   websiteSchema,
   softwareApplicationSchema,
+  faqPageSchema,
+  ATS_CHECKER_FAQ,
+  FAQ_PAGE_ITEMS,
   countWords,
   formatPostDate: formatDate,
 } = await import(pathToFileURL(contentBundle).href);
@@ -340,9 +344,13 @@ function buildPage({ title, description, path, jsonLd, bodyHtml, article }) {
     `<meta property="og:description" content="${escapeAttr(description)}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
     `<meta property="og:site_name" content="Jobsynk AI" />`,
+    `<meta property="og:image" content="${SITE_URL}/og-image.png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeAttr(title)}" />`,
     `<meta name="twitter:description" content="${escapeAttr(description)}" />`,
+    `<meta name="twitter:image" content="${SITE_URL}/og-image.png" />`,
     article ? `<meta property="article:published_time" content="${article.publishedAt}" />` : "",
     article ? `<meta property="article:modified_time" content="${article.updatedAt}" />` : "",
     article ? `<meta name="author" content="${escapeAttr(article.author.name)}" />` : "",
@@ -392,8 +400,10 @@ const MARKETING = {
     title: "Free ATS Resume Checker — No Signup | Jobsynk",
     description:
       "Paste your resume and get an instant parse-readiness score plus a named list of what would break an applicant tracking system. Free, no account, nothing uploaded.",
-    // The FAQPage graph here is emitted by the page's own useSeo() too — keep the
-    // two in sync, or a crawler and a browser see different structured data.
+    // This graph is emitted by the page's own useSeo() too — keep the two in
+    // sync, or a crawler and a browser see different structured data. The FAQ
+    // half is shared code already (faqPageSchema + ATS_CHECKER_FAQ, same calls
+    // in ats-checker.tsx); the SoftwareApplication node is still duplicated.
     jsonLd: [
       {
         "@context": "https://schema.org",
@@ -409,6 +419,7 @@ const MARKETING = {
               "Free browser-based resume parse-readiness checker. No account required and no upload — the analysis runs entirely on the client.",
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           },
+          faqPageSchema(ATS_CHECKER_FAQ),
         ],
       },
     ],
@@ -425,7 +436,18 @@ const MARKETING = {
     title: "FAQ — Jobsynk AI",
     description:
       "Answers about building, tailoring, managing and downloading your resume with Jobsynk AI.",
-    jsonLd: [{ "@context": "https://schema.org", "@graph": [organizationSchema()] }],
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          organizationSchema(),
+          faqPageSchema(
+            FAQ_PAGE_ITEMS.map((item) => ({ q: item.question, a: item.answer })),
+            "/faq"
+          ),
+        ],
+      },
+    ],
   },
   "/enterprise": {
     title: "Enterprise — Jobsynk AI",

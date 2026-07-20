@@ -3,41 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, HelpCircle, Mail, MessageCircle, Search } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
-
-const FAQ_ITEMS = [
-  {
-    question: "How do I create a resume?",
-    answer: "Choose a professionally designed template, add your experience, education, projects, and skills, then use Jobsynk AI suggestions to strengthen your content before downloading your resume.",
-  },
-  {
-    question: "Can I customize my resume template?",
-    answer: "Yes. You can choose from available templates and adjust your resume content to suit your experience, industry, and target role while keeping the layout ATS-friendly.",
-  },
-  {
-    question: "How much does Jobsynk AI cost?",
-    answer: "Jobsynk AI offers multiple plans for different needs. Visit the pricing section to compare current features and choose the plan that fits your job search.",
-  },
-  {
-    question: "How does AI tailoring work?",
-    answer: "Add a target job description and Jobsynk AI analyzes its skills, keywords, and requirements. It then suggests focused improvements that make your resume more relevant to that role.",
-  },
-  {
-    question: "Are Jobsynk AI resumes ATS-friendly?",
-    answer: "Our templates and guidance prioritize clear headings, readable structure, relevant keywords, and consistent formatting to improve compatibility with applicant tracking systems.",
-  },
-  {
-    question: "Is my personal data secure?",
-    answer: "We use industry-standard safeguards and responsible data practices to protect your information. You can review the Privacy Policy and Security pages for more details.",
-  },
-  {
-    question: "Can I download and update my resume later?",
-    answer: "Yes. You can return to your saved resumes, update their content, preview changes, and download the latest version whenever you need it.",
-  },
-  {
-    question: "How do I contact support?",
-    answer: "Visit the Help Center or Contact Us page for assistance. You can also email the Jobsynk AI team at support@jobsynk.ai.",
-  },
-];
+import { FAQ_PAGE_ITEMS as FAQ_ITEMS } from "@/content/site-faq";
 
 function FAQItem({
   question,

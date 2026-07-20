@@ -17,7 +17,8 @@ import SiteFooter from "../layout/site-footer";
 import { analyzeResume, type AtsCheck, type AtsReport, type CheckStatus } from "@/lib/ats-check";
 import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-extract";
 import { downloadScoreCard, shareText } from "@/lib/share-card";
-import { organizationSchema, SITE_URL } from "@/content/blog/schema";
+import { faqPageSchema, organizationSchema, SITE_URL } from "@/content/blog/schema";
+import { ATS_CHECKER_FAQ as FAQ } from "@/content/site-faq";
 import { useSeo } from "@/lib/seo";
 
 /**
@@ -32,29 +33,6 @@ import { useSeo } from "@/lib/seo";
  *   3. NO OVERCLAIMING. We tell people plainly that no ATS emits a score. See the
  *      disclaimer below — it is deliberate, and it is a differentiator.
  */
-
-const FAQ = [
-  {
-    q: "Is this ATS checker really free?",
-    a: "Yes, and there's no account. Your resume is analysed in your browser and never leaves your device — nothing is uploaded to a server, so there is nothing for us to store.",
-  },
-  {
-    q: "Does an applicant tracking system give my resume a score?",
-    a: "No, and be sceptical of any tool that implies otherwise. An ATS is a database: it parses your resume into fields and stores it so a recruiter can search. There is no official score a hiring team sees. What this tool measures is whether your resume would parse cleanly and read well — which is the part you can actually control.",
-  },
-  {
-    q: "What does this actually check?",
-    a: "Ten things: whether your contact details are findable, whether you use standard section headings, how many of your bullets contain a number, whether you lead with duties instead of results, length, resume register, filler phrases, dates, bullet length, and — if you paste a job description — how well your vocabulary matches it.",
-  },
-  {
-    q: "Is my resume uploaded to your servers?",
-    a: "No. The file is read and analysed inside your browser and never sent anywhere — there is no upload, no storage, and nothing for us to keep. That is also why the tool is free and needs no account: it costs us nothing to run.",
-  },
-  {
-    q: "What file types can I upload?",
-    a: "PDF, DOCX and plain text. If your PDF turns out to contain no selectable text, we'll tell you — that means it's a scanned image, and it is the single most fatal ATS mistake there is, because a parser reads exactly what we read: nothing.",
-  },
-];
 
 const STATUS_STYLE: Record<CheckStatus, { icon: typeof Check; tint: string; text: string; label: string }> = {
   pass: { icon: Check, tint: "var(--pastel-mint)", text: "text-[#3F8E5C]", label: "Pass" },
@@ -295,14 +273,7 @@ export default function AtsCheckerScreen() {
               "Free browser-based resume parse-readiness checker. No account required and no upload — the analysis runs entirely on the client.",
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
           },
-          {
-            "@type": "FAQPage",
-            mainEntity: FAQ.map((item) => ({
-              "@type": "Question",
-              name: item.q,
-              acceptedAnswer: { "@type": "Answer", text: item.a },
-            })),
-          },
+          faqPageSchema(FAQ),
         ],
       },
     ],

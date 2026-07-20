@@ -69,6 +69,24 @@ export function softwareApplicationSchema(): object {
   };
 }
 
+/**
+ * FAQPage graph node. Pass `path` to stamp a stable @id (fine for pages whose
+ * schema only the prerenderer emits). Omit it where a client `useSeo()` also
+ * emits the graph — both sides must then call this with identical arguments so
+ * crawler and browser stay byte-identical.
+ */
+export function faqPageSchema(items: Array<{ q: string; a: string }>, path?: string): object {
+  return {
+    "@type": "FAQPage",
+    ...(path ? { "@id": `${SITE_URL}${path}#faq` } : {}),
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+}
+
 function breadcrumbSchema(trail: Array<{ name: string; path: string }>): object {
   return {
     "@type": "BreadcrumbList",
