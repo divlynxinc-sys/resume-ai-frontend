@@ -489,3 +489,70 @@ html.light ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.18);
     transition: none;
   }
 }
+
+/* ATS checker hero — a code-drawn resume scanner, with no media dependency. */
+.ats-printer { position: relative; width: min(100%, 34rem); height: 27rem; margin-inline: auto; isolation: isolate; }
+.ats-printer__glow { position: absolute; inset: 8% 0 2%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--pastel-sky) 72%, transparent), transparent 68%); filter: blur(15px); }
+.ats-printer__body { position: absolute; left: 24%; bottom: 9%; width: 68%; height: 55%; border-radius: 1.35rem 1.35rem 1.1rem 1.1rem; background: linear-gradient(145deg, #3d494d, #1d2529 64%); box-shadow: 0 1.8rem 2.8rem rgba(24,34,38,.22), inset 0 1px rgba(255,255,255,.14); }
+.ats-printer__back-slot { position: absolute; left: 7%; right: 7%; top: -5%; height: 12%; border-radius: .6rem; background: #182024; box-shadow: inset 0 .25rem .6rem rgba(0,0,0,.55); }
+.ats-printer__resume { position: absolute; left: 13%; top: -83%; width: 74%; height: 92%; overflow: hidden; padding: 7% 8%; color: #263238; background: #fff; border: 1px solid rgba(35,45,50,.12); box-shadow: 0 .8rem 1.4rem rgba(24,34,38,.2); animation: ats-paper-feed 6.4s cubic-bezier(.65,0,.35,1) infinite; }
+.ats-printer__resume-head { display: flex; flex-direction: column; align-items: flex-start; gap: .16rem; padding-bottom: .5rem; border-bottom: 2px solid #39464b; }
+.ats-printer__resume-head strong { font-size: clamp(.55rem, 1.4vw, .82rem); line-height: 1; }
+.ats-printer__resume-head span { color: #6557c7; font-size: clamp(.28rem, .62vw, .42rem); font-weight: 800; letter-spacing: .08em; }
+.ats-printer__resume-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 8%; margin-top: 7%; }
+.ats-printer__resume-grid > div { display: flex; flex-direction: column; gap: .24rem; }
+.ats-printer__resume-grid b { margin-top: .3rem; padding-bottom: .18rem; border-bottom: 1px solid #5d676b; font-size: clamp(.27rem, .66vw, .4rem); }
+.ats-printer__resume-grid i { display: block; height: 2px; border-radius: 4px; background: #c7ced0; }
+.ats-printer__resume-grid i:nth-of-type(2n) { width: 82%; }
+.ats-printer__scan-line { position: absolute; inset-inline: 0; top: 0; height: 1.35rem; opacity: 0; background: linear-gradient(180deg, transparent, rgba(87,205,177,.34), #69d9bd, transparent); box-shadow: 0 .2rem .7rem rgba(79,213,180,.42); animation: ats-scan-line 6.4s ease-in-out infinite; }
+.ats-printer__top { position: absolute; inset: 0 5% auto; height: 12%; border-radius: .65rem .65rem 0 0; background: linear-gradient(#556267, #303a3e); transform: translateY(-28%); }
+.ats-printer__console { position: absolute; inset: 7% 9% auto; height: 57%; padding: 3%; border-radius: .75rem; background: linear-gradient(140deg, #1f292d, #101619); box-shadow: inset 0 1px rgba(255,255,255,.12), 0 .65rem 1.1rem rgba(0,0,0,.25); }
+.ats-printer__screen { position: relative; width: 100%; height: 100%; overflow: hidden; border: .55rem solid #5345ad; border-radius: .5rem; color: #303a3e; background: #e8ebeb; box-shadow: 0 0 1.2rem rgba(99,78,223,.24); }
+.ats-printer__screen-scan, .ats-printer__screen-result { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.ats-printer__screen-scan { flex-direction: column; gap: .38rem; animation: ats-screen-scan 6.4s infinite; }
+.ats-printer__screen-icon { display: grid; width: 1.45rem; height: 1.45rem; place-items: center; border-radius: 50%; color: #fff; background: #6557c7; }
+.ats-printer__screen-icon svg { width: .82rem; }
+.ats-printer__screen-scan strong, .ats-printer__screen-result strong { font-size: clamp(.45rem, 1vw, .68rem); }
+.ats-printer__screen-scan > i { width: 46%; height: .25rem; overflow: hidden; border-radius: 999px; background: #cdd3d4; }
+.ats-printer__screen-scan > i span { display: block; width: 100%; height: 100%; border-radius: inherit; background: #69cdb5; transform-origin: left; animation: ats-progress 6.4s ease-in-out infinite; }
+.ats-printer__screen-result { gap: .65rem; opacity: 0; animation: ats-screen-result 6.4s infinite; }
+.ats-printer__screen-result > div { display: flex; flex-direction: column; }
+.ats-printer__screen-result small { margin-top: .16rem; color: #687579; font-size: clamp(.34rem, .72vw, .5rem); }
+.ats-printer__score { font-size: clamp(1.15rem, 3vw, 2rem); font-weight: 700; color: #3f9a72; }
+.ats-printer__output-slot { position: absolute; left: 16%; right: 16%; bottom: 7%; z-index: 3; height: 10%; border-radius: .3rem; background: #0f1518; box-shadow: inset 0 .3rem .6rem #050809; }
+.ats-printer__paper { position: absolute; left: 24%; bottom: 5%; z-index: 2; display: flex; width: 52%; height: 48%; flex-direction: column; align-items: center; padding-top: 6%; color: #293438; background: #fff; box-shadow: 0 .8rem 1rem rgba(0,0,0,.18); transform-origin: top; animation: ats-result-print 6.4s cubic-bezier(.5,0,.2,1) infinite; }
+.ats-printer__paper svg { width: 1.2rem; color: #3f9a72; }
+.ats-printer__paper strong { margin-top: .1rem; font-size: clamp(.4rem, .9vw, .6rem); letter-spacing: .12em; }
+.ats-printer__paper span { margin-top: .2rem; color: #6557c7; font-size: clamp(.62rem, 1.5vw, 1rem); font-weight: 700; }
+.ats-printer__paper i { width: 54%; height: 2px; margin-top: .35rem; background: #d6dbdc; }
+.ats-printer__paper i:last-child { width: 38%; }
+.ats-printer__meter { position: absolute; left: 2%; bottom: 9%; z-index: 2; width: 25%; height: 73%; border-radius: .85rem; color: #fff; background: linear-gradient(180deg, #303b3f 0 62%, #5944c4 100%); box-shadow: 0 1.4rem 2rem rgba(24,34,38,.22), inset 0 1px rgba(255,255,255,.13); }
+.ats-printer__brand { display: block; margin-top: 14%; text-align: center; font-size: clamp(.38rem, .85vw, .6rem); line-height: 1.7; letter-spacing: .25em; }
+.ats-printer__gauge { position: relative; width: 58%; aspect-ratio: 2/1; overflow: hidden; margin: 14% auto 0; border: .35rem solid #0e1518; border-bottom: 0; border-radius: 999px 999px 0 0; background: conic-gradient(from 270deg at 50% 100%, #62d1b3 0 28%, #f8b64c 28% 42%, #dfe6e6 42% 50%, transparent 50%); }
+.ats-printer__needle { position: absolute; left: 48%; bottom: -3%; width: 4%; height: 86%; border-radius: 999px; background: #ffb348; transform-origin: 50% 100%; animation: ats-needle 6.4s ease-in-out infinite; }
+.ats-printer__pulse { position: relative; width: 62%; height: 14%; margin: 19% auto 0; overflow: hidden; border-radius: .2rem; background: #121a1d; }
+.ats-printer__pulse i { position: absolute; left: -10%; top: 50%; width: 48%; height: 1px; background: #a7b6b8; transform: rotate(-4deg); }
+.ats-printer__pulse i:nth-child(2) { left: 25%; width: 23%; transform: rotate(65deg); }
+.ats-printer__pulse i:nth-child(3) { left: 45%; width: 50%; transform: rotate(-12deg); }
+.ats-printer__lights { display: flex; justify-content: center; gap: 10%; margin-top: 18%; }
+.ats-printer__lights i { width: 10%; aspect-ratio: 1; border-radius: 50%; background: #dce5e5; box-shadow: 0 0 .4rem rgba(255,255,255,.3); }
+.ats-printer__lights i:first-child { background: #6bdbb6; animation: ats-status-light 6.4s infinite; }
+
+@keyframes ats-paper-feed { 0%, 8% { transform: translateY(-5%); } 42%, 100% { transform: translateY(77%); } }
+@keyframes ats-scan-line { 0%, 10%, 48%, 100% { opacity: 0; top: 4%; } 15% { opacity: 1; } 40% { opacity: 1; top: 90%; } }
+@keyframes ats-progress { 0%, 8% { transform: scaleX(0); } 43%, 100% { transform: scaleX(1); } }
+@keyframes ats-screen-scan { 0%, 44% { opacity: 1; } 49%, 94% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes ats-screen-result { 0%, 44% { opacity: 0; transform: scale(.96); } 51%, 92% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+@keyframes ats-result-print { 0%, 47% { transform: translateY(-78%) scaleY(.35); } 67%, 92% { transform: translateY(64%) scaleY(1); } 100% { transform: translateY(-78%) scaleY(.35); } }
+@keyframes ats-needle { 0%, 12% { transform: rotate(-58deg); } 48%, 92% { transform: rotate(48deg); } 100% { transform: rotate(-58deg); } }
+@keyframes ats-status-light { 0%, 45% { box-shadow: 0 0 .4rem rgba(107,219,182,.3); } 52%, 92% { box-shadow: 0 0 .9rem #6bdbb6; } }
+
+@media (max-width: 639px) { .ats-printer { height: 21.5rem; } }
+@media (prefers-reduced-motion: reduce) {
+  .ats-printer *, .ats-printer *::before, .ats-printer *::after { animation-play-state: paused !important; }
+  .ats-printer__resume { transform: translateY(45%); }
+  .ats-printer__screen-scan { opacity: 0; }
+  .ats-printer__screen-result { opacity: 1; transform: none; }
+  .ats-printer__paper { transform: translateY(64%) scaleY(1); }
+  .ats-printer__needle { transform: rotate(48deg); }
+}

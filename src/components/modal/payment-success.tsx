@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
 import { pricingService } from "@/services";
+import { useConfettiBurst } from "@/hooks/use-confetti-burst";
 
 type Plan = {
   title: string;
@@ -45,142 +46,6 @@ function ProBadge() {
       Pro
     </div>
   );
-}
-
-/**
- * Self-contained canvas confetti burst — no external dep.
- * Particles drop from the top of the viewport with a short, celebratory cadence.
- */
-function useConfettiBurst() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const prefersReducedMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const resize = () => {
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const colors = [
-      "#10B981", // emerald
-      "#34D399",
-      "#60A5FA", // sky
-      "#A78BFA", // violet
-      "#F472B6", // pink
-      "#FBBF24", // amber
-      "#5B6CDB", // indigo (matches app accent)
-    ];
-
-    type Particle = {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      rot: number;
-      vr: number;
-      size: number;
-      color: string;
-      shape: "rect" | "circle";
-      life: number;
-    };
-
-    const particles: Particle[] = [];
-
-    const spawnBurst = (count: number) => {
-      const w = window.innerWidth;
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x: Math.random() * w,
-          y: -20 - Math.random() * 80,
-          vx: (Math.random() - 0.5) * 2.2,
-          vy: 0.8 + Math.random() * 1.6,
-          rot: Math.random() * Math.PI * 2,
-          vr: (Math.random() - 0.5) * 0.18,
-          size: 6 + Math.random() * 6,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          shape: Math.random() > 0.5 ? "rect" : "circle",
-          life: 0,
-        });
-      }
-    };
-
-    // Initial burst, then two follow-up waves (spaced wider for a gentler cadence)
-    spawnBurst(90);
-    const t1 = window.setTimeout(() => spawnBurst(60), 700);
-    const t2 = window.setTimeout(() => spawnBurst(40), 1500);
-
-    const gravity = 0.045;
-    const drag = 0.998;
-    const maxLife = 720; // ~12s @ 60fps
-
-    let rafId = 0;
-    const tick = () => {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.vy += gravity;
-        p.vx *= drag;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rot += p.vr;
-        p.life += 1;
-
-        if (p.y > window.innerHeight + 40 || p.life > maxLife) {
-          particles.splice(i, 1);
-          continue;
-        }
-
-        const fadeStart = maxLife - 60;
-        const alpha = p.life > fadeStart ? 1 - (p.life - fadeStart) / 60 : 1;
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = p.color;
-        if (p.shape === "rect") {
-          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, (p.size * 2) / 3);
-        } else {
-          ctx.beginPath();
-          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
-
-      if (particles.length > 0) {
-        rafId = requestAnimationFrame(tick);
-      } else {
-        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      }
-    };
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return canvasRef;
 }
 
 type SyncState =

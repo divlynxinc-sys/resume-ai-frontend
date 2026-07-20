@@ -39,6 +39,7 @@ const CARD_MIN_HEIGHT = 1123;
 /** e.g. "jobsynk.co" — shown under the wordmark and on the button. */
 const DOMAIN = SITE_URL.replace(/^https?:\/\//, "");
 const SHARE_URL = `${SITE_URL}/ats-checker`;
+const CREATE_URL = SITE_URL;
 
 // The app palette, hardcoded. html2canvas can't read our CSS variables (they resolve
 // to oklch), so these are the light-theme values written out as plain hex.
@@ -118,55 +119,79 @@ async function logoDataUri(): Promise<string> {
 
 function verdict(score: number): string {
   if (score >= 85) return "This one parses cleanly.";
-  if (score >= 70) return "Solid — with a few things left on the table.";
+  if (score >= 70) return "Solid, with a few things left on the table.";
   if (score >= 50) return "It'll parse, but it's losing points.";
   return "Worth fixing before the next application.";
 }
 
-/**
- * The score ring.
- *
- * 🔴 ONLY THE NUMBER GOES INSIDE THE RING. The "out of 100" caption lives BELOW it,
- * outside the circle. Do not move it back in.
- *
- * It used to sit inside, and it collided with the ring's inner edge. The tempting fix
- * is to compute the clearance — `sqrt(innerRadius² − dy²) − halfLabelWidth` — and
- * tune the radius until it fits. That was tried twice and looked fine on paper both
- * times, because the model can't be trusted: html2canvas rasterises into a cloned
- * iframe where the web font (Geist) may not resolve, so the label renders in a wider
- * fallback face and is *measurably a different width* than in the live DOM. Any
- * geometry that only just fits will therefore break in the actual PDF and nowhere
- * else — which is a miserable bug to chase.
- *
- * Putting the caption outside makes the collision impossible at any font, any size.
- */
+function scoreMood(score: number): { label: string; color: string; tint: string } {
+  if (score >= 85) return { label: "LOOKING SHARP", color: C.pass, tint: C.passSoft };
+  if (score >= 70) return { label: "STRONG START", color: C.accent, tint: C.accentSoft };
+  if (score >= 50) return { label: "GETTING THERE", color: C.warn, tint: C.warnSoft };
+  return { label: "ROOM TO GROW", color: C.fail, tint: C.failSoft };
+}
+
+/** A labelled, print-safe ATS meter with a score-driven needle. */
 const RING = 176;
-const RING_R = 71;
-const RING_STROKE = 11;
+const METER_HEIGHT = 196;
 
 function scoreRing(score: number): string {
-  const circumference = 2 * Math.PI * RING_R;
   const clamped = Math.min(Math.max(score, 0), 100);
-  const offset = circumference * (1 - clamped / 100);
   const tone = score >= 75 ? C.pass : score >= 50 ? C.warn : C.fail;
-  const c = RING / 2;
+  const centerX = 88;
+  const centerY = 111;
+  const needleAngle = Math.PI - (clamped / 100) * Math.PI;
+  const needleX = centerX + 55 * Math.cos(needleAngle);
+  const needleY = centerY - 55 * Math.sin(needleAngle);
 
   return `
     <div style="display:block;width:${RING}px;text-align:center;">
-      <div style="position:relative;width:${RING}px;height:${RING}px;overflow:visible;">
-        <svg width="${RING}" height="${RING}" viewBox="0 0 ${RING} ${RING}"
-             style="position:absolute;inset:0;display:block;width:${RING}px;height:${RING}px;overflow:visible;shape-rendering:geometricPrecision;">
-          <g transform="rotate(-90 ${c} ${c})">
-            <circle cx="${c}" cy="${c}" r="${RING_R}" fill="none" stroke="${C.border}" stroke-width="${RING_STROKE}"/>
-            <circle cx="${c}" cy="${c}" r="${RING_R}" fill="none" stroke="${tone}" stroke-width="${RING_STROKE}"
-                    stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
-          </g>
-          <text x="${c}" y="${c}" text-anchor="middle" dominant-baseline="central"
-                fill="${C.fg}" font-family="Arial,Helvetica,sans-serif" font-size="56" font-weight="700"
-                letter-spacing="-1.5">${score}</text>
+      <div style="position:relative;width:${RING}px;height:${METER_HEIGHT}px;overflow:visible;">
+        <svg width="${RING}" height="${METER_HEIGHT}" viewBox="0 0 ${RING} ${METER_HEIGHT}"
+             style="position:absolute;inset:0;display:block;width:${RING}px;height:${METER_HEIGHT}px;overflow:visible;shape-rendering:geometricPrecision;">
+          <defs>
+            <radialGradient id="score-center" cx="42%" cy="34%" r="72%">
+              <stop offset="0%" stop-color="#FFFFFF"/>
+              <stop offset="100%" stop-color="#F3F5FD"/>
+            </radialGradient>
+          </defs>
+          <!-- Three labelled performance zones: needs work, solid and strong. -->
+          <path d="M18 111 A70 70 0 0 1 88 41" fill="none" stroke="#E8A0B4" stroke-width="13" stroke-linecap="round"/>
+          <path d="M88 41 A70 70 0 0 1 137.5 61.5" fill="none" stroke="#E8C66B" stroke-width="13" stroke-linecap="butt"/>
+          <path d="M137.5 61.5 A70 70 0 0 1 158 111" fill="none" stroke="#69B889" stroke-width="13" stroke-linecap="round"/>
+          <path d="M18 111 A70 70 0 0 1 158 111" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.62"/>
+          <path d="M27 96 A62 62 0 0 1 149 96" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round" opacity="0.8"/>
+          <line x1="88" y1="34" x2="88" y2="48" stroke="#FFFFFF" stroke-width="3"/>
+          <line x1="137.5" y1="55" x2="132" y2="67" stroke="#FFFFFF" stroke-width="3"/>
+          <line x1="38.5" y1="56" x2="46" y2="68" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+          <line x1="120" y1="44" x2="116" y2="57" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.85"/>
+          <path d="M20 33l2.2 5 5 2.2-5 2.2-2.2 5-2.2-5-5-2.2 5-2.2z" fill="#A78BFA"/>
+          <circle cx="157" cy="39" r="4" fill="#FBBF24"/><circle cx="166" cy="48" r="2" fill="#5B6CDB"/>
+
+          <!-- Needle shadow, needle and pivot. -->
+          <line x1="${centerX}" y1="${centerY}" x2="${needleX}" y2="${needleY}" stroke="${tone}" stroke-width="8" stroke-linecap="round" opacity="0.16"/>
+          <line x1="${centerX}" y1="${centerY}" x2="${needleX}" y2="${needleY}" stroke="${tone}" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="${needleX}" cy="${needleY}" r="7" fill="${tone}" opacity="0.15"/>
+          <circle cx="${needleX}" cy="${needleY}" r="3.5" fill="${tone}" stroke="#FFFFFF" stroke-width="1.5"/>
+          <circle cx="${centerX}" cy="${centerY}" r="14" fill="${tone}" opacity="0.1"/>
+          <circle cx="${centerX}" cy="${centerY}" r="9" fill="#FFFFFF" stroke="${tone}" stroke-width="4"/>
+          <circle cx="${centerX}" cy="${centerY}" r="3" fill="${tone}"/>
+
+          <!-- Numeric markers and plain-language labels. -->
+          <text x="16" y="128" text-anchor="middle" fill="${C.fail}" font-family="Arial,Helvetica,sans-serif" font-size="8" font-weight="700">0</text>
+          <text x="88" y="31" text-anchor="middle" fill="${C.warn}" font-family="Arial,Helvetica,sans-serif" font-size="8" font-weight="700">50</text>
+          <text x="160" y="128" text-anchor="middle" fill="${C.pass}" font-family="Arial,Helvetica,sans-serif" font-size="8" font-weight="700">100</text>
+
+          <!-- Digital score readout sits below the pivot, outside the needle sweep. -->
+          <rect x="52" y="130" width="72" height="40" rx="20" fill="url(#score-center)" stroke="#DDE1FA" stroke-width="1.5"/>
+          <text x="88" y="140" text-anchor="middle" dominant-baseline="central" fill="${C.soft}" font-family="Arial,Helvetica,sans-serif" font-size="6.5" font-weight="700" letter-spacing="1.15">ATS SCORE</text>
+          <text x="88" y="157" text-anchor="middle" dominant-baseline="central" fill="${C.fg}" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="700" letter-spacing="-0.7">${score}</text>
+
+          <circle cx="9" cy="187" r="3" fill="${C.fail}"/><text x="15" y="190" fill="${C.soft}" font-family="Arial,Helvetica,sans-serif" font-size="7" font-weight="700">NEEDS WORK</text>
+          <circle cx="73" cy="187" r="3" fill="${C.warn}"/><text x="79" y="190" fill="${C.soft}" font-family="Arial,Helvetica,sans-serif" font-size="7" font-weight="700">SOLID</text>
+          <circle cx="119" cy="187" r="3" fill="${C.pass}"/><text x="125" y="190" fill="${C.soft}" font-family="Arial,Helvetica,sans-serif" font-size="7" font-weight="700">STRONG</text>
         </svg>
       </div>
-      <div style="height:15px;margin-top:9px;font-size:10px;font-weight:600;line-height:15px;letter-spacing:1.2px;text-transform:uppercase;color:${C.soft};white-space:nowrap;">out of 100</div>
     </div>`;
 }
 
@@ -177,6 +202,8 @@ function scoreRing(score: number): string {
 export async function buildScoreCard(report: AtsReport): Promise<HTMLElement> {
   const logo = await logoDataUri();
   const passed = report.checks.filter((check) => check.status === "pass").length;
+  const mood = scoreMood(report.score);
+  const toReview = report.checks.length - passed;
 
   const rows = report.checks
     .map((check) => {
@@ -209,9 +236,9 @@ export async function buildScoreCard(report: AtsReport): Promise<HTMLElement> {
           ${logo ? `<img src="${logo}" alt="" style="position:absolute;left:0;top:1px;width:40px;height:40px;object-fit:contain;display:block;"/>` : ""}
           <svg width="250" height="42" viewBox="0 0 250 42" aria-label="JobsynkAI, ${DOMAIN}"
                style="position:absolute;left:0;top:0;display:block;width:250px;height:42px;overflow:visible;">
-            <text x="${logo ? 64 : 0}" y="13" dominant-baseline="central" fill="${C.fg}"
+            <text x="${logo ? 54 : 0}" y="13" dominant-baseline="central" fill="${C.fg}"
                   font-family="Arial,Helvetica,sans-serif" font-size="21" font-weight="700" letter-spacing="-0.4">Jobsynk<tspan fill="${C.accent}">AI</tspan></text>
-            <text x="${logo ? 64 : 0}" y="32" dominant-baseline="central" fill="${C.accent}"
+            <text x="${logo ? 54 : 0}" y="32" dominant-baseline="central" fill="${C.accent}"
                   font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="500" letter-spacing="0.2">${DOMAIN}</text>
           </svg>
         </div>
@@ -224,15 +251,41 @@ export async function buildScoreCard(report: AtsReport): Promise<HTMLElement> {
       </div>
 
       <!-- Score -->
-      <div style="margin-top:36px;background:${C.surface};border:1px solid ${C.border};border-radius:20px;
-                  padding:32px 34px;">
-        <div style="display:table;width:100%;table-layout:fixed;">
-          <div style="display:table-cell;width:${RING + 32}px;vertical-align:middle;">${scoreRing(report.score)}</div>
-          <div style="display:table-cell;vertical-align:middle;">
-            <div style="height:18px;font-size:13px;font-weight:600;line-height:18px;letter-spacing:1.4px;text-transform:uppercase;color:${C.soft};">My resume scored</div>
-            <div style="margin-top:9px;font-size:31px;font-weight:700;line-height:1.15;letter-spacing:-0.6px;color:${C.fg};">${verdict(report.score)}</div>
-            <div style="margin-top:12px;font-size:14px;color:${C.muted};">
-              ${passed} of ${report.checks.length} checks passed · ${report.wordCount} words
+      <div style="position:relative;margin-top:36px;overflow:hidden;background:linear-gradient(135deg,#FFFFFF 0%,#F7F8FE 66%,#F0F3FF 100%);border:1px solid #DDE1FA;border-radius:22px;
+                  padding:34px 36px;box-shadow:0 12px 30px rgba(91,108,219,0.08);">
+        <!-- Print-safe personality: bubbles, a sparkle and a tiny squiggle. -->
+        <svg width="188" height="138" viewBox="0 0 188 138" aria-hidden="true"
+             style="position:absolute;right:-28px;top:-30px;display:block;width:188px;height:138px;overflow:visible;">
+          <circle cx="132" cy="24" r="72" fill="#E8EBFC"/>
+          <circle cx="168" cy="105" r="12" fill="#E3F3E9"/>
+          <circle cx="88" cy="20" r="5" fill="#FBBF24"/>
+          <path d="M98 48l4 9 9 4-9 4-4 9-4-9-9-4 9-4z" fill="#A78BFA"/>
+          <path d="M121 93c10-9 20 9 30 0s20 9 30 0" fill="none" stroke="#5B6CDB" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+        <div style="position:relative;z-index:1;display:table;width:100%;table-layout:fixed;">
+          <div style="display:table-cell;width:${RING + 38}px;vertical-align:middle;">${scoreRing(report.score)}</div>
+          <div style="display:table-cell;padding-left:2px;vertical-align:middle;text-align:left;">
+            <svg width="132" height="28" viewBox="0 0 132 28" aria-label="${mood.label}"
+                 style="display:block;width:132px;height:28px;overflow:visible;">
+              <rect x="0.5" y="0.5" width="131" height="27" rx="13.5" fill="${mood.tint}" stroke="${mood.color}" stroke-opacity="0.28"/>
+              <text x="66" y="14" text-anchor="middle" dominant-baseline="central" fill="${mood.color}"
+                    font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="700" letter-spacing="1.2">${mood.label}</text>
+            </svg>
+            <div style="margin-top:13px;font-size:12px;font-weight:700;line-height:17px;letter-spacing:1.5px;text-transform:uppercase;color:${C.soft};">My resume scored</div>
+            <div style="margin-top:7px;max-width:420px;font-size:30px;font-weight:700;line-height:1.16;letter-spacing:-0.6px;color:${C.fg};">${verdict(report.score)}</div>
+            <div style="margin-top:16px;height:30px;white-space:nowrap;">
+              <svg width="126" height="30" viewBox="0 0 126 30" aria-label="${passed} checks passed" style="display:inline-block;width:126px;height:30px;margin-right:7px;overflow:visible;vertical-align:middle;">
+                <rect x="0.5" y="0.5" width="125" height="29" rx="14.5" fill="#FFFFFF" stroke="#CDE7D6"/>
+                <text x="63" y="15" text-anchor="middle" dominant-baseline="central" fill="${C.pass}" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="600">${passed} checks passed</text>
+              </svg>
+              <svg width="94" height="30" viewBox="0 0 94 30" aria-label="${toReview} to review" style="display:inline-block;width:94px;height:30px;margin-right:7px;overflow:visible;vertical-align:middle;">
+                <rect x="0.5" y="0.5" width="93" height="29" rx="14.5" fill="#FFFFFF" stroke="${C.border}"/>
+                <text x="47" y="15" text-anchor="middle" dominant-baseline="central" fill="${C.muted}" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="600">${toReview} to review</text>
+              </svg>
+              <svg width="90" height="30" viewBox="0 0 90 30" aria-label="${report.wordCount} words" style="display:inline-block;width:90px;height:30px;overflow:visible;vertical-align:middle;">
+                <rect x="0.5" y="0.5" width="89" height="29" rx="14.5" fill="#FFFFFF" stroke="${C.border}"/>
+                <text x="45" y="15" text-anchor="middle" dominant-baseline="central" fill="${C.muted}" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="600">${report.wordCount} words</text>
+              </svg>
             </div>
           </div>
         </div>
@@ -253,13 +306,11 @@ export async function buildScoreCard(report: AtsReport): Promise<HTMLElement> {
         This is a readability and parse-readiness estimate against the things that actually break parsers.
       </div>
 
-      <!-- The hook. The whole panel is an anchor, so a click anywhere on the block
-           opens the tool. html2pdf maps every anchor in the source node to a real
-           jsPDF link annotation (see enableLinks in downloadScoreCard) — without
-           that, html2canvas rasterises the button into a dead picture of a button,
-           which is exactly what it was before. -->
-      <a href="${SHARE_URL}" style="display:block;margin-top:16px;border:1px solid #DDE1FA;background:${C.accentSoft};border-radius:18px;
-                padding:22px 26px;color:${C.fg};text-decoration:none;">
+      <!-- The hooks. html2pdf maps both anchors to real jsPDF link annotations
+           (see enableLinks in downloadScoreCard), so these remain clickable in the
+           downloaded PDF rather than becoming pictures of buttons. -->
+      <div style="display:block;margin-top:16px;border:1px solid #DDE1FA;background:${C.accentSoft};border-radius:18px;
+                  padding:20px 24px;color:${C.fg};">
         <div style="display:table;width:100%;table-layout:fixed;">
           <div style="display:table-cell;padding-right:24px;vertical-align:middle;">
             <div style="font-size:21px;font-weight:700;letter-spacing:-0.3px;line-height:27px;color:${C.fg};">
@@ -272,19 +323,26 @@ export async function buildScoreCard(report: AtsReport): Promise<HTMLElement> {
               ${DOMAIN}/ats-checker
             </div>
           </div>
-          <div style="display:table-cell;width:204px;vertical-align:middle;text-align:right;">
-            <svg width="204" height="48" viewBox="0 0 204 48" aria-label="Check my resume"
-                 style="display:block;width:204px;height:48px;overflow:visible;">
-              <rect x="0.5" y="0.5" width="203" height="47" rx="12" fill="#FFFFFF" stroke="#CDD4F5"/>
-              <text x="18" y="24" dominant-baseline="central" fill="${C.accent}"
-                    font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="700">Check my resume</text>
-              <circle cx="180" cy="24" r="13" fill="${C.accent}"/>
-              <path d="M175 24h9m-3.5-3.5L184 24l-3.5 3.5" fill="none" stroke="#FFFFFF"
-                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <div style="display:table-cell;width:190px;vertical-align:middle;text-align:right;">
+            <a href="${SHARE_URL}" style="display:block;width:190px;height:42px;text-decoration:none;">
+              <svg width="190" height="42" viewBox="0 0 190 42" aria-label="Check my resume" style="display:block;width:190px;height:42px;overflow:visible;">
+                <rect x="0.5" y="0.5" width="189" height="41" rx="11" fill="#FFFFFF" stroke="#CDD4F5"/>
+                <text x="16" y="21" dominant-baseline="central" fill="${C.accent}" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700">Check my resume</text>
+                <circle cx="169" cy="21" r="11" fill="${C.accent}"/>
+                <path d="M165 21h8m-3-3 3 3-3 3" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="${CREATE_URL}" style="display:block;width:190px;height:42px;margin-top:8px;text-decoration:none;">
+              <svg width="190" height="42" viewBox="0 0 190 42" aria-label="Create resume" style="display:block;width:190px;height:42px;overflow:visible;">
+                <rect width="190" height="42" rx="11" fill="${C.accent}"/>
+                <text x="16" y="21" dominant-baseline="central" fill="#FFFFFF" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="700">Create resume</text>
+                <circle cx="169" cy="21" r="11" fill="#FFFFFF" fill-opacity="0.18"/>
+                <path d="M165 21h8m-3-3 3 3-3 3" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
           </div>
         </div>
-      </a>
+      </div>
     </div>`;
 
   return node;

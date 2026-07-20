@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
+  ArrowRight,
   Check,
   Copy,
   Download,
@@ -9,6 +10,7 @@ import {
   Loader2,
   Share2,
   ShieldCheck,
+  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-ex
 import { downloadScoreCard, shareText } from "@/lib/share-card";
 import { organizationSchema, SITE_URL } from "@/content/blog/schema";
 import { useSeo } from "@/lib/seo";
+import { useConfettiBurst } from "@/hooks/use-confetti-burst";
 
 /**
  * The free, ungated ATS checker.
@@ -88,6 +91,46 @@ function ScoreRing({ score }: { score: number }) {
       <div className="absolute text-center">
         <div className="font-display text-3xl font-light text-[var(--app-fg)]">{score}</div>
         <div className="text-[10px] uppercase tracking-[0.14em] text-[var(--app-fg-soft)]">out of 100</div>
+      </div>
+    </div>
+  );
+}
+
+function AtsPrinterVisual() {
+  return (
+    <div className="ats-printer" role="img" aria-label="Animated resume moving through an ATS scanner and receiving a passing score">
+      <div className="ats-printer__glow" aria-hidden="true" />
+      <div className="ats-printer__meter" aria-hidden="true">
+        <span className="ats-printer__brand">RESUME<br />GRADER</span>
+        <div className="ats-printer__gauge"><i className="ats-printer__needle" /></div>
+        <div className="ats-printer__pulse"><i /><i /><i /></div>
+        <div className="ats-printer__lights"><i /><i /><i /><i /></div>
+      </div>
+      <div className="ats-printer__body" aria-hidden="true">
+        <div className="ats-printer__back-slot" />
+        <div className="ats-printer__resume">
+          <div className="ats-printer__resume-head"><strong>Alex Morgan</strong><span>PRODUCT DESIGNER</span></div>
+          <div className="ats-printer__resume-grid">
+            <div><b>PROFILE</b><i /><i /><i /><b>EXPERIENCE</b><i /><i /><i /><i /><i /></div>
+            <div><b>SKILLS</b><i /><i /><i /><b>EDUCATION</b><i /><i /></div>
+          </div>
+          <span className="ats-printer__scan-line" />
+        </div>
+        <div className="ats-printer__top" />
+        <div className="ats-printer__console">
+          <div className="ats-printer__screen">
+            <div className="ats-printer__screen-scan">
+              <span className="ats-printer__screen-icon"><ShieldCheck /></span>
+              <strong>Scanning resume</strong><i><span /></i>
+            </div>
+            <div className="ats-printer__screen-result">
+              <span className="ats-printer__score">92</span>
+              <div><strong>Great match</strong><small>Ready for recruiters</small></div>
+            </div>
+          </div>
+        </div>
+        <div className="ats-printer__output-slot" />
+        <div className="ats-printer__paper"><Check /><strong>ATS READY</strong><span>92 / 100</span><i /><i /></div>
       </div>
     </div>
   );
@@ -228,7 +271,9 @@ export default function AtsCheckerScreen() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<{ message: string; hint?: string } | null>(null);
   const [showPaste, setShowPaste] = useState(false);
+  const [confettiRun, setConfettiRun] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scoreRef = useRef<HTMLDivElement>(null);
 
   const reset = () => {
     setResume("");
@@ -316,40 +361,84 @@ export default function AtsCheckerScreen() {
   );
 
   const tooShort = submitted && report === null;
+  const confettiRef = useConfettiBurst(confettiRun);
+
+  // Celebrate immediately when analysis completes, then replay once when the
+  // user reaches the score card (which commonly starts below the fold).
+  useEffect(() => {
+    if (!report) return;
+    setConfettiRun((run) => run + 1);
+  }, [report]);
+
+  useEffect(() => {
+    const score = scoreRef.current;
+    if (!report || !score || !("IntersectionObserver" in window)) return;
+
+    let hasEntered = false;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasEntered) {
+          hasEntered = true;
+          setConfettiRun((run) => run + 1);
+        }
+      },
+      { threshold: 0.45 }
+    );
+    observer.observe(score);
+    return () => observer.disconnect();
+  }, [report]);
 
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
 
+      <canvas
+        ref={confettiRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-50"
+      />
+
       <main>
-        <section className="relative overflow-hidden px-6 pb-10 pt-14 text-center sm:pt-20">
+        <section className="relative overflow-hidden px-6 pb-12 pt-10 sm:pb-16 sm:pt-16">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <div className="absolute -left-32 -top-40 size-96 rounded-full bg-[var(--pastel-mint)] opacity-40 blur-3xl" />
             <div className="absolute -right-32 -top-32 size-96 rounded-full bg-[var(--pastel-sky)] opacity-35 blur-3xl" />
           </div>
 
-          <div className="relative mx-auto max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent-text)]">
-              <ShieldCheck className="size-4" />
-              Free · no signup
+          <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14">
+            <AtsPrinterVisual />
+            <div className="text-center lg:text-left">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-[var(--accent-text)]">
+                <ShieldCheck className="size-4" />
+                Free · no signup
+              </div>
+              <h1 className="font-display text-4xl font-light tracking-tight text-[var(--app-fg)] sm:text-5xl lg:text-[3.4rem] lg:leading-[1.08]">
+                See how your resume performs before an ATS does
+              </h1>
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base lg:mx-0">
+                Upload your resume and get a parse-readiness score plus a named list of everything
+                that would trip up an applicant tracking system — in about two seconds, without
+                making an account.
+              </p>
+              <p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-[var(--app-fg-soft)] lg:mx-0">
+                Your file is read in your browser and never uploaded to a server.
+              </p>
             </div>
-            <h1 className="font-display text-4xl font-light tracking-tight text-[var(--app-fg)] sm:text-5xl">
-              ATS resume checker
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[var(--app-fg-muted)] sm:text-base">
-              Upload your resume and get a parse-readiness score plus a named list of everything
-              that would trip up an applicant tracking system — in about two seconds, without
-              making an account.
-            </p>
-            <p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-[var(--app-fg-soft)]">
-              Your file is read in your browser and never uploaded to a server.
-            </p>
           </div>
         </section>
 
         {/* The tool */}
-        <section className="mx-auto max-w-3xl px-6 pb-16">
-          <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--shadow-soft)] sm:p-7">
+        <section className="relative mx-auto max-w-3xl px-6 pb-16">
+          <div className="relative rounded-2xl border border-[var(--accent)]/25 bg-[var(--app-surface)] p-5 shadow-[0_18px_45px_color-mix(in_srgb,var(--accent)_10%,transparent),var(--shadow-soft)] ring-1 ring-[var(--accent)]/5 sm:p-7">
+            <div className="mb-5 flex items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--accent-soft)]/55 p-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--app-surface)] text-[var(--accent-text)] shadow-sm">
+                <ShieldCheck className="size-4.5" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--app-fg)]">Check your resume now</h2>
+                <p className="mt-1 text-xs leading-5 text-[var(--app-fg-soft)]">Instant ATS feedback, private by design, and completely free.</p>
+              </div>
+            </div>
             <input
               ref={inputRef}
               type="file"
@@ -373,39 +462,47 @@ export default function AtsCheckerScreen() {
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
               disabled={reading}
-              className={`flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+              className={`group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 sm:py-12 ${
                 dragging
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                  : "border-[var(--app-border-strong)] bg-[var(--app-bg)] hover:border-[var(--accent)]/60 hover:bg-[var(--accent-soft)]/40"
+                  ? "scale-[1.01] border-[var(--accent)] bg-[var(--accent-soft)] shadow-[inset_0_0_0_1px_var(--accent)]"
+                  : resume && fileName
+                  ? "border-[#69B889]/55 bg-[linear-gradient(145deg,var(--app-surface),var(--pastel-mint))] hover:border-[#3F8E5C]"
+                  : "border-[var(--app-border-strong)] bg-[linear-gradient(145deg,var(--app-bg),var(--app-surface))] hover:-translate-y-0.5 hover:border-[var(--accent)]/60 hover:shadow-[var(--shadow-pop)]"
               } ${reading ? "cursor-wait opacity-70" : "cursor-pointer"}`}
             >
+              <span className="pointer-events-none absolute -right-14 -top-14 size-36 rounded-full bg-[var(--accent-soft)] opacity-45 transition-transform duration-500 group-hover:scale-110" aria-hidden="true" />
               {reading ? (
                 <>
-                  <Loader2 className="size-8 animate-spin text-[var(--accent-text)]" />
-                  <span className="mt-4 text-sm font-medium text-[var(--app-fg)]">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                    <Loader2 className="size-7 animate-spin" />
+                  </span>
+                  <span className="mt-4 text-sm font-semibold text-[var(--app-fg)]">
                     Reading {fileName}…
                   </span>
+                  <span className="mt-1.5 text-xs text-[var(--app-fg-soft)]">Extracting your resume securely in this browser</span>
                 </>
               ) : resume && fileName ? (
                 <>
-                  <span className="grid size-12 place-items-center rounded-full bg-[var(--pastel-mint)] text-[#3F8E5C]">
-                    <Check className="size-6" />
+                  <span className="relative grid size-14 place-items-center rounded-2xl bg-[var(--pastel-mint)] text-[#3F8E5C] shadow-sm ring-1 ring-[#69B889]/20">
+                    <FileText className="size-6" />
+                    <span className="absolute -bottom-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-[#3F8E5C] text-white ring-2 ring-[var(--app-surface)]"><Check className="size-3" /></span>
                   </span>
-                  <span className="mt-4 text-sm font-medium text-[var(--app-fg)]">{fileName}</span>
-                  <span className="mt-1 text-xs text-[var(--app-fg-soft)]">
-                    Read successfully · click to choose a different file
-                  </span>
+                  <span className="mt-4 max-w-full truncate px-4 text-sm font-semibold text-[var(--app-fg)]">{fileName}</span>
+                  <span className="mt-1 text-xs font-medium text-[#3F8E5C]">Resume read successfully</span>
+                  <span className="mt-4 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-2 text-xs font-semibold text-[var(--app-fg-muted)] shadow-sm transition-colors group-hover:border-[var(--accent)]/35 group-hover:text-[var(--accent-text)]">Choose a different file</span>
                 </>
               ) : (
                 <>
-                  <span className="grid size-12 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)]">
-                    <UploadCloud className="size-6" />
+                  <span className="grid size-16 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] shadow-sm ring-1 ring-[var(--accent)]/10 transition-transform duration-300 group-hover:-translate-y-1">
+                    <UploadCloud className="size-7" />
                   </span>
-                  <span className="mt-4 text-base font-medium text-[var(--app-fg)]">
-                    Drop your resume here, or click to upload
-                  </span>
-                  <span className="mt-1.5 text-xs text-[var(--app-fg-soft)]">
-                    PDF, DOCX or TXT · analysed in your browser · never uploaded
+                  <span className="mt-5 text-base font-semibold text-[var(--app-fg)]">Drop your resume here</span>
+                  <span className="mt-1.5 text-sm text-[var(--app-fg-muted)]">or <span className="font-semibold text-[var(--accent-text)]">browse your files</span></span>
+                  <span className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] font-medium text-[var(--app-fg-soft)]">
+                    <span className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2.5 py-1">PDF</span>
+                    <span className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2.5 py-1">DOCX</span>
+                    <span className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2.5 py-1">TXT</span>
+                    <span className="px-1">· Private browser analysis</span>
                   </span>
                 </>
               )}
@@ -508,10 +605,12 @@ export default function AtsCheckerScreen() {
 
           {/* Results */}
           {report && (
-            <div className="mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--shadow-soft)] sm:p-7">
-              <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+            <div ref={scoreRef} className="relative mt-6 overflow-hidden rounded-2xl border border-[var(--accent)]/20 bg-[var(--app-surface)] p-5 shadow-[var(--shadow-pop)] sm:p-7">
+              <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--accent),#69B889)]" aria-hidden="true" />
+              <div className="flex flex-col items-center gap-6 rounded-xl border border-[var(--app-border)] bg-[var(--accent-soft)]/35 p-5 sm:flex-row sm:items-center sm:p-6">
                 <ScoreRing score={report.score} />
-                <div>
+                <div className="text-center sm:text-left">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">Your ATS readiness</span>
                   <h2 className="font-display text-2xl font-light tracking-tight text-[var(--app-fg)]">
                     {report.score >= 75
                       ? "This will parse cleanly."
@@ -527,7 +626,7 @@ export default function AtsCheckerScreen() {
               </div>
 
               {/* The honesty note. This is a positioning choice, not boilerplate. */}
-              <p className="mt-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-4 text-xs leading-6 text-[var(--app-fg-soft)]">
+              <p className="mt-5 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-4 text-xs leading-6 text-[var(--app-fg-soft)]">
                 <strong className="font-semibold text-[var(--app-fg-muted)]">
                   What this score is, honestly:
                 </strong>{" "}
@@ -579,17 +678,42 @@ export default function AtsCheckerScreen() {
 
               <ShareRow report={report} />
 
-              <div className="mt-7 rounded-xl border border-[var(--app-border)] bg-[var(--accent-soft)] p-5 text-center">
-                <p className="text-sm leading-7 text-[var(--app-fg-muted)]">
-                  Want the fixes applied for you? Build it in Jobsynk — the resume builder and an
-                  ATS-friendly template are free.
-                </p>
-                <Link
-                  to="/signup"
-                  className="mt-4 inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
-                >
-                  Build my resume free
-                </Link>
+              <div className="relative mt-7 overflow-hidden rounded-2xl border border-[var(--accent)]/20 bg-[linear-gradient(135deg,var(--accent-soft),var(--app-surface))] p-6 sm:p-7">
+                <div className="relative z-10 grid items-center gap-7 sm:grid-cols-[1fr_190px]">
+                  <div>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/15 bg-[var(--app-surface)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-text)]">
+                      <Sparkles className="size-3.5" />
+                      Turn feedback into a resume
+                    </span>
+                    <h3 className="mt-4 font-display text-2xl font-light tracking-tight text-[var(--app-fg)]">
+                      Build a cleaner, ATS-ready resume in minutes
+                    </h3>
+                    <p className="mt-2 max-w-md text-sm leading-7 text-[var(--app-fg-muted)]">
+                      Start with a professional template, add your experience, and create a resume that is ready to tailor for every role.
+                    </p>
+                    <Link
+                      to="/"
+                      className="mt-5 inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-semibold text-[var(--btn-primary-text)] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[var(--btn-primary-hover)] hover:shadow-md"
+                    >
+                      Create my resume
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </div>
+
+                  <div className="relative mx-auto h-44 w-40" aria-hidden="true">
+                    <div className="absolute -left-5 top-5 h-36 w-28 -rotate-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] shadow-sm" />
+                    <div className="absolute right-0 top-0 h-40 w-32 rotate-3 rounded-xl border border-[var(--accent)]/20 bg-[var(--app-surface)] p-4 shadow-[var(--shadow-pop)]">
+                      <div className="flex items-center gap-2 border-b border-[var(--app-border)] pb-3">
+                        <span className="size-6 rounded-full bg-[var(--pastel-mint)]" />
+                        <div className="flex-1 space-y-1"><i className="block h-1.5 w-12 rounded-full bg-[var(--app-fg)]/70" /><i className="block h-1 w-8 rounded-full bg-[var(--accent)]/45" /></div>
+                      </div>
+                      <div className="mt-3 space-y-2"><i className="block h-1 w-16 rounded-full bg-[var(--app-fg-soft)]/50" /><i className="block h-1 w-full rounded-full bg-[var(--app-border-strong)]" /><i className="block h-1 w-10/12 rounded-full bg-[var(--app-border-strong)]" /><i className="mt-4 block h-1 w-14 rounded-full bg-[var(--app-fg-soft)]/50" /><i className="block h-1 w-full rounded-full bg-[var(--app-border-strong)]" /><i className="block h-1 w-8/12 rounded-full bg-[var(--app-border-strong)]" /></div>
+                    </div>
+                    <span className="absolute -right-3 bottom-0 grid size-11 place-items-center rounded-2xl bg-[var(--accent)] text-white shadow-lg ring-4 ring-[var(--app-surface)]">
+                      <Sparkles className="size-5" />
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

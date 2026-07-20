@@ -7,7 +7,7 @@ function Brand() {
   const { theme } = useTheme();
 
   return (
-    <div>
+    <div className="min-w-0">
       <Link
         to="/"
         aria-label="Jobsynk AI — go to home"
@@ -22,18 +22,13 @@ function Brand() {
         </span>
       </Link>
 
-      <p className="text-white/60 text-sm mt-4 max-w-[280px] leading-relaxed">
-        Create professional, ATS-friendly, and industry-accepted resumes in minutes
-        with our AI-powered builder.
-      </p>
-
-      <div className="mt-6">
-        <div className="text-xs font-semibold text-white/60 tracking-wide">
+      <div className="mt-3">
+        <div className="text-[11px] font-semibold text-white/50 tracking-[0.14em]">
           CONTACT US
         </div>
         <a
           href="mailto:info@divlynx.com"
-          className="mt-3 inline-block text-white/70 hover:text-white text-sm"
+          className="mt-2 inline-block text-white/70 hover:text-white text-sm transition-colors"
         >
           info@divlynx.com
         </a>
@@ -50,16 +45,16 @@ function Column({
   links: { label: string; to: string }[];
 }) {
   return (
-    <div>
-      <div className="text-xs font-semibold text-white/60 tracking-wide">
+    <div className="min-w-0">
+      <div className="text-[11px] font-semibold text-white/55 tracking-[0.12em]">
         {title}
       </div>
-      <ul className="mt-3 space-y-2">
+      <ul className="mt-4 space-y-2.5">
         {links.map((l) => (
           <li key={l.label}>
             <Link
               to={l.to}
-              className="text-white/70 hover:text-white text-sm"
+              className="text-white/70 hover:text-white text-sm leading-6 transition-colors"
             >
               {l.label}
             </Link>
@@ -73,59 +68,18 @@ function Column({
 export default function SiteFooter() {
   return (
     <footer className="text-white border-t border-white/10 bg-[var(--app-bg)]">
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-8 gap-y-12 px-6 py-12 sm:grid-cols-3 lg:grid-cols-[1.35fr_repeat(5,minmax(0,1fr))] lg:gap-x-10 lg:py-14">
         <Brand />
-
-        <Column
-          title="PRODUCT"
-          links={[
-            { label: "Features", to: "/#features" },
-            { label: "Pricing", to: "/#pricing" },
-            { label: "Templates", to: "/templates" },
-            { label: "Dashboard", to: "/dashboard" },
-          ]}
-        />
-
-        <Column
-          title="FREE TOOLS"
-          links={[
-            { label: "ATS Resume Checker", to: "/ats-checker" },
-            { label: "Resume Templates", to: "/templates" },
-          ]}
-        />
-
-        <Column
-          title="RESOURCES"
-          links={[
-            { label: "Blog", to: "/blog" },
-            { label: "ATS Resume Format", to: "/blog/ats-resume-format" },
-            { label: "Tailoring Guide", to: "/blog/tailor-resume-to-job-description" },
-            { label: "Resume Keywords", to: "/blog/resume-keywords-that-matter" },
-          ]}
-        />
-
-        <Column
-          title="SUPPORT"
-          links={[
-            { label: "Help Center", to: "/help-center" },
-            { label: "FAQ", to: "/faq" },
-          ]}
-        />
-
-        <Column
-          title="LEGAL"
-          links={[
-            { label: "Privacy Policy", to: "/privacy" },
-            { label: "Terms of Service", to: "/terms" },
-            { label: "Cookie Policy", to: "/cookie-policy" },
-            { label: "Security", to: "/security" },
-          ]}
-        />
+        <Column title="PRODUCT" links={[{ label: "Features", to: "/#features" }, { label: "Pricing", to: "/#pricing" }, { label: "Templates", to: "/templates" }, { label: "Dashboard", to: "/dashboard" }]} />
+        <Column title="RESOURCES" links={[{ label: "Blog", to: "/blog" }, { label: "ATS Resume Format", to: "/blog/ats-resume-format" }, { label: "Tailoring Guide", to: "/blog/tailor-resume-to-job-description" }, { label: "Resume Keywords", to: "/blog/resume-keywords-that-matter" }]} />
+        <Column title="LEGAL" links={[{ label: "Privacy Policy", to: "/privacy" }, { label: "Terms of Service", to: "/terms" }, { label: "Cookie Policy", to: "/cookie-policy" }, { label: "Security", to: "/security" }]} />
+        <Column title="FREE TOOLS" links={[{ label: "ATS Resume Checker", to: "/ats-checker" }, { label: "Resume Templates", to: "/templates" }]} />
+        <Column title="SUPPORT" links={[{ label: "Help Center", to: "/help-center" }, { label: "FAQ", to: "/faq" }]} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 border-t border-white/5 py-8 text-center text-sm text-white/40">
+      <div className="max-w-7xl mx-auto px-6 border-t border-white/10 py-6 text-center text-sm text-white/40 sm:flex sm:items-center sm:justify-between sm:text-left">
         <p>© 2025 Jobsynk AI. All rights reserved.</p>
-        <p className="mt-2">
+        <p className="mt-2 sm:mt-0">
           Powered by{" "}
           <a
             href="https://divlynx.com"
