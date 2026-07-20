@@ -34,7 +34,7 @@ if (!CHROME) {
 // bounce authenticated users away).
 const PUBLIC_ROUTES = [
   "/", "/blog", "/blog/ats-resume-format", "/ats-checker", "/pricing",
-  "/terms", "/privacy", "/cookie-policy", "/security", "/contact-us",
+  "/terms", "/privacy", "/cookie-policy", "/security",
   "/enterprise", "/faq", "/forgot-password", "/login", "/signup",
   "/definitely-not-a-page-404",
 ];

@@ -15,7 +15,6 @@ const PUBLIC_ROUTES = new Set([
   "/privacy",
   "/cookie-policy",
   "/security",
-  "/contact-us",
   "/enterprise",
   "/faq",
   "/forgot-password",

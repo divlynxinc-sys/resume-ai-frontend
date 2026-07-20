@@ -26,6 +26,18 @@ function Brand() {
         Create professional, ATS-friendly, and industry-accepted resumes in minutes
         with our AI-powered builder.
       </p>
+
+      <div className="mt-6">
+        <div className="text-xs font-semibold text-white/60 tracking-wide">
+          CONTACT US
+        </div>
+        <a
+          href="mailto:info@divlynx.com"
+          className="mt-3 inline-block text-white/70 hover:text-white text-sm"
+        >
+          info@divlynx.com
+        </a>
+      </div>
     </div>
   );
 }
@@ -96,8 +108,6 @@ export default function SiteFooter() {
           title="SUPPORT"
           links={[
             { label: "Help Center", to: "/help-center" },
-            { label: "Contact Us", to: "/contact-us" },
-            { label: "Documentation", to: "/documentation" },
             { label: "FAQ", to: "/faq" },
           ]}
         />
@@ -116,10 +126,6 @@ export default function SiteFooter() {
       <div className="max-w-7xl mx-auto px-6 border-t border-white/5 py-8 text-center text-sm text-white/40">
         <p>© 2025 Jobsynk AI. All rights reserved.</p>
         <p className="mt-2">
-          <a href="mailto:info@divlynx.com" className="hover:text-white/70">
-            info@divlynx.com
-          </a>
-          <span className="mx-2" aria-hidden="true">·</span>
           Powered by{" "}
           <a
             href="https://divlynx.com"

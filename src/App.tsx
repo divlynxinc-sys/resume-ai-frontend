@@ -42,7 +42,6 @@ const DocumentationScreen= lazy(() => import("./components/modal/documentation")
 const FAQScreen          = lazy(() => import("./components/modal/faq"));
 const CookiePolicyScreen = lazy(() => import("./components/modal/cookie-policy"));
 const SecurityScreen     = lazy(() => import("./components/modal/security"));
-const ContactUsScreen    = lazy(() => import("./components/modal/contact-us"));
 const EnterpriseScreen   = lazy(() => import("./components/modal/enterprise"));
 const ForgotPassword     = lazy(() => import("./components/modal/forgot-password"));
 const ResumeGenerated    = lazy(() => import("./components/modal/resume-generated"));
@@ -137,7 +136,6 @@ const router = createBrowserRouter([
   { path: "/privacy",        element: <Page><PrivacyScreen /></Page> },
   { path: "/cookie-policy",  element: <Page><CookiePolicyScreen /></Page> },
   { path: "/security",       element: <Page><SecurityScreen /></Page> },
-  { path: "/contact-us",     element: <Page><ContactUsScreen /></Page> },
   { path: "/enterprise",     element: <Page><EnterpriseScreen /></Page> },
   { path: "/faq",            element: <Page><FAQScreen /></Page> },
   { path: "/forgot-password",element: <Page><ForgotPassword /></Page> },

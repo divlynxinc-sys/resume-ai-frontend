@@ -283,13 +283,13 @@ function ArticleDialog({ article, onClose }: { article: Article; onClose: () => 
 
         <div className="mt-7 flex flex-col gap-3 border-t border-[var(--app-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-[var(--app-fg-soft)]">Need more help with this topic?</p>
-          <Link
-            to="/contact-us"
+          <a
+            href="mailto:info@divlynx.com"
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
             Contact Support
             <Mail className="size-4" />
-          </Link>
+          </a>
         </div>
       </article>
     </div>
@@ -312,13 +312,13 @@ function HelpCTA() {
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
-          <Link
-            to="/contact-us"
+          <a
+            href="mailto:info@divlynx.com"
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
             Contact Support
             <Mail className="size-4" />
-          </Link>
+          </a>
           <Link
             to="/faq"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--app-border-strong)] px-4 py-2.5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"

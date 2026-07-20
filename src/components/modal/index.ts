@@ -1,6 +1,5 @@
 export { default as AdvancedAnalyticsModal } from "./advanced-analytics";
 export { default as AIChatModal } from "./ai-chat";
-export { default as ContactUsModal } from "./contact-us";
 export { default as CookieConsentScreen } from "./cookie-consent";
 export { default as CookiePolicyScreen } from "./cookie-policy";
 export { default as Dashboard } from "./dashboard";

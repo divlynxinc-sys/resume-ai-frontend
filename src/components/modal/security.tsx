@@ -143,9 +143,9 @@ export default function SecurityScreen() {
               If you notice unexpected account activity or have a question about our security practices, contact the Jobsynk AI team. We’re here to help.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link to="/contact-us" className="inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
+              <a href="mailto:info@divlynx.com" className="inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
                 Contact Security Team
-              </Link>
+              </a>
               <Link to="/help-center" className="inline-flex h-10 items-center rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
                 Visit Help Center
               </Link>

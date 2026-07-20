@@ -1,4 +1,3 @@
-import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BarChart3,
@@ -209,20 +208,11 @@ function WorkspacePreview() {
 }
 
 export default function EnterpriseScreen() {
-  const navigate = useNavigate();
-
   const contactSales = (plan?: Plan) => {
-    if (plan) {
-      try {
-        sessionStorage.setItem(
-          "selectedPlan",
-          JSON.stringify({ title: plan.name, price: plan.price, subtitle: plan.seats }),
-        );
-      } catch {
-        // Contact sales remains available when browser storage is unavailable.
-      }
-    }
-    navigate("/contact-us");
+    const subject = plan
+      ? `Enterprise inquiry — ${plan.name} plan`
+      : "Enterprise inquiry";
+    window.location.href = `mailto:info@divlynx.com?subject=${encodeURIComponent(subject)}`;
   };
 
   return (
@@ -357,13 +347,13 @@ export default function EnterpriseScreen() {
                   Tell us about your workflows, compliance needs, integrations, and team size. We’ll shape a package around your organization.
                 </p>
               </div>
-              <Link
-                to="/contact-us"
+              <a
+                href={`mailto:info@divlynx.com?subject=${encodeURIComponent("Enterprise inquiry")}`}
                 className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--btn-primary-bg)] px-6 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)] sm:w-auto"
               >
                 Contact Sales
                 <ArrowRight className="size-4" />
-              </Link>
+              </a>
             </div>
           </div>
         </section>

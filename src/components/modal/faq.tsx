@@ -173,10 +173,10 @@ export default function FAQScreen() {
               <Link to="/help-center" className="inline-flex h-10 items-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]">
                 Visit Help Center
               </Link>
-              <Link to="/contact-us" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
+              <a href="mailto:info@divlynx.com" className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--btn-secondary-border)] bg-[var(--btn-secondary-bg)] px-5 text-sm font-medium text-[var(--btn-secondary-text)] transition-colors hover:bg-[var(--btn-secondary-hover)]">
                 <Mail className="size-4" />
                 Contact Us
-              </Link>
+              </a>
             </div>
           </div>
         </section>
