@@ -342,11 +342,10 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
       </p>
       {offerActive && (
         <div
-          className="mt-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
+          className="mt-6 inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
           style={{ color: "var(--app-fg)" }}
         >
-          🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans — already
-          applied at checkout.
+          {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans, already applied at checkout.
         </div>
       )}
 
