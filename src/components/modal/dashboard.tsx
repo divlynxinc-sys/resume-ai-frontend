@@ -19,6 +19,8 @@ import {
   Plus,
   Search,
   Mail,
+  BotMessageSquare,
+  MicVocal,
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -142,7 +144,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
           onLockedClick={() => openUpgradeModal("Q&A Prep is a Pro feature. Upgrade to generate tailored interview answers for your target roles.")}
         />
         <NavItem
-          icon={<MessagesSquare className="size-4" />}
+          icon={<BotMessageSquare className="size-4" />}
           label="Juno AI"
           route="ai-chat"
           active={current === "ai-chat"}
@@ -150,7 +152,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
           comingSoon
         />
         <NavItem
-          icon={<MessagesSquare className="size-4" />}
+          icon={<MicVocal className="size-4" />}
           label="AI Interviews"
           route="interview"
           active={current === "interview"}
@@ -577,13 +579,6 @@ function RecentActivity({
                   <div className="mt-0.5 text-[5.1px] leading-[1.35] text-slate-600">Figma · Research · Prototyping · Systems</div>
                 </div>
               </div>
-            </div>
-            <div className="absolute left-5 top-16 flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-[var(--app-surface)] px-3 py-2 text-[10px] font-semibold text-emerald-500 shadow-[var(--shadow-soft)]">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              ATS ready
-            </div>
-            <div className="absolute bottom-7 left-8 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-[10px] font-medium text-[var(--app-fg-muted)] shadow-[var(--shadow-soft)]">
-              One page · PDF
             </div>
           </div>
         </div>
