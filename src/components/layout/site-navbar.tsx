@@ -210,8 +210,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
               Features
             </Link>
             <Link
-              to="/#ats-checker"
-              onClick={(event) => scrollToLandingSection(event, "ats-checker")}
+              to="/ats-checker"
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               ATS Checker
@@ -224,8 +223,7 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
               Pricing
             </Link>
             <Link
-              to="/#blog"
-              onClick={(event) => scrollToLandingSection(event, "blog")}
+              to="/blog"
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               Blog
@@ -281,14 +279,20 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
                 >
                   {[
                     { to: "/#features", label: "Features", sectionId: "features" },
-                    { to: "/#ats-checker", label: "ATS Checker", sectionId: "ats-checker" },
+                    { to: "/ats-checker", label: "ATS Checker" },
                     { to: "/#pricing", label: "Pricing", sectionId: "pricing" },
-                    { to: "/#blog", label: "Blog", sectionId: "blog" },
+                    { to: "/blog", label: "Blog" },
                   ].map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
-                      onClick={(event) => scrollToLandingSection(event, item.sectionId)}
+                      onClick={(event) => {
+                        if (item.sectionId) {
+                          scrollToLandingSection(event, item.sectionId);
+                        } else {
+                          setMenuOpen(false);
+                        }
+                      }}
                       className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
                     >
                       {item.label}
