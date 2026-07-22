@@ -122,7 +122,7 @@ function TemplateCard({
   return (
     <article className="group w-[18rem] flex-none sm:w-[20rem] lg:w-[21rem]">
       <div
-        className="relative aspect-[210/297] w-full overflow-hidden rounded-xl bg-white shadow-[var(--shadow-soft)] ring-1 ring-[var(--app-border)]"
+        className="relative aspect-[210/297] w-full overflow-hidden bg-white shadow-[var(--shadow-soft)] ring-1 ring-[var(--app-border)]"
       >
         <iframe
           srcDoc={htmlForPreview(html)}

@@ -790,13 +790,38 @@ export default function LandingPageScreen() {
       <SiteNavbar marketingMode />
       <Hero />
 
-      <section id="features" className="max-w-[1100px] mx-auto px-6 mt-20 scroll-mt-24">
-        <SectionTitle
-          eyebrow="Features"
-          title="Everything you need, nothing you don't."
-          subtitle="A focused toolkit that helps you build a resume worth reading."
-        />
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
+      <section id="features" className="relative isolate mx-auto mt-20 max-w-[1160px] scroll-mt-24 overflow-visible px-6 py-5">
+        <div aria-hidden className="pointer-events-none absolute left-12 top-4 size-28">
+          <div className="absolute inset-1 rounded-full bg-violet-300/25 blur-2xl dark:bg-violet-400/20" />
+          <div className="absolute inset-3 rounded-full border border-violet-400/45 dark:border-violet-300/35" />
+          <div className="absolute inset-8 rounded-full border border-violet-400/25 dark:border-violet-300/20" />
+          <span className="absolute right-3 top-5 size-2.5 rounded-full bg-violet-500 shadow-[0_0_14px_rgba(139,92,246,0.65)] dark:bg-violet-300" />
+        </div>
+        <div aria-hidden className="pointer-events-none absolute right-12 top-7 size-32">
+          <div className="absolute inset-1 rounded-full bg-emerald-300/25 blur-2xl dark:bg-emerald-400/20" />
+          <div className="absolute inset-3 rounded-full border border-emerald-400/45 dark:border-emerald-300/35" />
+          <div className="absolute inset-9 rounded-full border border-emerald-400/25 dark:border-emerald-300/20" />
+          <span className="absolute bottom-5 left-2 size-2.5 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.65)] dark:bg-emerald-300" />
+        </div>
+        <div aria-hidden className="pointer-events-none absolute -left-12 top-[47%] hidden size-40 md:block">
+          <div className="absolute inset-2 rounded-full bg-rose-300/15 blur-2xl dark:bg-rose-400/10" />
+          <div className="absolute inset-5 rounded-full border border-rose-400/35 dark:border-rose-300/25" />
+          <div className="absolute inset-11 rounded-full border border-rose-400/20 dark:border-rose-300/15" />
+        </div>
+        <div aria-hidden className="pointer-events-none absolute -right-10 top-[53%] hidden size-36 md:block">
+          <div className="absolute inset-2 rounded-full bg-sky-300/15 blur-2xl dark:bg-sky-400/10" />
+          <div className="absolute inset-5 rounded-full border border-sky-400/35 dark:border-sky-300/25" />
+          <div className="absolute inset-10 rounded-full border border-sky-400/20 dark:border-sky-300/15" />
+        </div>
+
+        <div className="relative z-10">
+          <SectionTitle
+            eyebrow="Features"
+            title="Everything you need, nothing you don't."
+            subtitle="A focused toolkit that helps you build a resume worth reading."
+          />
+        </div>
+        <div className="relative z-10 mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
           <FeatureCard featured icon={<Wand2 className="size-5" />} title="AI-Powered Generation" desc="Let our AI suggest improvements and tailor your resume to specific job descriptions." color="purple" />
           <FeatureCard icon={<LayoutGrid className="size-5" />} title="Customizable Templates" desc="Choose from a variety of professionally designed templates to match your style." color="blue" />
           <FeatureCard icon={<ShieldCheck className="size-5" />} title="ATS Score & Compatibility" desc="Analyze your resume against ATS criteria and get actionable fixes." color="emerald" />
