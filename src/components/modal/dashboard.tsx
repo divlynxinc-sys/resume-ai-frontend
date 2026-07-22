@@ -43,7 +43,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
       link: "/tailoring",
     },
     {
-      title: "AI Chat",
+      title: "Juno AI",
       icon: <MessagesSquare className="size-4" />,
       points: ["Ask for better wording", "Generate bullet points", "Iterate quickly in chat"],
       link: "/ai-chat",
@@ -143,7 +143,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}
-          label="AI Chat"
+          label="Juno AI"
           route="ai-chat"
           active={current === "ai-chat"}
           collapsed={collapsed}
@@ -335,11 +335,53 @@ function HeroCard() {
   );
 }
 
+const EMPTY_DASHBOARD_MESSAGES = [
+  {
+    eyebrow: "Start with your story",
+    title: "What are we building today?",
+    body: "A focused resume, a sharper story, and a stronger first impression. Pick a template and make the first move.",
+  },
+  {
+    eyebrow: "A fresh beginning",
+    title: "Your next opportunity starts here.",
+    body: "Bring your experience—we'll help you shape it into a resume that feels clear, confident, and ready to send.",
+  },
+  {
+    eyebrow: "Make your work count",
+    title: "Turn your experience into momentum.",
+    body: "Every project, skill, and result can move your story forward. Start building the version recruiters should see.",
+  },
+  {
+    eyebrow: "Ready when you are",
+    title: "Let's make your work impossible to overlook.",
+    body: "Choose a strong starting point, add what you've accomplished, and we'll help you turn it into a polished resume.",
+  },
+] as const;
+
+function pickEmptyDashboardMessage() {
+  if (typeof window === "undefined") return EMPTY_DASHBOARD_MESSAGES[0];
+
+  try {
+    const storageKey = "jobsynk.lastEmptyDashboardMessage";
+    const previousIndex = Number.parseInt(window.sessionStorage.getItem(storageKey) ?? "-1", 10);
+    const availableIndexes = EMPTY_DASHBOARD_MESSAGES.map((_, index) => index).filter(
+      (index) => index !== previousIndex,
+    );
+    const nextIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)] ?? 0;
+    window.sessionStorage.setItem(storageKey, String(nextIndex));
+    return EMPTY_DASHBOARD_MESSAGES[nextIndex];
+  } catch {
+    return EMPTY_DASHBOARD_MESSAGES[Math.floor(Math.random() * EMPTY_DASHBOARD_MESSAGES.length)];
+  }
+}
+
 function RecentActivity() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
+  const [activityStatus, setActivityStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [emptyMessage] = useState(pickEmptyDashboardMessage);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -349,16 +391,17 @@ function RecentActivity() {
 
   const fetchActivities = () => {
     dashboardService.getRecentActivity(10)
-      .then((data) =>
+      .then((data) => {
         setActivities(
           data.map((item) => ({
             id: item.id,
             name: item.title,
             date: new Date(item.updated_at).toLocaleDateString(),
           }))
-        )
-      )
-      .catch(() => {});
+        );
+        setActivityStatus("ready");
+      })
+      .catch(() => setActivityStatus("error"));
   };
 
   useEffect(() => {
@@ -412,6 +455,44 @@ function RecentActivity() {
   const filteredActivities = activities.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (activityStatus === "loading") {
+    return (
+      <section className="grid min-h-72 place-items-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
+        <div className="flex items-center gap-2 text-sm text-[var(--app-fg-muted)]">
+          <span className="size-2 animate-pulse rounded-full bg-[var(--accent)]" />
+          Loading your workspace...
+        </div>
+      </section>
+    );
+  }
+
+  if (activityStatus === "ready" && activities.length === 0) {
+    return (
+      <section className="relative isolate min-h-80 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-12 text-center sm:px-10">
+        <div aria-hidden className="pointer-events-none absolute -left-16 -top-20 size-64 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-70" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-24 -right-12 size-64 rounded-full bg-[var(--pastel-mint)] blur-3xl opacity-70" />
+        <div className="relative mx-auto flex max-w-2xl flex-col items-center">
+          <div className="grid size-11 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--accent-text)]">
+            <Wand2 className="size-5" />
+          </div>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
+            {emptyMessage.eyebrow}
+          </p>
+          <h3 className="mt-2 font-display text-3xl font-light tracking-tight text-[var(--app-fg)] sm:text-4xl">
+            {emptyMessage.title}
+          </h3>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--app-fg-muted)] sm:text-base">
+            {emptyMessage.body}
+          </p>
+          <AppButton className="mt-7" variant="primary" size="lg" onClick={() => navigate("/templates")}>
+            <Plus className="size-4" />
+            Build my first resume
+          </AppButton>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
