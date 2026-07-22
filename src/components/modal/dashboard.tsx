@@ -346,7 +346,7 @@ const EMPTY_DASHBOARD_MESSAGES = [
   {
     eyebrow: "A fresh beginning",
     title: "Your next opportunity starts here.",
-    body: "Bring your experience—we'll help you shape it into a resume that feels clear, confident, and ready to send.",
+    body: "Bring your experience, and we'll help you shape it into a resume that feels clear, confident, and ready to send.",
   },
   {
     eyebrow: "Make your work count",
