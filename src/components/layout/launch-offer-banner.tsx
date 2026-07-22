@@ -17,28 +17,24 @@ export default function LaunchOfferBanner({ showCta = true }: { showCta?: boolea
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-2.5 text-center text-sm font-medium"
+      className="flex min-h-9 flex-wrap items-center justify-center gap-x-5 gap-y-1 border-b px-4 py-2 text-center text-[13px]"
       style={{
-        background: isDark
-          ? "#FFFFFF"
-          : "linear-gradient(90deg, var(--accent) 0%, #8b5cf6 50%, var(--accent) 100%)",
-        color: isDark ? "#111111" : "#FFFFFF",
+        backgroundColor: isDark ? "#232743" : "#ECEEFB",
+        borderColor: isDark ? "rgba(255,255,255,0.08)" : "#D9DDF7",
+        color: isDark ? "#F4F5FF" : "#29358F",
       }}
     >
-      <span>
-        🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans — for a limited
-        time.
+      <span className="font-medium">
+        {LAUNCH_OFFER.label} <span aria-hidden="true">&middot;</span>{" "}
+        <strong className="font-semibold">{LAUNCH_OFFER.percentOff}% off all plans</strong>
       </span>
       {showCta && (
         <Link
           to="/pricing"
-          className="rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wide transition-opacity hover:opacity-80"
-          style={{
-            backgroundColor: isDark ? "#111111" : "#FFFFFF",
-            color: isDark ? "#FFFFFF" : "#4F46C8",
-          }}
+          className="inline-flex items-center gap-1 font-semibold underline decoration-current/30 underline-offset-4 transition-opacity hover:opacity-70"
+          style={{ color: "inherit" }}
         >
-          Claim offer
+          View plans <span aria-hidden="true">&rarr;</span>
         </Link>
       )}
     </div>
