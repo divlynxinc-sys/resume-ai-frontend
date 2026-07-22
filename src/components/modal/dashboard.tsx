@@ -486,14 +486,24 @@ function RecentActivity({
   if (activityStatus === "ready" && activities.length === 0) {
     return (
       <section className="relative isolate min-h-[430px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-10 sm:px-10 lg:px-14">
+        <style>{`
+          @keyframes dashboard-resume-text-in {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .dashboard-resume-text {
+            opacity: 0;
+            animation: dashboard-resume-text-in 520ms ease-out forwards;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .dashboard-resume-text { opacity: 1; animation: none; }
+          }
+        `}</style>
         <div aria-hidden className="pointer-events-none absolute -left-20 -top-24 size-72 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-75" />
         <div aria-hidden className="pointer-events-none absolute -bottom-28 right-0 size-80 rounded-full bg-[var(--pastel-mint)] blur-3xl opacity-70" />
         <div className="relative grid min-h-[350px] items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="max-w-xl text-center lg:text-left">
-            <div className="mx-auto grid size-11 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--accent-text)] lg:mx-0">
-              <FileText className="size-5" />
-            </div>
-            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
               {emptyMessage.eyebrow}
             </p>
             <h2 className="mt-2 font-display text-4xl font-light leading-tight tracking-tight text-[var(--app-fg)] sm:text-5xl">
@@ -511,52 +521,64 @@ function RecentActivity({
           <div aria-hidden className="relative mx-auto hidden h-[330px] w-full max-w-md lg:block">
             <div className="absolute left-1/2 top-1/2 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)]/15 bg-[var(--accent-soft)]/50" />
             <div className="absolute left-12 top-12 h-[262px] w-[190px] -rotate-6 border border-slate-200 bg-slate-100 shadow-[var(--shadow-soft)]" />
-            <div className="absolute right-10 top-4 h-[292px] w-[208px] rotate-2 border border-slate-200 bg-white px-5 py-5 text-slate-700 shadow-[var(--shadow-pop)]">
-              <div className="border-b border-slate-200 pb-3">
-                <div className="text-[14px] font-bold tracking-tight text-slate-900">Jordan Lee</div>
-                <div className="mt-0.5 text-[7px] font-semibold uppercase tracking-[0.16em] text-indigo-600">Product Designer</div>
-                <div className="mt-2 text-[6px] text-slate-500">jordan.lee@email.com · (555) 012-4821 · New York, NY</div>
+            <div className="absolute right-8 top-1 h-[314px] w-[222px] rotate-1 overflow-hidden border border-slate-200 bg-white px-4 py-4 text-slate-700 shadow-[var(--shadow-pop)]">
+              <div className="dashboard-resume-text border-b border-slate-200 pb-2.5" style={{ animationDelay: "80ms" }}>
+                <div className="text-[14px] font-bold leading-none tracking-tight text-slate-900">Jordan Lee</div>
+                <div className="mt-1 text-[6.5px] font-semibold uppercase tracking-[0.16em] text-indigo-600">Product Designer</div>
+                <div className="mt-1.5 whitespace-nowrap text-[5.2px] text-slate-500">jordan.lee@email.com · (555) 012-4821 · New York, NY</div>
               </div>
-              <div className="mt-3">
-                <div className="text-[7px] font-bold uppercase tracking-[0.14em] text-indigo-600">Profile</div>
-                <p className="mt-1 text-[6px] leading-[1.45] text-slate-600">
-                  Product designer creating clear, accessible experiences for growing digital products.
+
+              <div className="dashboard-resume-text mt-2.5" style={{ animationDelay: "190ms" }}>
+                <div className="text-[6.5px] font-bold uppercase tracking-[0.14em] text-indigo-600">Profile</div>
+                <p className="mt-0.5 text-[5.5px] leading-[1.35] text-slate-600">
+                  Product designer creating accessible experiences for fast-growing digital products.
                 </p>
               </div>
-              <div className="mt-3">
-                <div className="text-[7px] font-bold uppercase tracking-[0.14em] text-indigo-600">Experience</div>
+
+              <div className="dashboard-resume-text mt-2.5" style={{ animationDelay: "300ms" }}>
+                <div className="text-[6.5px] font-bold uppercase tracking-[0.14em] text-indigo-600">Experience</div>
+                <div className="mt-1 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[6.2px] font-bold text-slate-800">Senior Product Designer</div>
+                    <div className="text-[5.3px] text-slate-500">Northstar Labs</div>
+                  </div>
+                  <div className="whitespace-nowrap text-[5px] text-slate-400">2022 — Present</div>
+                </div>
+                <ul className="mt-1 space-y-0.5 pl-1.5 text-[5.2px] leading-[1.3] text-slate-600">
+                  <li>• Improved checkout completion by 24%.</li>
+                  <li>• Built a system used by three product teams.</li>
+                </ul>
                 <div className="mt-1.5 flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-[7px] font-bold text-slate-800">Senior Product Designer</div>
-                    <div className="text-[6px] text-slate-500">Northstar Labs</div>
+                    <div className="text-[6.2px] font-bold text-slate-800">Product Designer</div>
+                    <div className="text-[5.3px] text-slate-500">Fieldwork Studio</div>
                   </div>
-                  <div className="whitespace-nowrap text-[5.5px] text-slate-400">2022 — Present</div>
+                  <div className="whitespace-nowrap text-[5px] text-slate-400">2019 — 2022</div>
                 </div>
-                <ul className="mt-1.5 space-y-1 pl-2 text-[5.8px] leading-[1.35] text-slate-600">
-                  <li>• Led a checkout redesign that improved completion by 24%.</li>
-                  <li>• Built a design system used across three product teams.</li>
+                <ul className="mt-1 pl-1.5 text-[5.2px] leading-[1.3] text-slate-600">
+                  <li>• Shipped research-led tools for 40k users.</li>
                 </ul>
-                <div className="mt-2 flex items-start justify-between gap-2">
-                  <div>
-                    <div className="text-[7px] font-bold text-slate-800">Product Designer</div>
-                    <div className="text-[6px] text-slate-500">Fieldwork Studio</div>
-                  </div>
-                  <div className="whitespace-nowrap text-[5.5px] text-slate-400">2019 — 2022</div>
-                </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-4 border-t border-slate-200 pt-3">
+
+              <div className="dashboard-resume-text mt-2.5 border-t border-slate-200 pt-2" style={{ animationDelay: "410ms" }}>
+                <div className="text-[6.5px] font-bold uppercase tracking-[0.14em] text-indigo-600">Selected project</div>
+                <div className="mt-0.5 text-[5.8px] font-semibold text-slate-700">Mobile banking redesign</div>
+                <div className="mt-0.5 text-[5.2px] leading-[1.3] text-slate-600">Simplified onboarding and reduced support requests by 18%.</div>
+              </div>
+
+              <div className="dashboard-resume-text mt-2.5 grid grid-cols-2 gap-3 border-t border-slate-200 pt-2" style={{ animationDelay: "520ms" }}>
                 <div>
-                  <div className="text-[7px] font-bold uppercase tracking-[0.12em] text-indigo-600">Education</div>
-                  <div className="mt-1 text-[6px] font-semibold text-slate-700">BFA, Interaction Design</div>
-                  <div className="text-[5.5px] text-slate-500">Parsons School of Design</div>
+                  <div className="text-[6.2px] font-bold uppercase tracking-[0.12em] text-indigo-600">Education</div>
+                  <div className="mt-0.5 text-[5.4px] font-semibold text-slate-700">BFA, Interaction Design</div>
+                  <div className="text-[4.9px] text-slate-500">Parsons · 2019</div>
                 </div>
                 <div>
-                  <div className="text-[7px] font-bold uppercase tracking-[0.12em] text-indigo-600">Skills</div>
-                  <div className="mt-1 text-[5.8px] leading-[1.45] text-slate-600">Figma · Research · Prototyping · Design Systems</div>
+                  <div className="text-[6.2px] font-bold uppercase tracking-[0.12em] text-indigo-600">Skills</div>
+                  <div className="mt-0.5 text-[5.1px] leading-[1.35] text-slate-600">Figma · Research · Prototyping · Systems</div>
                 </div>
               </div>
             </div>
-            <div className="absolute right-0 top-12 flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-[var(--app-surface)] px-3 py-2 text-[10px] font-semibold text-emerald-500 shadow-[var(--shadow-soft)]">
+            <div className="absolute left-5 top-16 flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-[var(--app-surface)] px-3 py-2 text-[10px] font-semibold text-emerald-500 shadow-[var(--shadow-soft)]">
               <span className="size-1.5 rounded-full bg-emerald-500" />
               ATS ready
             </div>
