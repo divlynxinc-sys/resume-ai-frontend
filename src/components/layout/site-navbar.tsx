@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Bell, User2, LogOut, FileText, CheckCircle, Building2, Crown, Menu, Moon, Sun, LayoutGrid, Sparkles, X } from "lucide-react";
@@ -136,6 +136,15 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
     navigate("/login");
   };
 
+  const scrollToLandingSection = (event: ReactMouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    event.preventDefault();
+    window.history.replaceState(null, "", `/#${sectionId}`);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    setMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-white/10 bg-[var(--app-bg)]/80 backdrop-blur supports-[backdrop-filter]:bg-[var(--app-bg)]/60">
       {showLogoutModal && createPortal(
@@ -195,24 +204,28 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
           >
             <Link
               to="/#features"
+              onClick={(event) => scrollToLandingSection(event, "features")}
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               Features
             </Link>
             <Link
-              to="/ats-checker"
+              to="/#ats-checker"
+              onClick={(event) => scrollToLandingSection(event, "ats-checker")}
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               ATS Checker
             </Link>
             <Link
               to="/#pricing"
+              onClick={(event) => scrollToLandingSection(event, "pricing")}
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               Pricing
             </Link>
             <Link
-              to="/blog"
+              to="/#blog"
+              onClick={(event) => scrollToLandingSection(event, "blog")}
               className="text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:text-[var(--app-fg)]"
             >
               Blog
@@ -267,15 +280,15 @@ export default function SiteNavbar({ marketingMode = false }: { marketingMode?: 
                   className="fixed inset-x-0 top-16 z-40 flex flex-col border-b border-[var(--app-border)] bg-[var(--app-bg)]/95 px-4 py-3 shadow-[var(--shadow-pop)] backdrop-blur"
                 >
                   {[
-                    { to: "/#features", label: "Features" },
-                    { to: "/ats-checker", label: "ATS Checker" },
-                    { to: "/pricing", label: "Pricing" },
-                    { to: "/blog", label: "Blog" },
+                    { to: "/#features", label: "Features", sectionId: "features" },
+                    { to: "/#ats-checker", label: "ATS Checker", sectionId: "ats-checker" },
+                    { to: "/#pricing", label: "Pricing", sectionId: "pricing" },
+                    { to: "/#blog", label: "Blog", sectionId: "blog" },
                   ].map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
-                      onClick={() => setMenuOpen(false)}
+                      onClick={(event) => scrollToLandingSection(event, item.sectionId)}
                       className="rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
                     >
                       {item.label}

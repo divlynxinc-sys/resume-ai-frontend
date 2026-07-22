@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { MouseEvent } from "react";
 import { LAUNCH_OFFER, isLaunchOfferActive } from "@/lib/launch-offer";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -13,6 +14,14 @@ export default function LaunchOfferBanner({ showCta = true }: { showCta?: boolea
   if (!isLaunchOfferActive()) return null;
 
   const isDark = theme === "dark";
+
+  const scrollToPricing = (event: MouseEvent<HTMLAnchorElement>) => {
+    const pricing = document.getElementById("pricing");
+    if (!pricing) return;
+    event.preventDefault();
+    window.history.replaceState(null, "", "/#pricing");
+    pricing.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div
@@ -30,7 +39,8 @@ export default function LaunchOfferBanner({ showCta = true }: { showCta?: boolea
       </span>
       {showCta && (
         <Link
-          to="/pricing"
+          to="/#pricing"
+          onClick={scrollToPricing}
           className="inline-flex items-center gap-1 font-semibold underline decoration-current/30 underline-offset-4 transition-opacity hover:opacity-70"
           style={{ color: "inherit" }}
         >

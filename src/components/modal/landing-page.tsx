@@ -442,7 +442,7 @@ const CHECKER_LOOKS_FOR = [
 
 function ProofSection() {
   return (
-    <section className="max-w-[1100px] mx-auto px-6">
+    <section id="ats-checker" className="max-w-[1100px] mx-auto scroll-mt-24 px-6">
       <SectionTitle
         eyebrow="Proof, not testimonials"
         title="Don't take our word for it."
