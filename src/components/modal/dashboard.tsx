@@ -19,8 +19,6 @@ import {
   Plus,
   Search,
   Mail,
-  CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -493,7 +491,7 @@ function RecentActivity({
         <div className="relative grid min-h-[350px] items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="max-w-xl text-center lg:text-left">
             <div className="mx-auto grid size-11 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--accent-text)] lg:mx-0">
-              <Sparkles className="size-5" />
+              <FileText className="size-5" />
             </div>
             <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
               {emptyMessage.eyebrow}
@@ -510,32 +508,60 @@ function RecentActivity({
             </AppButton>
           </div>
 
-          <div aria-hidden className="relative mx-auto hidden h-72 w-full max-w-sm lg:block">
-            <div className="absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)]/15 bg-[var(--accent-soft)]/55" />
-            <div className="absolute left-8 top-8 h-56 w-40 -rotate-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] shadow-[var(--shadow-soft)]" />
-            <div className="absolute right-9 top-5 h-60 w-44 rotate-3 rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface)] p-5 shadow-[var(--shadow-pop)]">
-              <div className="h-3 w-20 rounded-full bg-[var(--app-fg)]/80" />
-              <div className="mt-2 h-1.5 w-12 rounded-full bg-[var(--accent)]/60" />
-              <div className="mt-6 h-1.5 w-full rounded-full bg-[var(--app-border-strong)]" />
-              <div className="mt-2 h-1.5 w-4/5 rounded-full bg-[var(--app-border)]" />
-              <div className="mt-5 h-2 w-16 rounded-full bg-[var(--app-fg)]/65" />
-              <div className="mt-3 space-y-2">
-                <div className="h-1.5 w-full rounded-full bg-[var(--app-border-strong)]" />
-                <div className="h-1.5 w-11/12 rounded-full bg-[var(--app-border)]" />
-                <div className="h-1.5 w-4/5 rounded-full bg-[var(--app-border)]" />
+          <div aria-hidden className="relative mx-auto hidden h-[330px] w-full max-w-md lg:block">
+            <div className="absolute left-1/2 top-1/2 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)]/15 bg-[var(--accent-soft)]/50" />
+            <div className="absolute left-12 top-12 h-[262px] w-[190px] -rotate-6 border border-slate-200 bg-slate-100 shadow-[var(--shadow-soft)]" />
+            <div className="absolute right-10 top-4 h-[292px] w-[208px] rotate-2 border border-slate-200 bg-white px-5 py-5 text-slate-700 shadow-[var(--shadow-pop)]">
+              <div className="border-b border-slate-200 pb-3">
+                <div className="text-[14px] font-bold tracking-tight text-slate-900">Jordan Lee</div>
+                <div className="mt-0.5 text-[7px] font-semibold uppercase tracking-[0.16em] text-indigo-600">Product Designer</div>
+                <div className="mt-2 text-[6px] text-slate-500">jordan.lee@email.com · (555) 012-4821 · New York, NY</div>
               </div>
-              <div className="mt-6 h-2 w-12 rounded-full bg-[var(--app-fg)]/65" />
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <span className="h-5 rounded-md bg-[var(--accent-soft)]" />
-                <span className="h-5 rounded-md bg-[var(--pastel-mint)]" />
-                <span className="h-5 rounded-md bg-[var(--pastel-sky)]" />
+              <div className="mt-3">
+                <div className="text-[7px] font-bold uppercase tracking-[0.14em] text-indigo-600">Profile</div>
+                <p className="mt-1 text-[6px] leading-[1.45] text-slate-600">
+                  Product designer creating clear, accessible experiences for growing digital products.
+                </p>
+              </div>
+              <div className="mt-3">
+                <div className="text-[7px] font-bold uppercase tracking-[0.14em] text-indigo-600">Experience</div>
+                <div className="mt-1.5 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[7px] font-bold text-slate-800">Senior Product Designer</div>
+                    <div className="text-[6px] text-slate-500">Northstar Labs</div>
+                  </div>
+                  <div className="whitespace-nowrap text-[5.5px] text-slate-400">2022 — Present</div>
+                </div>
+                <ul className="mt-1.5 space-y-1 pl-2 text-[5.8px] leading-[1.35] text-slate-600">
+                  <li>• Led a checkout redesign that improved completion by 24%.</li>
+                  <li>• Built a design system used across three product teams.</li>
+                </ul>
+                <div className="mt-2 flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[7px] font-bold text-slate-800">Product Designer</div>
+                    <div className="text-[6px] text-slate-500">Fieldwork Studio</div>
+                  </div>
+                  <div className="whitespace-nowrap text-[5.5px] text-slate-400">2019 — 2022</div>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4 border-t border-slate-200 pt-3">
+                <div>
+                  <div className="text-[7px] font-bold uppercase tracking-[0.12em] text-indigo-600">Education</div>
+                  <div className="mt-1 text-[6px] font-semibold text-slate-700">BFA, Interaction Design</div>
+                  <div className="text-[5.5px] text-slate-500">Parsons School of Design</div>
+                </div>
+                <div>
+                  <div className="text-[7px] font-bold uppercase tracking-[0.12em] text-indigo-600">Skills</div>
+                  <div className="mt-1 text-[5.8px] leading-[1.45] text-slate-600">Figma · Research · Prototyping · Design Systems</div>
+                </div>
               </div>
             </div>
-            <div className="absolute right-1 top-12 grid size-11 place-items-center rounded-xl border border-emerald-500/25 bg-[var(--app-surface)] text-emerald-500 shadow-[var(--shadow-soft)]">
-              <CheckCircle2 className="size-5" />
+            <div className="absolute right-0 top-12 flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-[var(--app-surface)] px-3 py-2 text-[10px] font-semibold text-emerald-500 shadow-[var(--shadow-soft)]">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              ATS ready
             </div>
-            <div className="absolute bottom-8 left-10 grid size-11 place-items-center rounded-xl border border-[var(--accent)]/25 bg-[var(--app-surface)] text-[var(--accent-text)] shadow-[var(--shadow-soft)]">
-              <Wand2 className="size-5" />
+            <div className="absolute bottom-7 left-8 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-[10px] font-medium text-[var(--app-fg-muted)] shadow-[var(--shadow-soft)]">
+              One page · PDF
             </div>
           </div>
         </div>
