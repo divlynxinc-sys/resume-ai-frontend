@@ -19,6 +19,8 @@ import {
   Plus,
   Search,
   Mail,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -375,7 +377,13 @@ function pickEmptyDashboardMessage() {
   }
 }
 
-function RecentActivity() {
+type DashboardActivityView = "loading" | "empty" | "active";
+
+function RecentActivity({
+  onActivityStateChange,
+}: {
+  onActivityStateChange: (view: DashboardActivityView) => void;
+}) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -407,6 +415,16 @@ function RecentActivity() {
   useEffect(() => {
     fetchActivities();
   }, []);
+
+  useEffect(() => {
+    if (activityStatus === "loading") {
+      onActivityStateChange("loading");
+    } else if (activityStatus === "ready") {
+      onActivityStateChange(activities.length === 0 ? "empty" : "active");
+    } else {
+      onActivityStateChange("active");
+    }
+  }, [activities.length, activityStatus, onActivityStateChange]);
 
   const handleDownload = async (id: number) => {
     setDownloadingId(id);
@@ -469,26 +487,57 @@ function RecentActivity() {
 
   if (activityStatus === "ready" && activities.length === 0) {
     return (
-      <section className="relative isolate min-h-80 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-12 text-center sm:px-10">
-        <div aria-hidden className="pointer-events-none absolute -left-16 -top-20 size-64 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-70" />
-        <div aria-hidden className="pointer-events-none absolute -bottom-24 -right-12 size-64 rounded-full bg-[var(--pastel-mint)] blur-3xl opacity-70" />
-        <div className="relative mx-auto flex max-w-2xl flex-col items-center">
-          <div className="grid size-11 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--accent-text)]">
-            <Wand2 className="size-5" />
+      <section className="relative isolate min-h-[430px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-10 sm:px-10 lg:px-14">
+        <div aria-hidden className="pointer-events-none absolute -left-20 -top-24 size-72 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-75" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 right-0 size-80 rounded-full bg-[var(--pastel-mint)] blur-3xl opacity-70" />
+        <div className="relative grid min-h-[350px] items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="max-w-xl text-center lg:text-left">
+            <div className="mx-auto grid size-11 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] text-[var(--accent-text)] lg:mx-0">
+              <Sparkles className="size-5" />
+            </div>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
+              {emptyMessage.eyebrow}
+            </p>
+            <h2 className="mt-2 font-display text-4xl font-light leading-tight tracking-tight text-[var(--app-fg)] sm:text-5xl">
+              {emptyMessage.title}
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-[var(--app-fg-muted)] sm:text-base">
+              {emptyMessage.body}
+            </p>
+            <AppButton className="mt-7" variant="primary" size="lg" onClick={() => navigate("/templates")}>
+              <Plus className="size-4" />
+              Build my first resume
+            </AppButton>
           </div>
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-text)]">
-            {emptyMessage.eyebrow}
-          </p>
-          <h3 className="mt-2 font-display text-3xl font-light tracking-tight text-[var(--app-fg)] sm:text-4xl">
-            {emptyMessage.title}
-          </h3>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--app-fg-muted)] sm:text-base">
-            {emptyMessage.body}
-          </p>
-          <AppButton className="mt-7" variant="primary" size="lg" onClick={() => navigate("/templates")}>
-            <Plus className="size-4" />
-            Build my first resume
-          </AppButton>
+
+          <div aria-hidden className="relative mx-auto hidden h-72 w-full max-w-sm lg:block">
+            <div className="absolute left-1/2 top-1/2 size-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--accent)]/15 bg-[var(--accent-soft)]/55" />
+            <div className="absolute left-8 top-8 h-56 w-40 -rotate-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] shadow-[var(--shadow-soft)]" />
+            <div className="absolute right-9 top-5 h-60 w-44 rotate-3 rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface)] p-5 shadow-[var(--shadow-pop)]">
+              <div className="h-3 w-20 rounded-full bg-[var(--app-fg)]/80" />
+              <div className="mt-2 h-1.5 w-12 rounded-full bg-[var(--accent)]/60" />
+              <div className="mt-6 h-1.5 w-full rounded-full bg-[var(--app-border-strong)]" />
+              <div className="mt-2 h-1.5 w-4/5 rounded-full bg-[var(--app-border)]" />
+              <div className="mt-5 h-2 w-16 rounded-full bg-[var(--app-fg)]/65" />
+              <div className="mt-3 space-y-2">
+                <div className="h-1.5 w-full rounded-full bg-[var(--app-border-strong)]" />
+                <div className="h-1.5 w-11/12 rounded-full bg-[var(--app-border)]" />
+                <div className="h-1.5 w-4/5 rounded-full bg-[var(--app-border)]" />
+              </div>
+              <div className="mt-6 h-2 w-12 rounded-full bg-[var(--app-fg)]/65" />
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <span className="h-5 rounded-md bg-[var(--accent-soft)]" />
+                <span className="h-5 rounded-md bg-[var(--pastel-mint)]" />
+                <span className="h-5 rounded-md bg-[var(--pastel-sky)]" />
+              </div>
+            </div>
+            <div className="absolute right-1 top-12 grid size-11 place-items-center rounded-xl border border-emerald-500/25 bg-[var(--app-surface)] text-emerald-500 shadow-[var(--shadow-soft)]">
+              <CheckCircle2 className="size-5" />
+            </div>
+            <div className="absolute bottom-8 left-10 grid size-11 place-items-center rounded-xl border border-[var(--accent)]/25 bg-[var(--app-surface)] text-[var(--accent-text)] shadow-[var(--shadow-soft)]">
+              <Wand2 className="size-5" />
+            </div>
+          </div>
         </div>
       </section>
     );
@@ -614,12 +663,14 @@ function RecentActivity() {
 }
 
 export default function DashboardModal() {
+  const [activityView, setActivityView] = useState<DashboardActivityView>("loading");
+
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
       <PageWithSidebar activeRoute="dashboard" mainClassName="space-y-6">
-          <HeroCard />
-          <RecentActivity />
+          {activityView === "active" ? <HeroCard /> : null}
+          <RecentActivity onActivityStateChange={setActivityView} />
       </PageWithSidebar>
     </div>
   );
