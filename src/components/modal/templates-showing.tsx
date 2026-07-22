@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { TEMPLATES, renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 
 /**
@@ -94,29 +95,67 @@ function SectionTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: s
   );
 }
 
-function TemplateCard({ name, html }: { name: string; html: string }) {
+function htmlForPreview(html: string) {
+  const previewStyles = `
+    <style>
+      html, body { width: 210mm !important; min-width: 210mm !important; min-height: 297mm !important; overflow: hidden !important; scrollbar-width: none !important; }
+      body::-webkit-scrollbar, html::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+    </style>
+  `;
+
+  return html.includes("</head>")
+    ? html.replace("</head>", `${previewStyles}</head>`)
+    : `${previewStyles}${html}`;
+}
+
+function TemplateCard({
+  slug,
+  name,
+  html,
+  decorative = false,
+}: {
+  slug: string;
+  name: string;
+  html: string;
+  decorative?: boolean;
+}) {
   return (
-    <div data-landing-reveal className="flex-none w-64 sm:w-72">
+    <article className="group w-[18rem] flex-none sm:w-[20rem] lg:w-[21rem]">
       <div
-        className="relative w-full aspect-[3/4] rounded-2xl bg-white border border-[var(--app-border)] shadow-[var(--shadow-soft)] overflow-hidden"
+        className="relative aspect-[210/297] w-full overflow-hidden rounded-xl bg-white shadow-[var(--shadow-soft)] ring-1 ring-[var(--app-border)]"
       >
         <iframe
-          srcDoc={html}
+          srcDoc={htmlForPreview(html)}
           title={name}
           aria-hidden
           tabIndex={-1}
           loading="lazy"
           sandbox=""
-          className="absolute top-0 left-0 origin-top-left pointer-events-none border-0"
+          scrolling="no"
+          className="pointer-events-none absolute left-0 top-0 origin-top-left border-0 bg-white [--template-scale:0.3627] sm:[--template-scale:0.403] lg:[--template-scale:0.4232]"
           style={{
-            width: "300%",
-            height: "300%",
-            transform: "scale(0.3333)",
+            width: "794px",
+            height: "1123px",
+            transform: "scale(var(--template-scale))",
           }}
         />
+        <div className="absolute inset-0 z-10 flex items-end justify-center bg-gradient-to-t from-black/55 via-black/10 to-transparent pb-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100">
+          <Link
+            to={`/signup?next=${encodeURIComponent(`/resumes?template=${slug}`)}`}
+            tabIndex={decorative ? -1 : 0}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--app-border-strong)] bg-[var(--app-surface)] px-4 text-xs font-semibold text-[var(--app-fg)] shadow-[var(--shadow-pop)] transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            Use this template <span aria-hidden="true">&rarr;</span>
+          </Link>
+        </div>
       </div>
-      <div className="mt-3 text-sm font-medium text-[var(--app-fg)] truncate">{name}</div>
-    </div>
+      <div className="flex items-center justify-between gap-3 px-1 pt-3">
+        <div className="truncate text-sm font-medium text-[var(--app-fg)]">{name}</div>
+        <span className="shrink-0 rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--accent-text)]">
+          ATS
+        </span>
+      </div>
+    </article>
   );
 }
 
@@ -134,9 +173,21 @@ export function TemplatesShowingSection() {
   return (
     <section className="max-w-[1100px] mx-auto px-6">
       <style>{`
-        @keyframes scrollXFast { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .templates-scroll-track { animation: scrollXFast 60s linear infinite; will-change: transform; }
-        .templates-scroll-track:hover { animation-play-state: paused; }
+        @keyframes templatesMarquee {
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(-50%, 0, 0); }
+        }
+        .templates-scroll-track {
+          animation: templatesMarquee 48s linear infinite;
+          will-change: transform;
+        }
+        .templates-scroll-window:hover .templates-scroll-track,
+        .templates-scroll-window:focus-within .templates-scroll-track {
+          animation-play-state: paused;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .templates-scroll-track { animation: none; transform: translate3d(0, 0, 0); }
+        }
       `}</style>
 
       <SectionTitle
@@ -145,18 +196,33 @@ export function TemplatesShowingSection() {
         subtitle="A preview of our refined, ATS-friendly resume designs."
       />
 
-      <div
-        className="mt-14 overflow-hidden"
-        style={{
-          WebkitMaskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
-          maskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
-        }}
-      >
-        <div className="templates-scroll-track flex items-start gap-6 w-max">
-          {/* Render twice for the seamless loop; iframes are heavy so cap at 2x */}
-          {[...cards, ...cards].map((c, i) => (
-            <TemplateCard key={`${c.slug}-${i}`} name={c.name} html={c.html} />
-          ))}
+      <div data-landing-reveal className="mt-14 py-2">
+        <div
+          className="templates-scroll-window overflow-hidden"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent 0, black 3rem, black calc(100% - 3rem), transparent 100%)",
+            maskImage: "linear-gradient(to right, transparent 0, black 3rem, black calc(100% - 3rem), transparent 100%)",
+          }}
+        >
+          <div className="templates-scroll-track flex w-max items-start">
+            {[0, 1].map((copy) => (
+              <div
+                key={copy}
+                aria-hidden={copy === 1 || undefined}
+                className="flex shrink-0 items-start gap-5 px-2.5"
+              >
+                {cards.map((card) => (
+                  <TemplateCard
+                    key={`${copy}-${card.slug}`}
+                    slug={card.slug}
+                    name={card.name}
+                    html={card.html}
+                    decorative={copy === 1}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

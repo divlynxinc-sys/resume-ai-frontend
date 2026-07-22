@@ -8,6 +8,9 @@ import { PricingSection } from "./pricing";
 import { TailoringSection } from "./tailoring";
 import { TemplatesShowingSection } from "./templates-showing";
 import { BlogSection } from "./blog";
+import atsScannerIllustration from "@/assets/illustrations/ats-scanner.png";
+import benchmarkIllustration from "@/assets/illustrations/resume-benchmark.png";
+import optimizationIllustration from "@/assets/illustrations/ai-optimization.png";
 
 type ResumePreviewTone = "blue" | "lavender" | "warm";
 
@@ -243,6 +246,89 @@ function MiniResumeSheet({
   );
 }
 
+type SideResume = {
+  name: string;
+  role: string;
+  tone: ResumePreviewTone;
+};
+
+const LEFT_SIDE_RESUMES: SideResume[] = [
+  { name: "John Smith", role: "Software Engineer", tone: "blue" },
+  { name: "Olivia Chen", role: "Data Analyst", tone: "lavender" },
+  { name: "Daniel Brooks", role: "Cloud Engineer", tone: "warm" },
+];
+
+const RIGHT_SIDE_RESUMES: SideResume[] = [
+  { name: "Hello, I'm Michael Davis", role: "Product Manager", tone: "warm" },
+  { name: "Sophia Patel", role: "UX Researcher", tone: "lavender" },
+  { name: "Ethan Walker", role: "Operations Lead", tone: "blue" },
+];
+
+function SideResumeRotator({
+  resumes,
+  positionClass,
+  initialDelay,
+}: {
+  resumes: SideResume[];
+  positionClass: string;
+  initialDelay: number;
+}) {
+  const [resumeIndex, setResumeIndex] = useState(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let intervalId: number | undefined;
+    let finishTimeoutId: number | undefined;
+
+    const spinToNextResume = () => {
+      if (document.hidden) return;
+
+      setIsSpinning(true);
+      finishTimeoutId = window.setTimeout(() => {
+        setResumeIndex((current) => (current + 1) % resumes.length);
+        setIsSpinning(false);
+      }, 900);
+    };
+
+    const initialTimeoutId = window.setTimeout(() => {
+      spinToNextResume();
+      intervalId = window.setInterval(spinToNextResume, 7000);
+    }, initialDelay);
+
+    return () => {
+      window.clearTimeout(initialTimeoutId);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+      if (finishTimeoutId !== undefined) window.clearTimeout(finishTimeoutId);
+    };
+  }, [initialDelay, resumes]);
+
+  const resume = resumes[resumeIndex];
+  const nextResume = resumes[(resumeIndex + 1) % resumes.length];
+
+  return (
+    <div
+      className={`absolute left-1/2 top-3 hidden aspect-[0.68] w-[390px] md:block ${positionClass}`}
+    >
+      <div className={`side-resume-rotator relative h-full w-full ${isSpinning ? "is-spinning" : ""}`}>
+        <MiniResumeSheet
+          name={resume.name}
+          role={resume.role}
+          tone={resume.tone}
+          className="side-resume-face side-resume-current left-0 top-0"
+        />
+        <MiniResumeSheet
+          name={nextResume.name}
+          role={nextResume.role}
+          tone={nextResume.tone}
+          className="side-resume-face side-resume-next left-0 top-0"
+        />
+      </div>
+    </div>
+  );
+}
+
 function HeroResumeStack() {
   return (
     <div
@@ -271,20 +357,78 @@ function HeroResumeStack() {
           z-index: 1;
         }
 
+        @keyframes side-resume-spin-out {
+          0% {
+            transform: rotateY(0deg) translateZ(0);
+            opacity: 1;
+          }
+          49% {
+            opacity: 1;
+          }
+          50%, 100% {
+            transform: rotateY(-90deg) translateZ(0);
+            opacity: 0;
+          }
+        }
+
+        @keyframes side-resume-spin-in {
+          0%, 50% {
+            transform: rotateY(90deg) translateZ(0);
+            opacity: 0;
+          }
+          51% {
+            opacity: 1;
+          }
+          100% {
+            transform: rotateY(0deg) translateZ(0);
+            opacity: 1;
+          }
+        }
+
+        .side-resume-rotator {
+          perspective: 1200px;
+          transform: translateZ(0);
+        }
+
+        .side-resume-face {
+          backface-visibility: hidden;
+          transform: translateZ(0);
+        }
+
+        .side-resume-next {
+          opacity: 0;
+          transform: rotateY(90deg) translateZ(0);
+        }
+
+        .side-resume-rotator.is-spinning .side-resume-current {
+          animation: side-resume-spin-out 900ms cubic-bezier(0.45, 0, 0.2, 1) both;
+          will-change: transform, opacity;
+        }
+
+        .side-resume-rotator.is-spinning .side-resume-next {
+          animation: side-resume-spin-in 900ms cubic-bezier(0.45, 0, 0.2, 1) both;
+          will-change: transform, opacity;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .side-resume-rotator.is-spinning .side-resume-current,
+          .side-resume-rotator.is-spinning .side-resume-next {
+            animation: none;
+          }
+        }
+
       `}</style>
       <div className="resume-stack absolute inset-0">
         <div className="pointer-events-none absolute inset-x-8 bottom-8 h-32 rounded-[50%] bg-[rgba(91,108,219,0.10)] blur-3xl" />
-        <MiniResumeSheet
-          name="John Smith"
-          role="Software Engineer"
-          tone="blue"
-          className="resume-sheet resume-stack-left left-1/2 top-3 hidden md:block"
+        <SideResumeRotator
+          resumes={LEFT_SIDE_RESUMES}
+          positionClass="resume-stack-left"
+          initialDelay={4000}
         />
-        <MiniResumeSheet
-          name="Hello, I'm Michael Davis"
-          role="Product Manager"
-          tone="warm"
-          className="resume-sheet resume-stack-right left-1/2 top-3 hidden md:block"
+        <SideResumeRotator
+          resumes={RIGHT_SIDE_RESUMES}
+          positionClass="resume-stack-right"
+          initialDelay={7300}
         />
         <MiniResumeSheet
           name="Emily Johnson"
@@ -415,6 +559,44 @@ function FeatureCard({
   );
 }
 
+function IllustratedSectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+  image,
+  imageAlt,
+  reverse = false,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  imageAlt: string;
+  reverse?: boolean;
+}) {
+  return (
+    <div
+      data-landing-reveal
+      className="grid items-center gap-7 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-7 py-7 shadow-[var(--shadow-soft)] md:grid-cols-[1fr_0.9fr] md:px-10 md:py-8"
+    >
+      <div className={reverse ? "md:order-2" : ""}>
+        <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">
+          {eyebrow}
+        </div>
+        <h2 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
+          {title}
+        </h2>
+        <p className="mt-3 max-w-xl text-[var(--app-fg-muted)] leading-relaxed">{subtitle}</p>
+      </div>
+      <img
+        src={image}
+        alt={imageAlt}
+        className={`mx-auto h-48 w-full select-none object-contain sm:h-56 ${reverse ? "md:order-1" : ""}`}
+      />
+    </div>
+  );
+}
+
 /**
  * Replaces the old `Testimonial` cards, which were three invented people with
  * invented quotes. That was a liability, not an asset:
@@ -521,6 +703,12 @@ function ProofSection() {
             account, and the file is read in your browser — it's never uploaded anywhere.
           </p>
 
+          <img
+            src={atsScannerIllustration}
+            alt="Resume passing through an ATS compatibility check"
+            className="mx-auto mt-4 h-36 w-full select-none object-contain sm:h-40"
+          />
+
           <ul className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {CHECKER_LOOKS_FOR.map((item) => (
               <li
@@ -619,12 +807,14 @@ export default function LandingPageScreen() {
       </section>
 
       <section className="max-w-[1100px] mx-auto px-6 mt-24">
-        <SectionTitle
+        <IllustratedSectionHeader
           eyebrow="The benchmark"
           title="What industry demands."
           subtitle="What recruiters and ATS actually look for in your resume."
+          image={benchmarkIllustration}
+          imageAlt="Resume evaluated against quality, keyword, and impact benchmarks"
         />
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
           <FeatureCard icon={<FileText className="size-5" />} title="ATS Compliance & Structure" desc="Clean headings, consistent bullet points, readable sections that parse correctly." color="blue" />
           <FeatureCard icon={<ListChecks className="size-5" />} title="Role & Keyword Relevance" desc="Presence of job-specific keywords and competencies aligned to the role." color="purple" />
           <FeatureCard icon={<BarChart3 className="size-5" />} title="Impact Metrics" desc="Quantified outcomes (growth %, savings, speed gains) that prove results." color="orange" />
@@ -634,12 +824,15 @@ export default function LandingPageScreen() {
         </div>
 
         <div className="mt-20">
-          <SectionTitle
+          <IllustratedSectionHeader
             eyebrow="Our approach"
             title="How we help you stand out."
             subtitle="We apply AI to optimize for these checks so you rise to the top."
+            image={optimizationIllustration}
+            imageAlt="Resume transformed by AI into a targeted, optimized version"
+            reverse
           />
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
             <FeatureCard icon={<Wand2 className="size-5" />} title="AI Tailoring to JD" desc="Aligns content to a target job, adding missing keywords and skills." color="violet" />
             <FeatureCard icon={<ShieldCheck className="size-5" />} title="ATS Optimizer" desc="Restructures sections and formatting to pass most ATS systems." color="emerald" />
             <FeatureCard icon={<Sparkles className="size-5" />} title="Achievement Rewriter" desc="Turns tasks into quantified impact statements with crisp phrasing." color="amber" />

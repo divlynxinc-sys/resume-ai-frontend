@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import tailoringIllustration from "@/assets/illustrations/resume-tailoring.png";
 
 
 function IconWrap({ children }: { children: ReactNode }) {
@@ -68,15 +69,27 @@ function InfoPanel({ title, items }: { title: string; items: string[] }) {
 function Hero() {
   return (
     <section className="relative">
-      <div className="max-w-[1100px] mx-auto px-6 pt-14 text-center">
-        <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">How it works</div>
-        <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
-          Tailoring, <span className="italic">simplified.</span>
-        </h1>
-        <p className="text-[var(--app-fg-muted)] mt-4 max-w-2xl mx-auto leading-relaxed">
-          Our AI analyzes the job description and optimizes your resume for each application,
-          highlighting the most relevant skills and experiences.
-        </p>
+      <div className="max-w-[1100px] mx-auto px-6 pt-14">
+        <div className="grid items-center gap-7 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-7 py-8 shadow-[var(--shadow-soft)] md:grid-cols-[1fr_0.9fr] md:px-10 md:py-9">
+          <div className="text-center md:text-left">
+            <div className="text-xs font-medium tracking-[0.18em] uppercase text-[var(--accent-text)] mb-3">How it works</div>
+            <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] leading-tight">
+              Tailoring, <span className="italic">simplified.</span>
+            </h1>
+            <p className="text-[var(--app-fg-muted)] mt-4 max-w-xl leading-relaxed">
+              Our AI analyzes the job description and optimizes your resume for each application,
+              highlighting the most relevant skills and experiences.
+            </p>
+          </div>
+          <div className="relative mx-auto w-full max-w-[430px]">
+            <div aria-hidden className="absolute inset-8 rounded-full bg-[var(--pastel-lavender)] blur-3xl opacity-70" />
+            <img
+              src={tailoringIllustration}
+              alt="Resume content being matched to a job description"
+              className="relative mx-auto w-full select-none object-contain"
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
