@@ -165,7 +165,7 @@ function TemplateCard({
         />
 
         {locked && (
-          <div className="absolute right-2 top-2 z-30 inline-flex items-center gap-1 rounded-full bg-[rgba(26,26,26,0.78)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
+          <div className="absolute right-2 top-2 z-30 inline-flex items-center gap-1 rounded-full bg-[rgba(26,26,26,0.78)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#FFFFFF]">
             <Lock className="size-3" />
             Pro
           </div>

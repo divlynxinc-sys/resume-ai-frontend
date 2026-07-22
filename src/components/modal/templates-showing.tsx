@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { TEMPLATES, renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 
 /**
@@ -95,13 +94,11 @@ function SectionTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: s
   );
 }
 
-function TemplateCard({ slug, name, html }: { slug: string; name: string; html: string }) {
-  const navigate = useNavigate();
+function TemplateCard({ name, html }: { name: string; html: string }) {
   return (
     <div data-landing-reveal className="flex-none w-64 sm:w-72">
       <div
-        onClick={() => navigate(`/templates?selected=${slug}`)}
-        className="relative group w-full aspect-[3/4] rounded-2xl bg-white border border-[var(--app-border)] shadow-[var(--shadow-soft)] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-pop)]"
+        className="relative w-full aspect-[3/4] rounded-2xl bg-white border border-[var(--app-border)] shadow-[var(--shadow-soft)] overflow-hidden"
       >
         <iframe
           srcDoc={html}
@@ -117,14 +114,6 @@ function TemplateCard({ slug, name, html }: { slug: string; name: string; html: 
             transform: "scale(0.3333)",
           }}
         />
-        <div className="absolute inset-0 z-20 flex items-end justify-center pb-5 bg-gradient-to-t from-[rgba(26,26,26,0.55)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-full bg-white text-[var(--app-fg)] text-xs font-medium shadow-md cursor-pointer"
-          >
-            Use this template
-          </button>
-        </div>
       </div>
       <div className="mt-3 text-sm font-medium text-[var(--app-fg)] truncate">{name}</div>
     </div>
@@ -153,7 +142,7 @@ export function TemplatesShowingSection() {
       <SectionTitle
         eyebrow="Templates"
         title="Pick a template, make it yours."
-        subtitle="A small library of refined, ATS-friendly designs to start from. Click any to use it in the builder."
+        subtitle="A preview of our refined, ATS-friendly resume designs."
       />
 
       <div
@@ -166,7 +155,7 @@ export function TemplatesShowingSection() {
         <div className="templates-scroll-track flex items-start gap-6 w-max">
           {/* Render twice for the seamless loop; iframes are heavy so cap at 2x */}
           {[...cards, ...cards].map((c, i) => (
-            <TemplateCard key={`${c.slug}-${i}`} slug={c.slug} name={c.name} html={c.html} />
+            <TemplateCard key={`${c.slug}-${i}`} name={c.name} html={c.html} />
           ))}
         </div>
       </div>

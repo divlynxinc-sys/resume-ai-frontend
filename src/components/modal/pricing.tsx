@@ -44,10 +44,12 @@ function PlanCard({
   isCurrent,
   hasActiveSubscription,
   onSwitch,
+  showAction = true,
 }: PlanProps & {
   isCurrent?: boolean;
   hasActiveSubscription?: boolean;
   onSwitch?: (slug: string, title: string, price: string, subtitle?: string) => void;
+  showAction?: boolean;
 }) {
   const navigate = useNavigate();
   const isSwitchTarget = !!hasActiveSubscription && !isCurrent;
@@ -141,7 +143,7 @@ function PlanCard({
           ))}
         </ul>
 
-        <button
+        {showAction && <button
           onClick={() => {
             if (isCurrent) return;
             if (isSwitchTarget) {
@@ -165,7 +167,7 @@ function PlanCard({
           }
         >
           {isCurrent ? "Current plan" : isSwitchTarget ? "Switch to this plan" : button}
-        </button>
+        </button>}
       </div>
     </div>
   );
@@ -234,7 +236,7 @@ type PendingSwitch = {
   subtitle?: string;
 };
 
-export function PricingSection() {
+export function PricingSection({ showPlanActions = true }: { showPlanActions?: boolean } = {}) {
   const { currentPlan } = usePlan();
   const [plans, setPlans] = useState<PlanData[]>(defaultPlans);
   const [currentPlanName, setCurrentPlanName] = useState<string | null>(currentPlan);
@@ -366,6 +368,7 @@ export function PricingSection() {
             isCurrent={!!normalizedCurrent && plan.title.trim().toLowerCase() === normalizedCurrent}
             hasActiveSubscription={hasActiveSubscription}
             onSwitch={handleSwitchRequest}
+            showAction={showPlanActions}
           />
         ))}
       </div>

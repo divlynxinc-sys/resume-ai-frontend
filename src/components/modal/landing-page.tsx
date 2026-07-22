@@ -664,7 +664,7 @@ export default function LandingPageScreen() {
       </div>
 
       <div className="mt-24">
-        <PricingSection />
+        <PricingSection showPlanActions={false} />
       </div>
 
       {/* Blog — sits after pricing so it catches visitors who aren't ready to buy
@@ -674,13 +674,13 @@ export default function LandingPageScreen() {
       </div>
 
       <div className="mt-24">
-        <SiteFooter />
+        <SiteFooter publicOnly />
       </div>
 
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Back to top"
-        className={`fixed bottom-6 right-6 z-50 h-11 w-11 rounded-full bg-[var(--app-surface)] border border-[var(--app-border)] grid place-items-center transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 ${
+        className={`fixed bottom-20 right-6 z-50 h-11 w-11 rounded-full bg-[var(--app-surface)] border border-[var(--app-border)] grid place-items-center transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30 ${
           showTop
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-2 pointer-events-none"

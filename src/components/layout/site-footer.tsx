@@ -65,20 +65,29 @@ function Column({
   );
 }
 
-export default function SiteFooter() {
+export default function SiteFooter({ publicOnly = false }: { publicOnly?: boolean }) {
   return (
     <footer className="text-white border-t border-white/10 bg-[var(--app-bg)]">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-8 gap-y-12 px-6 py-12 sm:grid-cols-3 lg:grid-cols-[1.35fr_repeat(5,minmax(0,1fr))] lg:gap-x-10 lg:py-14">
         <Brand />
-        <Column title="PRODUCT" links={[{ label: "Features", to: "/#features" }, { label: "Pricing", to: "/#pricing" }, { label: "Templates", to: "/templates" }, { label: "Dashboard", to: "/dashboard" }]} />
+        <Column title="PRODUCT" links={publicOnly
+          ? [{ label: "Features", to: "/#features" }, { label: "Pricing", to: "/#pricing" }]
+          : [{ label: "Features", to: "/#features" }, { label: "Pricing", to: "/#pricing" }, { label: "Templates", to: "/templates" }, { label: "Dashboard", to: "/dashboard" }]
+        } />
         <Column title="RESOURCES" links={[{ label: "Blog", to: "/blog" }, { label: "ATS Resume Format", to: "/blog/ats-resume-format" }, { label: "Tailoring Guide", to: "/blog/tailor-resume-to-job-description" }, { label: "Resume Keywords", to: "/blog/resume-keywords-that-matter" }]} />
         <Column title="LEGAL" links={[{ label: "Privacy Policy", to: "/privacy" }, { label: "Terms of Service", to: "/terms" }, { label: "Cookie Policy", to: "/cookie-policy" }, { label: "Security", to: "/security" }]} />
-        <Column title="FREE TOOLS" links={[{ label: "ATS Resume Checker", to: "/ats-checker" }, { label: "Resume Templates", to: "/templates" }]} />
-        <Column title="SUPPORT" links={[{ label: "Help Center", to: "/help-center" }, { label: "FAQ", to: "/faq" }]} />
+        <Column title="FREE TOOLS" links={publicOnly
+          ? [{ label: "ATS Resume Checker", to: "/ats-checker" }]
+          : [{ label: "ATS Resume Checker", to: "/ats-checker" }, { label: "Resume Templates", to: "/templates" }]
+        } />
+        <Column title="SUPPORT" links={publicOnly
+          ? [{ label: "FAQ", to: "/faq" }]
+          : [{ label: "Help Center", to: "/help-center" }, { label: "FAQ", to: "/faq" }]
+        } />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 border-t border-white/10 py-6 text-center text-sm text-white/40 sm:flex sm:items-center sm:justify-between sm:text-left">
-        <p>© 2025 Jobsynk AI. All rights reserved.</p>
+        <p>© 2026 Jobsynk AI. All rights reserved.</p>
         <p className="mt-2 sm:mt-0">
           Powered by{" "}
           <a
