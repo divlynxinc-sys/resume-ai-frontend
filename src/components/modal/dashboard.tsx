@@ -54,6 +54,16 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
       points: ["Start from a template", "Fill core sections", "Export or share"],
       link: "/templates",
     },
+    {
+      title: "Pro status",
+      icon: <Crown className="size-4" />,
+      points: [
+        "Green Pro labels mean your subscription is active",
+        "Pro Plans also turns green when Pro is enabled",
+        "Green sidebar tools are unlocked and ready to use",
+      ],
+      link: "/pricing",
+    },
   ];
   const [tipIndex, setTipIndex] = useState(0);
   const nextTip = () => setTipIndex((i) => (i + 1) % tips.length);
