@@ -4,7 +4,6 @@ import { ArrowRight, PenLine } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import { POSTS_BY_DATE } from "@/content/blog/posts";
-import { renderArt } from "@/content/blog/art";
 import { blogIndexSchema } from "@/content/blog/schema";
 import { formatPostDate } from "@/content/blog/render";
 import type { Post } from "@/content/blog/types";
@@ -19,10 +18,17 @@ function PostCard({ post, featured = false }: { post: Post; featured?: boolean }
         featured ? "md:col-span-2 md:grid md:grid-cols-2 md:items-center" : ""
       }`}
     >
-      <div
-        className={featured ? "h-full min-h-[220px] p-5" : "p-4"}
-        dangerouslySetInnerHTML={{ __html: renderArt(post.hero, post.tone) }}
-      />
+      <div className={featured ? "h-full min-h-[220px] p-5" : "p-4"}>
+        <img
+          src={post.heroImage}
+          alt={post.heroAlt}
+          width={1619}
+          height={971}
+          loading={featured ? "eager" : "lazy"}
+          fetchPriority={featured ? "high" : "auto"}
+          className="aspect-[5/3] h-full w-full rounded-xl object-cover"
+        />
+      </div>
 
       <div className={featured ? "p-6 sm:p-8" : "px-6 pb-6"}>
         <div className="flex flex-wrap items-center gap-2">
@@ -102,10 +108,16 @@ export function BlogSection() {
             data-landing-reveal
             className="group relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] transition-all duration-300 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]"
           >
-            <div
-              className="p-4"
-              dangerouslySetInnerHTML={{ __html: renderArt(post.hero, post.tone) }}
-            />
+            <div className="p-4">
+              <img
+                src={post.heroImage}
+                alt={post.heroAlt}
+                width={1619}
+                height={971}
+                loading="lazy"
+                className="aspect-[5/3] w-full rounded-xl object-cover"
+              />
+            </div>
             <div className="px-6 pb-6">
               <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent-text)]">
                 {post.tags[0]}

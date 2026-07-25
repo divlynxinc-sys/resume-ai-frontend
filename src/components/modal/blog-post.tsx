@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight, Clock, RefreshCw } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import { getPost, relatedPosts } from "@/content/blog/posts";
-import { renderArt } from "@/content/blog/art";
 import {
   formatPostDate,
   renderPostBodyHtml,
@@ -95,6 +94,7 @@ export default function BlogPostScreen() {
     updatedAt: post?.updatedAt,
     author: post?.author.name,
     tags: post?.tags,
+    image: post?.heroImage,
     jsonLd: post ? postSchema(post) : undefined,
   });
 
@@ -142,9 +142,13 @@ export default function BlogPostScreen() {
           </header>
 
           <div className="mt-10 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-8">
-            <div
-              className="aspect-[5/3] w-full"
-              dangerouslySetInnerHTML={{ __html: renderArt(post.hero, post.tone) }}
+            <img
+              src={post.heroImage}
+              alt={post.heroAlt}
+              width={1619}
+              height={971}
+              fetchPriority="high"
+              className="aspect-[5/3] w-full rounded-xl object-cover"
             />
           </div>
 
@@ -188,10 +192,13 @@ export default function BlogPostScreen() {
                     to={`/blog/${item.slug}`}
                     className="group flex items-center gap-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--app-border-strong)] hover:shadow-[var(--shadow-soft)]"
                   >
-                    <span
-                      aria-hidden="true"
-                      className="hidden h-16 w-24 shrink-0 overflow-hidden rounded-xl sm:block"
-                      dangerouslySetInnerHTML={{ __html: renderArt(item.hero, item.tone) }}
+                    <img
+                      src={item.heroImage}
+                      alt=""
+                      width={1619}
+                      height={971}
+                      loading="lazy"
+                      className="hidden h-16 w-24 shrink-0 rounded-xl object-cover sm:block"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-[var(--app-fg)]">

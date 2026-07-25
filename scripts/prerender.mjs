@@ -238,7 +238,6 @@ writeFileSync(
   `export { SITE_URL } from "../src/lib/site";
 export { POSTS_BY_DATE } from "../src/content/blog/posts";
 export { renderPostBodyHtml, renderPostFaqHtml, renderTocHtml, countWords, formatPostDate } from "../src/content/blog/render";
-export { renderArt } from "../src/content/blog/art";
 export { postSchema, blogIndexSchema, organizationSchema, websiteSchema, softwareApplicationSchema, faqPageSchema } from "../src/content/blog/schema";
 export { ATS_CHECKER_FAQ, FAQ_PAGE_ITEMS } from "../src/content/site-faq";
 `,
@@ -262,7 +261,6 @@ const {
   renderPostBodyHtml,
   renderPostFaqHtml,
   renderTocHtml,
-  renderArt,
   postSchema,
   blogIndexSchema,
   organizationSchema,
@@ -334,8 +332,9 @@ function stripDefaultMeta(html) {
     .replace(/\s*<meta\s+name="twitter:[\s\S]*?\/>/gi, "");
 }
 
-function buildPage({ title, description, path, jsonLd, bodyHtml, article }) {
+function buildPage({ title, description, path, jsonLd, bodyHtml, article, image = "/og-image.png" }) {
   const url = `${SITE_URL}${path}`;
+  const imageUrl = image.startsWith("http") ? image : `${SITE_URL}${image}`;
   const head = [
     `<meta name="description" content="${escapeAttr(description)}" />`,
     `<link rel="canonical" href="${escapeAttr(url)}" />`,
@@ -344,13 +343,11 @@ function buildPage({ title, description, path, jsonLd, bodyHtml, article }) {
     `<meta property="og:description" content="${escapeAttr(description)}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
     `<meta property="og:site_name" content="Jobsynk AI" />`,
-    `<meta property="og:image" content="${SITE_URL}/og-image.png" />`,
-    `<meta property="og:image:width" content="1200" />`,
-    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image" content="${escapeAttr(imageUrl)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeAttr(title)}" />`,
     `<meta name="twitter:description" content="${escapeAttr(description)}" />`,
-    `<meta name="twitter:image" content="${SITE_URL}/og-image.png" />`,
+    `<meta name="twitter:image" content="${escapeAttr(imageUrl)}" />`,
     article ? `<meta property="article:published_time" content="${article.publishedAt}" />` : "",
     article ? `<meta property="article:modified_time" content="${article.updatedAt}" />` : "",
     article ? `<meta name="author" content="${escapeAttr(article.author.name)}" />` : "",
@@ -513,7 +510,7 @@ function renderArticle(post) {
         </div>
       </header>
       <div class="mt-10 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-8">
-        <div class="aspect-[5/3] w-full">${renderArt(post.hero, post.tone)}</div>
+        <img src="${post.heroImage}" alt="${escapeAttr(post.heroAlt)}" width="1619" height="971" class="aspect-[5/3] w-full rounded-xl object-cover" />
       </div>
       <div class="mt-12">
         ${renderTocHtml(post)}
@@ -529,7 +526,7 @@ function renderBlogIndex(posts) {
   const cards = posts
     .map(
       (post) => `<article class="group relative overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
-      <div class="p-4">${renderArt(post.hero, post.tone)}</div>
+      <div class="p-4"><img src="${post.heroImage}" alt="${escapeAttr(post.heroAlt)}" width="1619" height="971" loading="lazy" class="aspect-[5/3] w-full rounded-xl object-cover" /></div>
       <div class="px-6 pb-6">
         <h2 class="mt-4 font-display font-light tracking-tight text-[var(--app-fg)] text-lg">
           <a href="/blog/${post.slug}">${post.title}</a>
@@ -583,6 +580,7 @@ for (const post of POSTS_BY_DATE) {
     jsonLd: postSchema(post),
     bodyHtml: renderArticle(post),
     article: post,
+    image: post.heroImage,
   });
   emit(`/blog/${post.slug}`, html);
   report.push([`/blog/${post.slug}`, visibleWords(html), countWords(post)]);

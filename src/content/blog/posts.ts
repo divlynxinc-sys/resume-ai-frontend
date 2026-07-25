@@ -33,6 +33,8 @@ export const POSTS: Post[] = [
     tags: ["ATS", "Formatting", "Resume basics"],
     readingMinutes: 6,
     hero: "scanner",
+    heroImage: "/blog/ats-resume-format-v3.jpg",
+    heroAlt: "A resume passing through an applicant tracking system scanner and emerging as structured information",
     tone: "accent",
     faq: [
       {
@@ -194,6 +196,8 @@ export const POSTS: Post[] = [
     tags: ["AI", "Hiring", "Strategy"],
     readingMinutes: 6,
     hero: "signal",
+    heroImage: "/blog/do-recruiters-reject-ai-resumes-v3.jpg",
+    heroAlt: "A recruiter weighing a human-written resume and an AI-assisted resume on a balanced scale",
     tone: "sky",
     faq: [
       {
@@ -321,6 +325,8 @@ export const POSTS: Post[] = [
     tags: ["Tailoring", "Job search", "Strategy"],
     readingMinutes: 7,
     hero: "match",
+    heroImage: "/blog/tailor-resume-to-job-description-v3.jpg",
+    heroAlt: "A resume and job description stitched together with blue thread to create a tailored application",
     tone: "mint",
     faq: [
       {
@@ -486,6 +492,8 @@ export const POSTS: Post[] = [
     tags: ["Keywords", "ATS", "Tailoring"],
     readingMinutes: 6,
     hero: "keywords",
+    heroImage: "/blog/resume-keywords-that-matter-v3.jpg",
+    heroAlt: "A brass sieve selecting the most relevant keyword tiles for a resume",
     tone: "butter",
     faq: [
       {
@@ -630,6 +638,8 @@ export const POSTS: Post[] = [
     tags: ["Writing", "Bullets", "Resume basics"],
     readingMinutes: 7,
     hero: "impact",
+    heroImage: "/blog/resume-bullet-points-that-get-interviews-v3.jpg",
+    heroAlt: "Weak resume bullets transforming into rising arrows that lead toward an interview",
     tone: "rose",
     faq: [
       {
@@ -786,6 +796,8 @@ export const POSTS: Post[] = [
     tags: ["Cover letters", "AI", "Writing"],
     readingMinutes: 6,
     hero: "voice",
+    heroImage: "/blog/ai-cover-letter-that-doesnt-sound-like-ai-v3.jpg",
+    heroAlt: "A human hand using a fountain pen to turn an AI spark into a personal cover letter",
     tone: "sky",
     faq: [
       {
@@ -934,6 +946,8 @@ export const POSTS: Post[] = [
     tags: ["Templates", "Engineering", "Resume basics"],
     readingMinutes: 8,
     hero: "stack",
+    heroImage: "/blog/software-engineer-resume-template-v3.jpg",
+    heroAlt: "A software engineer resume framed by code brackets and a six-second stopwatch",
     tone: "accent",
     faq: [
       {
@@ -1161,6 +1175,8 @@ export const POSTS: Post[] = [
     tags: ["Templates", "Graduates", "Resume basics"],
     readingMinutes: 8,
     hero: "sprout",
+    heroImage: "/blog/fresh-graduate-resume-template-v3.jpg",
+    heroAlt: "A fresh sprout growing from a graduate resume with roots in education, skills, projects, and work",
     tone: "mint",
     faq: [
       {
@@ -1361,6 +1377,8 @@ export const POSTS: Post[] = [
     tags: ["Templates", "Internships", "Graduates"],
     readingMinutes: 8,
     hero: "bridge",
+    heroImage: "/blog/internship-resume-no-experience-v3.jpg",
+    heroAlt: "A student crossing a resume-shaped bridge of projects and skills toward an internship",
     tone: "sky",
     faq: [
       {
