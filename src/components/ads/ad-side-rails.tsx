@@ -56,11 +56,19 @@ function Rail({ side, slot }: { side: "left" | "right"; slot: string }) {
       <span className="mb-1.5 block text-center text-[10px] uppercase tracking-[0.14em] text-[var(--app-fg-muted)] opacity-60">
         Advertisement
       </span>
+      {/*
+        `minHeight`, never `height`. The AdSense units are RESPONSIVE, so Google
+        picks the creative size from the container's width and sets the final height
+        itself — a hard `height` would clip anything it picks that isn't exactly
+        600px tall. The min just reserves the box so the caption doesn't sit alone
+        while the ad loads. (No CLS risk either way: the rail is `position: fixed`,
+        so it is out of flow and can't shove page content around.)
+      */}
       <AdSlot
         slot={slot}
         format="vertical"
         responsive={false}
-        style={{ width: RAIL_WIDTH_PX, height: RAIL_HEIGHT_PX }}
+        style={{ width: RAIL_WIDTH_PX, minHeight: RAIL_HEIGHT_PX }}
       />
     </aside>
   );

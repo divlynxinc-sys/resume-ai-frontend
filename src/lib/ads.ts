@@ -7,7 +7,10 @@
  *
  * ─── HOW TO FILL IN THE SLOT IDS ──────────────────────────────────────────────
  * AdSense → Ads → "By ad unit" → Display ads → create ONE unit per entry below,
- * shape = Vertical. Google hands back a snippet containing:
+ * shape = **Vertical**, ad size = **Responsive** (NOT Fixed 160×600 — fixed limits
+ * the request to one creative size, and 160×600 has thin demand; responsive lets
+ * the same 160px rail also fill with other vertical sizes). Google hands back a
+ * snippet containing:
  *
  *     data-ad-slot="1234567890"
  *
@@ -17,19 +20,42 @@
  * Until an ID is filled in, `AdSlot` renders nothing at all. That is deliberate:
  * an empty `data-ad-slot` makes AdSense log a TagError and can count against the
  * site during review, so shipping this file with blank IDs is safe.
+ *
+ * ─── WE DEVIATE FROM GOOGLE'S SNIPPET ON TWO ATTRIBUTES — ON PURPOSE ──────────
+ * The snippet Google hands you is written for an in-flow unit of unknown shape:
+ *
+ *     data-ad-format="auto"  data-full-width-responsive="true"
+ *
+ * `AdSlot` is called with `format="vertical"` and `responsive={false}` instead:
+ *
+ *  • **`vertical` not `auto`** — `auto` lets AdSense pick any shape that fits the
+ *    container, including a squat square that would leave two-thirds of a 600px
+ *    rail empty. `vertical` restricts it to tall creatives, which is the whole
+ *    point of a rail. (The `?client=` loader is already in index.html; the extra
+ *    copy in each snippet is redundant and must NOT be added again.)
+ *  • **`full-width-responsive=false`** — that flag makes an ad break out to the
+ *    full viewport width on narrow screens. A rail is 160px and never renders on
+ *    narrow screens anyway, so `true` is at best meaningless and at worst lets an
+ *    ad escape its box.
+ *
+ * Do not "restore" Google's version.
  */
 
 /** Publisher ID. Must match the `client=` param on the loader in index.html. */
 export const ADSENSE_CLIENT = "ca-pub-4075875605329268";
 
 export const AD_SLOTS = {
-  /** Left side rail — vertical/skyscraper display unit. */
-  railLeft: "",
-  /** Right side rail — vertical/skyscraper display unit. */
-  railRight: "",
+  /** Left side rail — responsive vertical display unit, created 2026-07-27. */
+  railLeft: "7661175198",
+  /** Right side rail — responsive vertical display unit, created 2026-07-27. */
+  railRight: "7201744263",
 } as const;
 
-/** Rail box. 160×600 is the classic wide skyscraper; AdSense fills it reliably. */
+/**
+ * Rail box. Width is a hard layout constraint and is what AdSense sizes the
+ * creative from. Height is only a RESERVED MINIMUM — the units are responsive, so
+ * Google sets the real height. See the note in `ad-side-rails.tsx`.
+ */
 export const RAIL_WIDTH_PX = 160;
 export const RAIL_HEIGHT_PX = 600;
 
