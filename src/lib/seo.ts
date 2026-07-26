@@ -53,6 +53,8 @@ export interface SeoOptions {
   updatedAt?: string;
   author?: string;
   tags?: string[];
+  /** Absolute URL or root-relative path for social sharing previews. */
+  image?: string;
   /** One or more JSON-LD objects. Replaced wholesale on every route change. */
   jsonLd?: object[];
 }
@@ -67,6 +69,7 @@ export function useSeo(options: SeoOptions): void {
     updatedAt,
     author,
     tags,
+    image,
     jsonLd,
   } = options;
 
@@ -77,6 +80,11 @@ export function useSeo(options: SeoOptions): void {
 
   useEffect(() => {
     const url = `${SITE_URL}${path}`;
+    const imageUrl = image
+      ? image.startsWith("http")
+        ? image
+        : `${SITE_URL}${image}`
+      : `${SITE_URL}/og-image.png`;
 
     document.title = title;
     upsertMeta("name", "description", description);
@@ -87,10 +95,12 @@ export function useSeo(options: SeoOptions): void {
     upsertMeta("property", "og:url", url);
     upsertMeta("property", "og:type", type);
     upsertMeta("property", "og:site_name", SITE_NAME);
+    upsertMeta("property", "og:image", imageUrl);
 
     upsertMeta("name", "twitter:card", "summary_large_image");
     upsertMeta("name", "twitter:title", title);
     upsertMeta("name", "twitter:description", description);
+    upsertMeta("name", "twitter:image", imageUrl);
 
     if (publishedAt) upsertMeta("property", "article:published_time", publishedAt);
     if (updatedAt) upsertMeta("property", "article:modified_time", updatedAt);
@@ -110,5 +120,5 @@ export function useSeo(options: SeoOptions): void {
       script.textContent = jsonLdKey;
       document.head.appendChild(script);
     }
-  }, [title, description, path, type, publishedAt, updatedAt, author, tagsKey, jsonLdKey]);
+  }, [title, description, path, type, publishedAt, updatedAt, author, tagsKey, image, jsonLdKey]);
 }

@@ -76,8 +76,37 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 function AtsPrinterVisual() {
+  const [stage, setStage] = useState<"feed" | "scan" | "result">("feed");
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setStage("result");
+      return;
+    }
+
+    let scanTimer = 0;
+    let resultTimer = 0;
+    const runCycle = () => {
+      setStage("feed");
+      scanTimer = window.setTimeout(() => setStage("scan"), 1800);
+      resultTimer = window.setTimeout(() => setStage("result"), 3500);
+    };
+
+    runCycle();
+    const cycleTimer = window.setInterval(runCycle, 6400);
+    return () => {
+      window.clearTimeout(scanTimer);
+      window.clearTimeout(resultTimer);
+      window.clearInterval(cycleTimer);
+    };
+  }, []);
+
   return (
-    <div className="ats-printer" role="img" aria-label="Animated resume moving through an ATS scanner and receiving a passing score">
+    <div
+      className={`ats-printer ats-printer--${stage}`}
+      role="img"
+      aria-label="Animated resume moving through an ATS scanner and receiving a passing score"
+    >
       <div className="ats-printer__glow" aria-hidden="true" />
       <div className="ats-printer__meter" aria-hidden="true">
         <span className="ats-printer__brand">RESUME<br />GRADER</span>
@@ -85,8 +114,7 @@ function AtsPrinterVisual() {
         <div className="ats-printer__pulse"><i /><i /><i /></div>
         <div className="ats-printer__lights"><i /><i /><i /><i /></div>
       </div>
-      <div className="ats-printer__body" aria-hidden="true">
-        <div className="ats-printer__back-slot" />
+      <div className="ats-printer__feed" aria-hidden="true">
         <div className="ats-printer__resume">
           <div className="ats-printer__resume-head"><strong>Alex Morgan</strong><span>PRODUCT DESIGNER</span></div>
           <div className="ats-printer__resume-grid">
@@ -95,6 +123,9 @@ function AtsPrinterVisual() {
           </div>
           <span className="ats-printer__scan-line" />
         </div>
+      </div>
+      <div className="ats-printer__body" aria-hidden="true">
+        <div className="ats-printer__back-slot" />
         <div className="ats-printer__top" />
         <div className="ats-printer__console">
           <div className="ats-printer__screen">
@@ -109,8 +140,8 @@ function AtsPrinterVisual() {
           </div>
         </div>
         <div className="ats-printer__output-slot" />
-        <div className="ats-printer__paper"><Check /><strong>ATS READY</strong><span>92 / 100</span><i /><i /></div>
       </div>
+      <div className="ats-printer__paper" aria-hidden="true"><Check /><strong>ATS READY</strong><span>92 / 100</span><i /><i /></div>
     </div>
   );
 }
@@ -251,6 +282,7 @@ export default function AtsCheckerScreen() {
   const [error, setError] = useState<{ message: string; hint?: string } | null>(null);
   const [showPaste, setShowPaste] = useState(false);
   const [confettiRun, setConfettiRun] = useState(0);
+  const [improvementCueRun, setImprovementCueRun] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const scoreRef = useRef<HTMLDivElement>(null);
 
@@ -335,11 +367,15 @@ export default function AtsCheckerScreen() {
   const tooShort = submitted && report === null;
   const confettiRef = useConfettiBurst(confettiRun);
 
-  // Celebrate immediately when analysis completes, then replay once when the
-  // user reaches the score card (which commonly starts below the fold).
+  // Strong results get a celebration. Lower results get a quieter coaching cue
+  // instead, so confetti never rewards a score that still needs meaningful work.
   useEffect(() => {
     if (!report) return;
-    setConfettiRun((run) => run + 1);
+    if (report.score >= 75) {
+      setConfettiRun((run) => run + 1);
+    } else {
+      setImprovementCueRun((run) => run + 1);
+    }
   }, [report]);
 
   useEffect(() => {
@@ -351,7 +387,11 @@ export default function AtsCheckerScreen() {
       ([entry]) => {
         if (entry.isIntersecting && !hasEntered) {
           hasEntered = true;
-          setConfettiRun((run) => run + 1);
+          if (report.score >= 75) {
+            setConfettiRun((run) => run + 1);
+          } else {
+            setImprovementCueRun((run) => run + 1);
+          }
         }
       },
       { threshold: 0.45 }
@@ -597,6 +637,21 @@ export default function AtsCheckerScreen() {
                     {report.checks.filter((check) => check.status === "pass").length} of{" "}
                     {report.checks.length} checks passed · {report.wordCount} words.
                   </p>
+                  {report.score < 75 && (
+                    <div
+                      key={improvementCueRun}
+                      className={`ats-improvement-cue mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
+                        report.score >= 50
+                          ? "bg-[var(--pastel-butter)] text-[#8A6717]"
+                          : "bg-[var(--pastel-rose)] text-[#A44263]"
+                      }`}
+                    >
+                      <Sparkles className="size-3.5" aria-hidden="true" />
+                      {report.score >= 50
+                        ? "Your priority fixes are ready below."
+                        : "Start with the critical fixes below."}
+                    </div>
+                  )}
                 </div>
               </div>
 

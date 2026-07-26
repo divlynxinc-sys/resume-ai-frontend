@@ -75,6 +75,9 @@ export interface Post {
   tags: string[];
   readingMinutes: number;
   hero: ArtKey;
+  /** Topic-specific editorial illustration used by cards, article heroes, and social previews. */
+  heroImage: string;
+  heroAlt: string;
   /** Pastel accent used by the card + hero. */
   tone: CalloutTone;
   body: Block[];
