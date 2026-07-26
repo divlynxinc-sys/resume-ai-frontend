@@ -4,6 +4,7 @@ import { ArrowRight, PenLine } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import AdSideRails from "../ads/ad-side-rails";
+import AdInline from "../ads/ad-inline";
 import { POSTS_BY_DATE } from "@/content/blog/posts";
 import { blogIndexSchema } from "@/content/blog/schema";
 import { formatPostDate } from "@/content/blog/render";
@@ -213,6 +214,8 @@ export default function BlogScreen() {
             </p>
           </div>
         </section>
+
+        <AdInline className="max-w-[1100px] px-6 pb-10" />
 
         <section className="mx-auto max-w-[1100px] px-6 pb-24">
           <div

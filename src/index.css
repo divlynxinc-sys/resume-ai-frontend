@@ -570,3 +570,21 @@ html.light ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.18);
   .ats-printer__resume, .ats-printer__paper { transition: none; }
   .ats-printer__needle { transform: rotate(48deg); }
 }
+
+/* ─── AdSense rails ──────────────────────────────────────────────────────────
+   When Google has no ad to serve it stamps data-ad-status="unfilled" on the <ins>
+   but does NOT reliably collapse it. Left alone that is a 160x600 WHITE SLAB on a
+   dark page — which looks broken, and (with the "Advertisement" caption still sat
+   above it) reads as a label with nothing under it.
+
+   So: hide the <ins>, and hide the whole rail including its caption. The rails are
+   position:fixed and out of flow, so collapsing them shifts nothing.
+
+   `:has()` is the point of the [data-ad-rail] hook in ad-side-rails.tsx — don't
+   remove that attribute. */
+ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
+[data-ad-rail]:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
+/* Same for the in-flow unit. This one matters MORE: it is in the document flow,
+   so an unfilled-but-reserved 280px box leaves a hole in the middle of an
+   article. Collapsing it closes the hole. */
+[data-ad-inline]:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }

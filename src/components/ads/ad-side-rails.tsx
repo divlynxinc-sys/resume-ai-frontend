@@ -48,6 +48,10 @@ export default function AdSideRails({
 function Rail({ side, slot }: { side: "left" | "right"; slot: string }) {
   return (
     <aside
+      // `data-ad-rail` is the hook the `:has()` rule in index.css uses to collapse
+      // the whole rail — caption included — when Google returns no ad. Removing it
+      // brings back the white slab.
+      data-ad-rail={side}
       role="complementary"
       aria-label="Advertisement"
       className={`fixed top-[88px] z-20 ${side === "left" ? "left-6" : "right-6"}`}

@@ -17,6 +17,8 @@ import {
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import AdSideRails from "../ads/ad-side-rails";
+import AdInline from "../ads/ad-inline";
+import { railBreakpointFor } from "@/lib/ads";
 import { analyzeResume, type AtsCheck, type AtsReport, type CheckStatus } from "@/lib/ats-check";
 import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-extract";
 import { downloadScoreCard, shareText } from "@/lib/share-card";
@@ -442,6 +444,12 @@ export default function AtsCheckerScreen() {
           </div>
         </section>
 
+        {/* Above the uploader, but ONLY below the rail breakpoint — this is the
+            narrow-screen stand-in for the side rails, which cannot physically fit
+            under ~1584px here. Above that width the rails already occupy this
+            position and a third simultaneous ad would be the only result. */}
+        <AdInline maxViewport={railBreakpointFor(1152)} className="max-w-3xl px-6 pb-8" />
+
         {/* The tool */}
         <section className="relative mx-auto max-w-3xl px-6 pb-16">
           <div className="relative rounded-2xl border border-[var(--accent)]/25 bg-[var(--app-surface)] p-5 shadow-[0_18px_45px_color-mix(in_srgb,var(--accent)_10%,transparent),var(--shadow-soft)] ring-1 ring-[var(--accent)]/5 sm:p-7">
@@ -748,6 +756,10 @@ export default function AtsCheckerScreen() {
             </div>
           )}
         </section>
+
+        {/* Deliberately BELOW the tool, never above it. Nothing goes between a
+            visitor and the free check — that ungated result is the product. */}
+        <AdInline className="max-w-3xl px-6 pb-12" />
 
         {/* Content layer — this is what makes the page rank */}
         <section className="mx-auto max-w-3xl px-6 pb-20">

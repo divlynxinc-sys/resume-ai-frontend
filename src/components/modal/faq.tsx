@@ -4,6 +4,7 @@ import { ChevronDown, HelpCircle, Mail, MessageCircle, Search } from "lucide-rea
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import AdSideRails from "../ads/ad-side-rails";
+import AdInline from "../ads/ad-inline";
 import { FAQ_PAGE_ITEMS as FAQ_ITEMS } from "@/content/site-faq";
 
 function FAQItem({
@@ -107,6 +108,8 @@ export default function FAQScreen() {
             </div>
           </div>
         </section>
+
+        <AdInline className="max-w-3xl px-6 pb-10" />
 
         <section className="mx-auto max-w-3xl px-6 pb-20">
           <div className="space-y-3">

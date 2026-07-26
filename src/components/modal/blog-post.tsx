@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Clock, RefreshCw } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
 import AdSideRails from "../ads/ad-side-rails";
+import AdInline from "../ads/ad-inline";
 import { getPost, relatedPosts } from "@/content/blog/posts";
 import {
   formatPostDate,
@@ -61,6 +62,10 @@ function ArticleBody({ post }: { post: Post }) {
   return (
     <>
       <div dangerouslySetInnerHTML={{ __html: renderTocHtml(post) }} />
+      {/* Between the table of contents and the body: high viewability, and it
+          costs nothing to the render pipeline (render.ts stays the ONE renderer —
+          this sits outside the injected HTML, so the prerenderer is unaffected). */}
+      <AdInline className="py-8" />
       <div dangerouslySetInnerHTML={{ __html: renderPostBodyHtml(post) }} />
       <div dangerouslySetInnerHTML={{ __html: renderPostFaqHtml(post) }} />
     </>
