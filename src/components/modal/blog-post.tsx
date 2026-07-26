@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Clock, RefreshCw } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
+import AdSideRails from "../ads/ad-side-rails";
 import { getPost, relatedPosts } from "@/content/blog/posts";
 import { renderArt } from "@/content/blog/art";
 import {
@@ -105,6 +106,9 @@ export default function BlogPostScreen() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
+
+      {/* Article column is max-w-3xl — the narrowest page, so rails appear earliest here. */}
+      <AdSideRails contentWidthPx={768} />
 
       <main>
         <article className="mx-auto max-w-3xl px-6 pb-20 pt-10 sm:pt-14">

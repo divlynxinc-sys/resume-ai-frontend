@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, PenLine } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
+import AdSideRails from "../ads/ad-side-rails";
 import { POSTS_BY_DATE } from "@/content/blog/posts";
 import { renderArt } from "@/content/blog/art";
 import { blogIndexSchema } from "@/content/blog/schema";
@@ -173,6 +174,9 @@ export default function BlogScreen() {
   return (
     <div className="landing-page min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
+
+      {/* Post grid is max-w-[1100px]. */}
+      <AdSideRails contentWidthPx={1100} />
 
       <main>
         <section className="relative overflow-hidden px-6 pb-12 pt-14 text-center sm:pt-20">

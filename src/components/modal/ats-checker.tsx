@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
+import AdSideRails from "../ads/ad-side-rails";
 import { analyzeResume, type AtsCheck, type AtsReport, type CheckStatus } from "@/lib/ats-check";
 import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-extract";
 import { downloadScoreCard, shareText } from "@/lib/share-card";
@@ -362,6 +363,9 @@ export default function AtsCheckerScreen() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar marketingMode />
+
+      {/* Widest container on this page is the max-w-6xl hero below. */}
+      <AdSideRails contentWidthPx={1152} />
 
       <canvas
         ref={confettiRef}

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, HelpCircle, Mail, MessageCircle, Search } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
+import AdSideRails from "../ads/ad-side-rails";
 import { FAQ_PAGE_ITEMS as FAQ_ITEMS } from "@/content/site-faq";
 
 function FAQItem({
@@ -67,6 +68,9 @@ export default function FAQScreen() {
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
       <SiteNavbar />
+
+      {/* Content column is max-w-3xl. */}
+      <AdSideRails contentWidthPx={768} />
 
       <main>
         <section className="relative overflow-hidden px-6 pb-14 pt-16 text-center sm:pt-20">
