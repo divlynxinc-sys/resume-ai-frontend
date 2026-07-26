@@ -588,3 +588,28 @@ ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
    so an unfilled-but-reserved 280px box leaves a hole in the middle of an
    article. Collapsing it closes the hole. */
 [data-ad-inline]:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
+
+/* ─── Reveal only on FILL ────────────────────────────────────────────────────
+   The collapse rules above run when Google ANSWERS. Between the push and that
+   answer there is a several-hundred-ms window where the ad iframe is already in
+   the page rendering its own white background — so on a dark page the sequence a
+   visitor actually saw was: white slab appears -> Google says "no ad" -> slab
+   vanishes. A flash of white, then a jump. Worse than either end state.
+
+   So ad wrappers start transparent and are revealed only once AdSense reports
+   data-ad-status="filled". Unfilled still collapses (rules above), so the three
+   states are: pending = invisible but reserved, filled = fades in, unfilled = gone.
+
+   Do NOT "simplify" this to display:none while pending — the <ins> must keep a
+   real width or AdSense records availableWidth=0 and blanks the slot forever. */
+[data-ad-rail],
+[data-ad-inline] { opacity: 0; transition: opacity 180ms ease-out; }
+
+[data-ad-rail]:has(ins.adsbygoogle[data-ad-status="filled"]),
+[data-ad-inline]:has(ins.adsbygoogle[data-ad-status="filled"]) { opacity: 1; }
+
+/* Dev placeholders are a <div>, not an <ins>, so the fill rule can never match
+   them. Without this they would be invisible on localhost — the exact confusion
+   the placeholder exists to prevent. */
+[data-ad-rail]:not(:has(ins.adsbygoogle)),
+[data-ad-inline]:not(:has(ins.adsbygoogle)) { opacity: 1; }
