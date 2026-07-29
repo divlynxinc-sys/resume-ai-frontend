@@ -10,6 +10,7 @@
 // it is both true and a differentiator.
 
 import type { Author, Post } from "./types";
+import { NEW_POSTS } from "./new-posts";
 
 const TEAM: Author = {
   name: "The Jobsynk AI Team",
@@ -18,6 +19,7 @@ const TEAM: Author = {
 };
 
 export const POSTS: Post[] = [
+  ...NEW_POSTS,
   // ───────────────────────────────────────────────────────────────────────────
   {
     slug: "ats-resume-format",

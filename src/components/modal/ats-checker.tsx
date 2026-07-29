@@ -906,7 +906,7 @@ export default function AtsCheckerScreen() {
         </section>
       </main>
 
-      <SiteFooter />
+      {!isAuthenticated && <SiteFooter />}
       </AtsPageShell>
     </div>
   );
