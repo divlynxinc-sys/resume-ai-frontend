@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Plus,
   Search,
+  ScanSearch,
   Mail,
   BotMessageSquare,
   MicVocal,
@@ -110,6 +111,7 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
         <NavItem icon={<Home className="size-4" />} label="Dashboard" route="dashboard" active={current === "dashboard"} collapsed={collapsed} />
         <NavItem icon={<FileText className="size-4" />} label="My Resumes" route="my-resumes" active={current === "my-resumes"} collapsed={collapsed} />
         <NavItem icon={<LayoutGrid className="size-4" />} label="Templates" route="templates" active={current === "templates"} collapsed={collapsed} />
+        <NavItem icon={<ScanSearch className="size-4" />} label="ATS Checker" route="ats-checker" active={current === "ats-checker"} collapsed={collapsed} />
         <NavItem
           icon={<Mail className="size-4" />}
           label="Cover Letter"

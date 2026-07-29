@@ -41,9 +41,13 @@ function extensionOf(name: string): string {
 }
 
 async function extractPdf(file: File): Promise<ExtractResult> {
+  // Use PDF.js's compatibility build here rather than the modern build. Mobile
+  // browsers and in-app WebViews can lag on features such as
+  // Promise.withResolvers; the legacy bundle supplies the required polyfills.
+  // Its worker must come from the same build so both halves stay in sync.
   const [pdfjs, worker] = await Promise.all([
-    import("pdfjs-dist"),
-    import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+    import("pdfjs-dist/legacy/build/pdf.mjs"),
+    import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url"),
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
 

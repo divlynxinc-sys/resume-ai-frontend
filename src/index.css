@@ -131,6 +131,14 @@ body {
   color: var(--app-fg);
 }
 
+/* Keep native select menus readable in both themes. Some browsers do not
+   apply the select element's themed background to its option popup. */
+select option,
+select optgroup {
+  background-color: var(--app-surface);
+  color: var(--app-fg);
+}
+
 /* ── Light mode: legacy dark-style overrides → soft pastel ────────────────── */
 /* The codebase was originally dark; many components hardcode text-white,
    bg-white/10, bg-[#0f1629], etc. These rules retro-fit them to the new palette. */
