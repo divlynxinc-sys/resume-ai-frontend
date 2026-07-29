@@ -882,7 +882,7 @@ export default function LandingPageScreen() {
       </div>
 
       <div className="mt-24">
-        <PricingSection showPlanActions={false} />
+        <PricingSection />
       </div>
 
       {/* Blog — sits after pricing so it catches visitors who aren't ready to buy

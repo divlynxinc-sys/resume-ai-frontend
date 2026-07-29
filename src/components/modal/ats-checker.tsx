@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,6 +26,7 @@ import { faqPageSchema, organizationSchema, SITE_URL } from "@/content/blog/sche
 import { ATS_CHECKER_FAQ as FAQ } from "@/content/site-faq";
 import { useSeo } from "@/lib/seo";
 import { useConfettiBurst } from "@/hooks/use-confetti-burst";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * The free, ungated ATS checker.
@@ -274,6 +275,8 @@ function ShareRow({ report }: { report: AtsReport }) {
 }
 
 export default function AtsCheckerScreen() {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [resume, setResume] = useState("");
   const [jd, setJd] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -283,10 +286,12 @@ export default function AtsCheckerScreen() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<{ message: string; hint?: string } | null>(null);
   const [showPaste, setShowPaste] = useState(false);
+  const [showImprovePrompt, setShowImprovePrompt] = useState(false);
   const [confettiRun, setConfettiRun] = useState(0);
   const [improvementCueRun, setImprovementCueRun] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const scoreRef = useRef<HTMLDivElement>(null);
+  const promptedForCurrentCheck = useRef(false);
 
   const reset = () => {
     setResume("");
@@ -295,7 +300,12 @@ export default function AtsCheckerScreen() {
     setError(null);
     setSubmitted(false);
     setShowPaste(false);
+    setShowImprovePrompt(false);
     if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const startResumeBuilder = () => {
+    navigate(isAuthenticated ? "/templates" : "/login?next=/templates");
   };
 
   const handleFile = useCallback(async (file: File) => {
@@ -369,6 +379,17 @@ export default function AtsCheckerScreen() {
   const tooShort = submitted && report === null;
   const confettiRef = useConfettiBurst(confettiRun);
 
+  useEffect(() => {
+    if (!submitted) {
+      promptedForCurrentCheck.current = false;
+      return;
+    }
+    if (report && !promptedForCurrentCheck.current) {
+      promptedForCurrentCheck.current = true;
+      setShowImprovePrompt(true);
+    }
+  }, [submitted, report]);
+
   // Strong results get a celebration. Lower results get a quieter coaching cue
   // instead, so confetti never rewards a score that still needs meaningful work.
   useEffect(() => {
@@ -404,7 +425,7 @@ export default function AtsCheckerScreen() {
 
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
-      <SiteNavbar marketingMode />
+      {!isAuthenticated && !authLoading && <SiteNavbar marketingMode />}
 
       {/* Widest container on this page is the max-w-6xl hero below. */}
       <AdSideRails contentWidthPx={1152} />
@@ -414,6 +435,56 @@ export default function AtsCheckerScreen() {
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-50"
       />
+
+      {showImprovePrompt && report && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="improve-resume-title"
+          onClick={() => setShowImprovePrompt(false)}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[var(--accent)]/25 bg-[var(--app-surface)] p-6 shadow-[var(--shadow-pop)] sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowImprovePrompt(false)}
+              aria-label="Close improvement prompt"
+              className="absolute right-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--app-fg-soft)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
+            >
+              <X className="size-4" />
+            </button>
+            <span className="grid size-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]">
+              <Sparkles className="size-6" />
+            </span>
+            <h2 id="improve-resume-title" className="mt-5 font-display text-2xl font-light text-[var(--app-fg)]">
+              Turn your score into a stronger resume
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--app-fg-muted)]">
+              You scored {report.score}/100. Start with an ATS-friendly template and use the resume builder to apply the improvements.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowImprovePrompt(false)}
+                className="h-11 rounded-lg border border-[var(--app-border-strong)] px-5 text-sm font-medium text-[var(--app-fg-muted)] transition-colors hover:bg-[var(--app-surface-2)] hover:text-[var(--app-fg)]"
+              >
+                Review my results
+              </button>
+              <button
+                type="button"
+                onClick={startResumeBuilder}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-semibold text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)]"
+              >
+                Improve my resume
+                <ArrowRight className="size-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main>
         <section className="relative overflow-hidden px-6 pb-12 pt-10 sm:pb-16 sm:pt-16">
@@ -729,13 +800,14 @@ export default function AtsCheckerScreen() {
                     <p className="mt-2 max-w-md text-sm leading-7 text-[var(--app-fg-muted)]">
                       Start with a professional template, add your experience, and create a resume that is ready to tailor for every role.
                     </p>
-                    <Link
-                      to="/"
+                    <button
+                      type="button"
+                      onClick={startResumeBuilder}
                       className="mt-5 inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-semibold text-[var(--btn-primary-text)] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[var(--btn-primary-hover)] hover:shadow-md"
                     >
                       Create my resume
                       <ArrowRight className="size-4" />
-                    </Link>
+                    </button>
                   </div>
 
                   <div className="relative mx-auto h-44 w-40" aria-hidden="true">
