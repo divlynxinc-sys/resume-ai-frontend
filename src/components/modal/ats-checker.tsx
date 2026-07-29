@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import SiteFooter from "../layout/site-footer";
+import PageWithSidebar from "../layout/page-with-sidebar";
 import AdSideRails from "../ads/ad-side-rails";
 import AdInline from "../ads/ad-inline";
 import { railBreakpointFor } from "@/lib/ads";
@@ -46,6 +47,20 @@ const STATUS_STYLE: Record<CheckStatus, { icon: typeof Check; tint: string; text
   warn: { icon: AlertTriangle, tint: "var(--pastel-butter)", text: "text-[#A07820]", label: "Could be better" },
   fail: { icon: X, tint: "var(--pastel-rose)", text: "text-[#B85273]", label: "Needs fixing" },
 };
+
+function AtsPageShell({ authenticated, children }: { authenticated: boolean; children: ReactNode }) {
+  if (!authenticated) return <>{children}</>;
+
+  return (
+    <PageWithSidebar
+      activeRoute="ats-checker"
+      navbarOffset={false}
+      mainClassName="!px-0 !py-0"
+    >
+      {children}
+    </PageWithSidebar>
+  );
+}
 
 function ScoreRing({ score }: { score: number }) {
   const radius = 54;
@@ -486,6 +501,7 @@ export default function AtsCheckerScreen() {
         </div>
       )}
 
+      <AtsPageShell authenticated={isAuthenticated}>
       <main>
         <section className="relative overflow-hidden px-6 pb-12 pt-10 sm:pb-16 sm:pt-16">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -891,6 +907,7 @@ export default function AtsCheckerScreen() {
       </main>
 
       <SiteFooter />
+      </AtsPageShell>
     </div>
   );
 }

@@ -14,11 +14,14 @@ export default function PageWithSidebar({
   activeRoute,
   mainClassName,
   defaultOpen = true,
+  navbarOffset = true,
 }: {
   children: ReactNode;
   activeRoute?: string;
   mainClassName?: string;
   defaultOpen?: boolean;
+  /** Set false when the page intentionally omits the 64px app navbar. */
+  navbarOffset?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(() => {
     try {
@@ -71,10 +74,12 @@ export default function PageWithSidebar({
   }, [mobileOpen]);
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className={`flex ${navbarOffset ? "min-h-[calc(100vh-64px)]" : "min-h-screen"}`}>
       {/* Fixed sidebar — desktop only; mobile uses the drawer below */}
       <div
-        className={`hidden md:block fixed top-[64px] left-0 h-[calc(100vh-64px)] z-40 transition-all duration-300 ease-in-out ${isOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_COLLAPSED_WIDTH} overflow-hidden`}
+        className={`hidden md:block fixed left-0 z-40 transition-all duration-300 ease-in-out ${
+          navbarOffset ? "top-[64px] h-[calc(100vh-64px)]" : "top-0 h-screen"
+        } ${isOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_COLLAPSED_WIDTH} overflow-hidden`}
       >
         <div className={`app-sidebar-scroll ${isOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_COLLAPSED_WIDTH} h-full overflow-auto transition-all duration-300 ease-in-out`}>
           <Sidebar activeRoute={activeRoute} collapsed={!isOpen} />
