@@ -29,6 +29,43 @@ export const ATS_CHECKER_FAQ: FaqEntry[] = [
   },
 ];
 
+/**
+ * `/` — rendered by the landing page's FAQ accordion, emitted as FAQPage JSON-LD
+ * by BOTH the page's `useSeo()` and the prerenderer. Both must call
+ * `faqPageSchema(HOME_FAQ)` with no `path` argument, or a crawler and a browser
+ * see different structured data for the same URL.
+ *
+ * These are deliberately the questions someone asks an answer engine, not the
+ * questions a marketing team wishes they asked — a page only gets quoted if it
+ * answers the question in the words it was asked.
+ */
+export const HOME_FAQ: FaqEntry[] = [
+  {
+    q: "Is Jobsynk free?",
+    a: "The resume builder, the Classic Professional template and the ATS checker are free, and the free plan stays free — no card is required to start. Paid plans unlock every other template plus the AI cover letters, interview answers and recruiter emails.",
+  },
+  {
+    q: "What makes a resume ATS-friendly?",
+    a: "A layout a parser can read without guessing: one column, real selectable text rather than an image or a scan, standard section headings like Experience and Education, a date range on every role, and no tables or text boxes holding your content. Good design is not the problem — layout that hides text from a parser is.",
+  },
+  {
+    q: "Does an ATS score my resume?",
+    a: "No. An applicant tracking system is a database that parses your resume into fields so a recruiter can search it; there is no score a hiring team sees, and any tool implying otherwise is inventing the number. What can be measured is whether your resume parses cleanly and reads well, which is what the Jobsynk checker scores out of 100.",
+  },
+  {
+    q: "How do I tailor a resume to a job description?",
+    a: "Work from the posting, not from your resume. Pull out the competencies it repeats, the tools it names and the outcomes it asks for, then make sure each one appears in your resume in the same words — a recruiter's search matches literal terms, not synonyms. Paste both into the Jobsynk ATS checker and it will name the job's vocabulary your resume never uses.",
+  },
+  {
+    q: "Does Jobsynk write my resume for me?",
+    a: "It drafts; you edit. Cover letters, interview answers and recruiter emails are generated from your resume and the job description together, and every one of them is editable before it leaves the app. You should edit them — the specifics only you know are what make a line worth reading.",
+  },
+  {
+    q: "Is my resume uploaded anywhere?",
+    a: "The ATS checker never uploads anything: your file is parsed inside your browser, which is also why it needs no account. Resumes you deliberately save to a Jobsynk account are stored on our servers so you can come back and edit them — see the Privacy and Security pages for how that data is handled.",
+  },
+];
+
 /** /faq — rendered by `faq.tsx`, emitted as FAQPage JSON-LD by the prerenderer only. */
 export const FAQ_PAGE_ITEMS = [
   {

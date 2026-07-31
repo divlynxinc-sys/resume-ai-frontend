@@ -51,6 +51,13 @@ html.light {
   --pastel-rose:     #FCE0E5;
   --pastel-sky:      #DDEFFA;
 
+  /* Status ink. Paired with the pastel tints above — the tint is the same in
+     both themes but the ink is not, because #B85273 on a near-black surface
+     fails contrast. Set once here so status chips never hardcode a hex. */
+  --tone-reject: #B85273;
+  --tone-win:    #3F8E5C;
+  --tone-warn:   #A07820;
+
   /* Button tokens */
   --btn-primary-bg:        var(--accent);
   --btn-primary-hover:     var(--accent-hover);
@@ -102,6 +109,10 @@ html.dark {
   --pastel-butter:   rgba(255, 244, 209, 0.14);
   --pastel-rose:     rgba(252, 224, 229, 0.14);
   --pastel-sky:      rgba(221, 239, 250, 0.14);
+
+  --tone-reject: #F0A2B5;
+  --tone-win:    #86D6A2;
+  --tone-warn:   #E3C46A;
 
   --btn-primary-bg:        var(--accent);
   --btn-primary-hover:     var(--accent-hover);
@@ -496,6 +507,45 @@ html.light ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.18);
     transform: none;
     transition: none;
   }
+}
+
+/* ── Landing page surface treatments ──────────────────────────────────────── */
+/* The rest of the landing motion is Framer Motion (`components/landing/`).
+   What lives here is the stuff CSS does better: page texture and an infinite
+   marquee, neither of which should cost a JS frame. */
+
+/* Hairline engineering grid behind the hero. Masked to an ellipse so it never
+   reaches an edge — a grid that touches the viewport border reads as a bug. */
+.landing-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--app-fg) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--app-fg) 5%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 38%, #000 0%, transparent 76%);
+  mask-image: radial-gradient(ellipse 62% 58% at 50% 38%, #000 0%, transparent 76%);
+}
+
+/* Full-bleed ticker of the ten ATS checks. Duplicated track + -50% travel =
+   seamless loop; hovering pauses it so the text stays readable. */
+@keyframes landingTicker {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.landing-ticker__track {
+  animation: landingTicker 60s linear infinite;
+  will-change: transform;
+}
+
+.landing-ticker:hover .landing-ticker__track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-ticker__track { animation: none; }
 }
 
 /* ATS checker hero — a code-drawn resume scanner, with no media dependency. */

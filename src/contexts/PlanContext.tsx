@@ -299,7 +299,7 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-emerald-500">✓</span>
-            <span>AI-generated cover letters and HR email drafts</span>
+            <span>AI cover letters and recruiter outreach emails</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-0.5 text-emerald-500">✓</span>
@@ -308,8 +308,8 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
         </ul>
         {isLaunchOfferActive() && (
           <p className="mt-4 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-sm font-medium">
-            🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans — applied
-            automatically at checkout.
+            🎉 {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off every plan — applied
+            automatically at checkout, no code needed.
           </p>
         )}
         <div className="mt-6 flex justify-end gap-3">

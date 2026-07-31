@@ -542,12 +542,12 @@ export default function QAAnswersScreen() {
     }
 
     if (fmt === "docx") {
-      const html = buildTextHtml("Q&A Prep", output, { wordCompat: true });
+      const html = buildTextHtml("Interview Answers", output, { wordCompat: true });
       saveBlob(new Blob(["﻿", html], { type: "application/msword" }), `${baseName}.doc`);
       return;
     }
 
-    const html = buildTextHtml("Q&A Prep", output, { wordCompat: false });
+    const html = buildTextHtml("Interview Answers", output, { wordCompat: false });
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
     const body = wrapper.querySelector("body");
@@ -586,7 +586,7 @@ export default function QAAnswersScreen() {
                 AI Prep
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
-                Q&amp;A <span className="italic">Prep</span>
+                Interview <span className="italic">answers</span>
               </h1>
               <p className="text-[var(--app-fg-muted)] mt-2 text-sm max-w-xl">
                 Generate tailored interview answers grounded in your resume and the job description.
@@ -665,7 +665,7 @@ export default function QAAnswersScreen() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-[var(--app-fg)]">Number of Q&amp;A items</div>
+                    <div className="text-sm font-medium text-[var(--app-fg)]">Number of answers</div>
                     <div className="text-xs text-[var(--app-fg-soft)]">{questionCount}</div>
                   </div>
                   <input
@@ -774,7 +774,7 @@ export default function QAAnswersScreen() {
                       <div className="size-12 grid place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] mb-4">
                         <HelpCircle className="size-5" />
                       </div>
-                      <div className="text-sm font-medium text-[var(--app-fg)]">Your Q&amp;A will appear here</div>
+                      <div className="text-sm font-medium text-[var(--app-fg)]">Your answers will appear here</div>
                       <div className="text-xs text-[var(--app-fg-muted)] mt-1.5 max-w-xs">
                         Pick a resume, paste the job description, and click Generate.
                       </div>

@@ -239,7 +239,7 @@ writeFileSync(
 export { POSTS_BY_DATE } from "../src/content/blog/posts";
 export { renderPostBodyHtml, renderPostFaqHtml, renderTocHtml, countWords, formatPostDate } from "../src/content/blog/render";
 export { postSchema, blogIndexSchema, organizationSchema, websiteSchema, softwareApplicationSchema, faqPageSchema } from "../src/content/blog/schema";
-export { ATS_CHECKER_FAQ, FAQ_PAGE_ITEMS } from "../src/content/site-faq";
+export { ATS_CHECKER_FAQ, FAQ_PAGE_ITEMS, HOME_FAQ } from "../src/content/site-faq";
 `,
   "utf8"
 );
@@ -269,6 +269,7 @@ const {
   faqPageSchema,
   ATS_CHECKER_FAQ,
   FAQ_PAGE_ITEMS,
+  HOME_FAQ,
   countWords,
   formatPostDate: formatDate,
 } = await import(pathToFileURL(contentBundle).href);
@@ -386,10 +387,18 @@ const MARKETING = {
     title: "Jobsynk AI — AI Resume Builder, ATS-Friendly Templates & Cover Letters",
     description:
       "Build an ATS-friendly resume free, tailor it to any job description, and generate cover letters, interview answers and recruiter emails with AI.",
+    // Mirrors the graph `landing-page.tsx` emits from useSeo() — same nodes, same
+    // order, and faqPageSchema() called with no `path` on both sides. A crawler
+    // and a browser must not see different structured data for the same URL.
     jsonLd: [
       {
         "@context": "https://schema.org",
-        "@graph": [organizationSchema(), websiteSchema(), softwareApplicationSchema()],
+        "@graph": [
+          organizationSchema(),
+          websiteSchema(),
+          softwareApplicationSchema(),
+          faqPageSchema(HOME_FAQ),
+        ],
       },
     ],
   },

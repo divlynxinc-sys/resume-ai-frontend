@@ -22,6 +22,7 @@ import AdInline from "../ads/ad-inline";
 import { railBreakpointFor } from "@/lib/ads";
 import { analyzeResume, type AtsCheck, type AtsReport, type CheckStatus } from "@/lib/ats-check";
 import { ACCEPTED_TYPES, ExtractError, extractResumeText } from "@/lib/resume-extract";
+import { takePendingAtsFile } from "@/lib/pending-ats-file";
 import { downloadScoreCard, shareText } from "@/lib/share-card";
 import { faqPageSchema, organizationSchema, SITE_URL } from "@/content/blog/schema";
 import { ATS_CHECKER_FAQ as FAQ } from "@/content/site-faq";
@@ -357,6 +358,13 @@ export default function AtsCheckerScreen() {
     },
     [handleFile]
   );
+
+  // The landing-page hero's drop-zone stashes its file in the hand-off slot
+  // before navigating here; run it as if it were dropped on this page.
+  useEffect(() => {
+    const pending = takePendingAtsFile();
+    if (pending) void handleFile(pending);
+  }, [handleFile]);
 
   useSeo({
     title: "Free ATS Resume Checker — No Signup | Jobsynk",

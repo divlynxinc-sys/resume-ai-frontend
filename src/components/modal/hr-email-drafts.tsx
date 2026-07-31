@@ -542,12 +542,12 @@ export default function HREmailDraftsScreen() {
     }
 
     if (fmt === "docx") {
-      const html = buildTextHtml("HR Email Drafts", output, { wordCompat: true });
+      const html = buildTextHtml("Recruiter Outreach", output, { wordCompat: true });
       saveBlob(new Blob(["﻿", html], { type: "application/msword" }), `${baseName}.doc`);
       return;
     }
 
-    const html = buildTextHtml("HR Email Drafts", output, { wordCompat: false });
+    const html = buildTextHtml("Recruiter Outreach", output, { wordCompat: false });
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
     const body = wrapper.querySelector("body");
@@ -586,7 +586,7 @@ export default function HREmailDraftsScreen() {
                 AI Writer
               </div>
               <h1 className="font-display text-3xl md:text-4xl font-light tracking-tight text-[var(--app-fg)] mt-1.5">
-                HR <span className="italic">email drafts</span>
+                Recruiter <span className="italic">outreach</span>
               </h1>
               <p className="text-[var(--app-fg-muted)] mt-2 text-sm max-w-xl">
                 Generate recruiter-ready emails for applications, follow-ups, thank-yous, scheduling, and more.

@@ -125,25 +125,25 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
         />
         <NavItem
           icon={<Edit2 className="size-4" />}
-          label="HR Email Drafts"
+          label="Recruiter Outreach"
           route="hr-email-drafts"
           active={current === "hr-email-drafts"}
           collapsed={collapsed}
           premium
           paidPlanActive={isPaid}
           locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("HR email drafts are a Pro feature. Upgrade to generate recruiter-ready emails for every application.")}
+          onLockedClick={() => openUpgradeModal("Recruiter outreach is a Pro feature. Upgrade to draft emails recruiters actually answer.")}
         />
         <NavItem
           icon={<MessagesSquare className="size-4" />}
-          label="Q&A Prep"
+          label="Interview Answers"
           route="qa-answers"
           active={current === "qa-answers"}
           collapsed={collapsed}
           premium
           paidPlanActive={isPaid}
           locked={!isPaid}
-          onLockedClick={() => openUpgradeModal("Q&A Prep is a Pro feature. Upgrade to generate tailored interview answers for your target roles.")}
+          onLockedClick={() => openUpgradeModal("Interview Answers is a Pro feature. Upgrade to generate tailored answers for interviews and screening questions.")}
         />
         <NavItem
           icon={<BotMessageSquare className="size-4" />}

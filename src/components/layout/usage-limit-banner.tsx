@@ -6,8 +6,8 @@ import { usePlan, useMinPlanPrice } from "@/contexts/PlanContext";
 const FEATURE_LABELS: Record<string, string> = {
   resume_ai: "AI resume optimization",
   cover_letter: "cover letter generation",
-  qa_answers: "Q&A answer generation",
-  hr_email: "HR email drafts",
+  qa_answers: "interview answer generation",
+  hr_email: "recruiter outreach emails",
 };
 
 function resetHint(resetsAt: string | null): string {

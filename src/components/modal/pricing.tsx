@@ -187,20 +187,20 @@ type PlanData = {
 };
 
 const FEATURE_LIST = [
-  "AI-tailored resumes",
-  "AI-tailored cover letters",
-  "HR email drafts",
-  "Q&A Prep",
-  "ATS optimization insights",
+  "AI resume tailoring",
+  "Cover letters in your voice",
+  "Recruiter outreach emails",
+  "Interview answer prep",
+  "All templates + ATS insights",
 ];
 
 const defaultPlans: PlanData[] = [
   {
     title: "Weekly",
     slug: "weekly",
-    price: "$14.99",
+    price: "$12.99",
     subtitle: "/ week",
-    blurb: "Try the full toolkit on a short-term sprint.",
+    blurb: "One focused week of the full toolkit.",
     button: "Get Weekly",
     features: FEATURE_LIST,
     trialNote: "1-day money-back guarantee",
@@ -208,7 +208,7 @@ const defaultPlans: PlanData[] = [
   {
     title: "Monthly",
     slug: "monthly",
-    price: "$35.99",
+    price: "$29.99",
     subtitle: "/ month",
     blurb: "Best for an active job search across many roles.",
     button: "Get Monthly",
@@ -220,7 +220,7 @@ const defaultPlans: PlanData[] = [
   {
     title: "3 months",
     slug: "three_months",
-    price: "$79.99",
+    price: "$64.99",
     subtitle: "/ 3 months",
     blurb: "Best value for a longer search — save vs monthly.",
     button: "Get 3 months",
@@ -338,14 +338,15 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
         Pick a plan, <span className="italic">land the role.</span>
       </h1>
       <p className="mt-5 max-w-2xl mx-auto text-[var(--app-fg-muted)] leading-relaxed">
-        Pick a plan to add AI-generated resumes, cover letters, emails, and Q&amp;A Prep to each application.
+        The resume builder and ATS checker are free forever. A plan unlocks the AI toolkit —
+        tailoring, cover letters, recruiter outreach, and interview answers — plus every template.
       </p>
       {offerActive && (
         <div
           className="mt-6 inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
           style={{ color: "var(--app-fg)" }}
         >
-          {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off all plans, already applied at checkout.
+          {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off every plan — applied automatically at checkout, no code needed.
         </div>
       )}
 
@@ -371,6 +372,10 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
           />
         ))}
       </div>
+
+      <p className="mt-8 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+        No coupon codes, no countdown timers, no "limited spots" — and the free tier stays free.
+      </p>
 
       {pendingSwitch && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4">

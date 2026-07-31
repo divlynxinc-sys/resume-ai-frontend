@@ -42,7 +42,7 @@ Never surface token counts or exact quotas in UI — limits are intentionally so
 
 `PlanContext` also self-heals Polar subscription drift: if an authenticated user looks unpaid it calls `pricingService.syncPolarSubscription()` once per session (sessionStorage flag `polar-reconciled`). Broadcast `plan-updated` CustomEvent after any plan change so all listeners refetch.
 
-## Launch offer (50% off, ends 2027-01-04)
+## Early-access offer (40% off, auto-applied, ends 2027-01-04)
 
 Single source of truth: `src/lib/launch-offer.ts` (`LAUNCH_OFFER`, `isLaunchOfferActive()`, `launchOfferPrice[Label]()`). Display-only — the real charge is discounted by Polar (backend pre-applies `POLAR_DISCOUNT_ID` to checkouts). Surfaces: `LaunchOfferBanner` (landing page top bar), pricing cards (strikethrough original + discounted, both `/pricing` and the landing `PricingSection`), offer pill in `PricingSection`, note in `UpgradeModal`, and discounted `useMinPlanPrice()`. Pricing cards are STATIC in `pricing.tsx` (`defaultPlans`, backend fetch disabled) — DB prices in `pricing_plans` must match. To retire the offer: flip `enabled` or let `endsAt` pass, and remove the Polar discount env.
 

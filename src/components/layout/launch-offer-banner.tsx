@@ -35,7 +35,8 @@ export default function LaunchOfferBanner({ showCta = true }: { showCta?: boolea
     >
       <span className="font-medium">
         {LAUNCH_OFFER.label} <span aria-hidden="true">&middot;</span>{" "}
-        <strong className="font-semibold">{LAUNCH_OFFER.percentOff}% off all plans</strong>
+        <strong className="font-semibold">{LAUNCH_OFFER.percentOff}% off every plan</strong>
+        {" "}&mdash; applied automatically, no code needed
       </span>
       {showCta && (
         <Link
