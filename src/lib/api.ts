@@ -27,6 +27,23 @@ function shouldRedirectToLogin() {
   return !PUBLIC_ROUTES.has(window.location.pathname);
 }
 
+// A 401 from an endpoint that establishes or refreshes a session is an auth
+// result (for example, bad credentials), not an expired-session signal. Trying
+// to refresh here hides the backend's useful error and can make a fresh login
+// fail because of an unrelated stale refresh token.
+const SESSION_ENDPOINTS = new Set([
+  "/auth/login",
+  "/auth/login/otp/start",
+  "/auth/login/otp/verify",
+  "/auth/signup",
+  "/auth/google",
+  "/auth/refresh",
+]);
+
+function shouldAttemptRefresh(path: string) {
+  return !SESSION_ENDPOINTS.has(path);
+}
+
 async function attemptRefresh(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
@@ -68,7 +85,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   let res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
-  if (res.status === 401) {
+  if (res.status === 401 && shouldAttemptRefresh(path)) {
     const newToken = await attemptRefresh();
     if (newToken) {
       headers["Authorization"] = `Bearer ${newToken}`;

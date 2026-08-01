@@ -128,15 +128,16 @@ export default function LoginScreen() {
     }
     setStatus("loading");
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       // Temporary dev bypass — remove once DB integration is live
-      if (email === "admin@divlynx.com" && password === "Pass@123") {
+      if (normalizedEmail === "admin@divlynx.com" && password === "Pass@123") {
         localStorage.setItem("accessToken", "dev-bypass-token");
         localStorage.setItem("refreshToken", "dev-bypass-refresh");
         await refreshUser();
         navigate(authSuccessPath());
         return;
       }
-      await login(email, password, turnstileToken);
+      await login(normalizedEmail, password, turnstileToken);
       navigate(authSuccessPath());
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed."));
