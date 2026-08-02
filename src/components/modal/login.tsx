@@ -63,7 +63,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [credentialFieldsUnlocked, setCredentialFieldsUnlocked] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading">("idle");
+  const [status, setStatus] = useState<"idle" | "email" | "google">("idle");
   const [error, setError] = useState<string>("");
   const [emailError, setEmailError] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
@@ -84,7 +84,7 @@ export default function LoginScreen() {
         setError("Please complete the security verification.");
         return;
       }
-      setStatus("loading");
+      setStatus("google");
       try {
         await googleLogin(tokenResponse.access_token, turnstileToken);
         navigate(authSuccessPath());
@@ -96,7 +96,14 @@ export default function LoginScreen() {
         setStatus("idle");
       }
     },
-    onError: () => setError("Google login failed"),
+    onError: () => {
+      setStatus("idle");
+      setError("Google login failed. Please try again.");
+    },
+    onNonOAuthError: () => {
+      setStatus("idle");
+      setError("Google sign-in was cancelled or the popup was blocked.");
+    },
   });
 
   const validateEmailField = (value: string) => {
@@ -126,7 +133,7 @@ export default function LoginScreen() {
       setError("Please complete the security verification.");
       return;
     }
-    setStatus("loading");
+    setStatus("email");
     try {
       const normalizedEmail = email.trim().toLowerCase();
       // Temporary dev bypass — remove once DB integration is live
@@ -180,7 +187,7 @@ export default function LoginScreen() {
                 aria-invalid={!!emailError}
                 aria-describedby={emailError ? "email-error" : undefined}
                 className={`mt-2.5 w-full rounded-lg border bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 ${emailError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
-                disabled={status === "loading"}
+                disabled={status !== "idle"}
               />
               {emailError ? (
                 <p id="email-error" className="mt-1.5 text-xs text-red-400">{emailError}</p>
@@ -210,7 +217,7 @@ export default function LoginScreen() {
                     aria-invalid={!!passwordError}
                     aria-describedby={passwordError ? "password-error" : undefined}
                     className={`login-password-input w-full rounded-lg border bg-[var(--btn-secondary-bg)] px-3.5 py-2.5 pr-10 text-sm outline-none placeholder:text-white/40 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 ${passwordError ? "border-red-400 focus:border-red-400" : "border-white/15"}`}
-                    disabled={status === "loading"}
+                    disabled={status !== "idle"}
                   />
                   <button
                     type="button"
@@ -245,14 +252,14 @@ export default function LoginScreen() {
               <button
                 type="submit"
                 disabled={
-                  status === "loading" ||
+                  status !== "idle" ||
                   !turnstileToken ||
                   !!validateEmailField(email) ||
                   !!validatePasswordField(password)
                 }
                 className="mt-4 w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:hover:bg-[var(--accent)] transition-colors"
               >
-                {status === "loading" ? "Signing in…" : "Sign in"}
+                {status === "email" ? "Signing in…" : "Sign in"}
               </button>
 
               <DividerLabel>Or continue with</DividerLabel>
@@ -260,12 +267,18 @@ export default function LoginScreen() {
               <div className="grid grid-cols-1 gap-3">
                 <button
                   type="button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={status === "loading" || !turnstileToken}
+                  onClick={() => {
+                    setError("");
+                    setStatus("google");
+                    handleGoogleLogin();
+                  }}
+                  disabled={status !== "idle" || !turnstileToken}
                   className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[var(--btn-secondary-bg)] border border-[var(--btn-secondary-border)] text-[var(--btn-secondary-text)] hover:bg-[var(--btn-secondary-hover)] transition-colors"
                 >
                   <span className="text-xl"><FcGoogle /></span>
-                  <span className="text-sm">Sign in with Google</span>
+                  <span className="text-sm">
+                    {status === "google" ? "Connecting to Google…" : "Sign in with Google"}
+                  </span>
                 </button>
               </div>
 

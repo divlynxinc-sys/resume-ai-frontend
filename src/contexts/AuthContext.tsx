@@ -66,7 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token, refresh_token } = await authService.login(email, password, turnstileToken);
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
-    await refreshUser();
+    try {
+      const profile = await profileService.getMe();
+      setUser(profile);
+    } catch (error) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      setUser(null);
+      throw error;
+    }
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -80,7 +88,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token, refresh_token, is_new_user } = await authService.googleAuth(credential, turnstileToken);
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
-    await refreshUser();
+    try {
+      const profile = await profileService.getMe();
+      setUser(profile);
+    } catch (error) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      setUser(null);
+      throw error;
+    }
     return { is_new_user: !!is_new_user };
   };
 

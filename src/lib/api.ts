@@ -1,4 +1,29 @@
 const BASE_URL = import.meta.env?.VITE_API_URL ?? "/api";
+const AUTH_REQUEST_TIMEOUT_MS = 45_000;
+
+async function fetchApi(path: string, options: RequestInit): Promise<Response> {
+  if (!path.startsWith("/auth/")) {
+    return fetch(`${BASE_URL}${path}`, options);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), AUTH_REQUEST_TIMEOUT_MS);
+  const upstreamSignal = options.signal;
+  const abortFromUpstream = () => controller.abort();
+  upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
+
+  try {
+    return await fetch(`${BASE_URL}${path}`, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted && !upstreamSignal?.aborted) {
+      throw new Error("The sign-in service is taking too long to respond. Please try again.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
+  }
+}
 
 function getToken() {
   return localStorage.getItem("accessToken");
@@ -48,7 +73,7 @@ async function attemptRefresh(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
   try {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+    const res = await fetchApi("/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -83,13 +108,18 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  let res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  let res = await fetchApi(path, { ...options, headers });
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (path.startsWith("/auth/") && res.ok && contentType.includes("text/html")) {
+    throw new Error("The sign-in service is unavailable because the API route is misconfigured.");
+  }
 
   if (res.status === 401 && shouldAttemptRefresh(path)) {
     const newToken = await attemptRefresh();
     if (newToken) {
       headers["Authorization"] = `Bearer ${newToken}`;
-      res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+      res = await fetchApi(path, { ...options, headers });
     } else {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
