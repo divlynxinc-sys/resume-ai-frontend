@@ -19,7 +19,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://resume-ai-backend-production-0380.up.railway.app/:path*"
+      "destination": "https://api.jobsynk.co/:path*"
     },
     { "source": "/(.*)", "destination": "/index" }
   ]
