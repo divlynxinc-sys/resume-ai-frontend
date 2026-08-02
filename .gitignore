@@ -71,5 +71,10 @@ coverage/
 *.sketch
 *.xcf
 
+# Smoke-test artifacts — regenerate with `node scripts/_smoke-render.mjs`
+# (test_export_smoke.py in ../resumeai-backend needs these fixtures present)
+scripts/output/_smoke/
+scripts/.smoke-bundle.mjs
+
 # Claude Code local instruction layer (knowledge-base rules) — never commit
 CLAUDE.local.md

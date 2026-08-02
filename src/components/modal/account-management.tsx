@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CreditCard, Download, Lock, Mail, Shield, Trash2, User } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
@@ -176,6 +176,10 @@ export default function AccountManagementScreen() {
   const [emailNotif, setEmailNotif] = useState(true);
   const [prefSaving, setPrefSaving] = useState(false);
 
+  const [subBusy, setSubBusy] = useState(false);
+  const [subError, setSubError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -275,6 +279,54 @@ export default function AccountManagementScreen() {
     }
   };
 
+  const handleOpenPortal = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      const res = await pricingService.getPortalUrl();
+      window.open(res.portal_url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : "Failed to open billing portal.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      const res = await pricingService.cancelSubscription();
+      refreshSubscriptionState();
+      window.dispatchEvent(new CustomEvent("plan-updated"));
+      setShowCancelModal(false);
+      showToast(
+        res.refunded
+          ? "Cancelled and refunded in full."
+          : "Cancelled. You can re-subscribe for free until your period ends.",
+      );
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : "Failed to cancel subscription.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setSubBusy(true);
+    setSubError(null);
+    try {
+      await pricingService.reactivateSubscription();
+      refreshSubscriptionState();
+      window.dispatchEvent(new CustomEvent("plan-updated"));
+      showToast("Your plan is active again until the end of your current period.");
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : "Failed to reactivate subscription.");
+    } finally {
+      setSubBusy(false);
+    }
+  };
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -309,6 +361,10 @@ export default function AccountManagementScreen() {
   };
 
   const planName = subDetails?.plan_name || summary?.current_plan || "Free";
+  const renewalLabel = subDetails?.current_period_end
+    ? new Date(subDetails.current_period_end).toLocaleDateString()
+    : null;
+  const subWindingDown = Boolean(subDetails?.cancel_at_period_end || subDetails?.can_reactivate_free);
 
   return (
     <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
@@ -363,31 +419,99 @@ export default function AccountManagementScreen() {
 
           <Card>
             <div className="grid gap-6 lg:grid-cols-[13rem_1fr]">
-              <SectionTitle icon={<CreditCard className="size-5" />} title="Billing" subtitle="Plan and payment method." />
-              <div className="grid divide-y divide-[var(--app-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                <div className="pb-5 sm:pb-0 sm:pr-6">
-                  <div className="text-xs text-[var(--app-fg-muted)]">Active plan</div>
-                  <div className="mt-2 flex items-center gap-2.5">
-                    <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" />
-                    <span className="text-base font-semibold text-[var(--app-fg)]">{planName}</span>
-                  </div>
-                </div>
-                <div className="pt-5 sm:pl-6 sm:pt-0">
-                  <div className="text-xs text-[var(--app-fg-muted)]">Payment method</div>
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="grid h-9 w-12 shrink-0 place-items-center rounded-md border border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-fg-muted)]">
-                      <CreditCard className="size-5" aria-hidden="true" />
+              <SectionTitle icon={<CreditCard className="size-5" />} title="Billing" subtitle="Plan, payment method, and cancellation." />
+              <div className="grid gap-5">
+                <div className="grid divide-y divide-[var(--app-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                  <div className="pb-5 sm:pb-0 sm:pr-6">
+                    <div className="text-xs text-[var(--app-fg-muted)]">Active plan</div>
+                    <div className="mt-2 flex items-center gap-2.5">
+                      <span
+                        className={`size-2 rounded-full ${
+                          subWindingDown
+                            ? "bg-amber-500"
+                            : subDetails?.has_subscription
+                              ? "bg-emerald-500"
+                              : "bg-[var(--app-fg-soft)]"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <span className="text-base font-semibold text-[var(--app-fg)]">{planName}</span>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-[var(--app-fg)]">
-                        {subDetails?.has_subscription ? "Card on file" : "No card added"}
+                    {renewalLabel ? (
+                      <div className="mt-1.5 text-xs text-[var(--app-fg-muted)]">
+                        {subWindingDown ? "Ends" : "Renews"} {renewalLabel}
                       </div>
-                      {subDetails?.has_subscription ? (
-                        <div className="mt-0.5 text-xs text-[var(--app-fg-muted)]">Securely managed by Polar</div>
-                      ) : null}
+                    ) : null}
+                  </div>
+                  <div className="pt-5 sm:pl-6 sm:pt-0">
+                    <div className="text-xs text-[var(--app-fg-muted)]">Payment method</div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="grid h-9 w-12 shrink-0 place-items-center rounded-md border border-[var(--app-border)] bg-[var(--app-bg)] text-[var(--app-fg-muted)]">
+                        <CreditCard className="size-5" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--app-fg)]">
+                          {subDetails?.has_subscription ? "Card on file" : "No card added"}
+                        </div>
+                        {subDetails?.has_subscription ? (
+                          <div className="mt-0.5 text-xs text-[var(--app-fg-muted)]">Securely managed by Polar</div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {subDetails?.can_reactivate_free ? (
+                  <div className="w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
+                    Cancelled — paid features locked. Re-subscribe free until {renewalLabel ?? "your period ends"}.
+                  </div>
+                ) : subDetails?.cancel_at_period_end ? (
+                  <div className="w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">
+                    Cancellation scheduled — you won't be billed again.
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to="/pricing"
+                    className="inline-flex items-center justify-center rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+                  >
+                    {subDetails?.has_subscription ? "Change Plan" : "Upgrade Plan"}
+                  </Link>
+                  {subDetails?.has_subscription ? (
+                    <SecondaryButton onClick={handleOpenPortal} disabled={subBusy}>
+                      Payment & Invoices
+                    </SecondaryButton>
+                  ) : null}
+                  {subDetails?.can_reactivate_free ? (
+                    <button
+                      type="button"
+                      onClick={handleReactivateSubscription}
+                      disabled={subBusy}
+                      className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {subBusy ? "Reactivating..." : "Reactivate (free)"}
+                    </button>
+                  ) : subDetails?.has_subscription && !subDetails.cancel_at_period_end ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSubError(null);
+                        setShowCancelModal(true);
+                      }}
+                      disabled={subBusy}
+                      className="inline-flex items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-300"
+                    >
+                      Cancel Subscription
+                    </button>
+                  ) : null}
+                </div>
+
+                {subError ? (
+                  <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-600 dark:text-rose-300">
+                    {subError}
+                  </div>
+                ) : null}
               </div>
             </div>
           </Card>
@@ -443,6 +567,55 @@ export default function AccountManagementScreen() {
           </Card>
         </div>
       </PageWithSidebar>
+
+      {showCancelModal ? (
+        <Modal
+          title="Cancel subscription?"
+          actions={
+            <>
+              <SecondaryButton onClick={() => setShowCancelModal(false)} disabled={subBusy}>
+                Keep Subscription
+              </SecondaryButton>
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={subBusy}
+                className="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {subBusy ? "Cancelling..." : "Confirm Cancel"}
+              </button>
+            </>
+          }
+        >
+          {subDetails?.refund_eligible_now ? (
+            <>
+              You're still within your{" "}
+              <span className="font-medium text-[var(--app-fg)]">
+                {subDetails.refund_window_days}-day money-back window
+              </span>
+              , so cancelling now will{" "}
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">refund you 100%</span>{" "}
+              and end your plan immediately.
+            </>
+          ) : (
+            <>
+              You're past the money-back window, so{" "}
+              <span className="font-medium text-[var(--app-fg)]">no refund</span> is issued and paid
+              features are locked immediately. You can re-subscribe for{" "}
+              <span className="font-medium text-[var(--app-fg)]">free</span> anytime until{" "}
+              <span className="font-medium text-[var(--app-fg)]">
+                {renewalLabel ?? "your period ends"}
+              </span>
+              , when your plan fully expires. We won't bill you again.
+            </>
+          )}
+          {subError ? (
+            <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-600 dark:text-rose-300">
+              {subError}
+            </div>
+          ) : null}
+        </Modal>
+      ) : null}
 
       {showDeleteModal ? (
         <Modal
