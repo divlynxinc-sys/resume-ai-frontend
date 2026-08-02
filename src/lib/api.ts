@@ -1,4 +1,10 @@
-const BASE_URL = import.meta.env?.VITE_API_URL ?? "/api";
+// Production always uses Vercel's same-origin proxy. This deliberately ignores
+// a stale VITE_API_URL deployment variable, which previously sent browsers
+// directly to an old Railway hostname and caused CORS/DNS "Failed to fetch"
+// errors. Local development may still opt into a custom API URL.
+const BASE_URL = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL ?? "/api")
+  : "/api";
 const AUTH_REQUEST_TIMEOUT_MS = 45_000;
 
 async function fetchApi(path: string, options: RequestInit): Promise<Response> {
@@ -17,6 +23,9 @@ async function fetchApi(path: string, options: RequestInit): Promise<Response> {
   } catch (error) {
     if (controller.signal.aborted && !upstreamSignal?.aborted) {
       throw new Error("The sign-in service is taking too long to respond. Please try again.");
+    }
+    if (error instanceof TypeError) {
+      throw new Error("Unable to reach the sign-in service. Please check your connection and try again.");
     }
     throw error;
   } finally {
