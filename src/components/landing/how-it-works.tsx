@@ -12,25 +12,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { Check, FileDown } from "lucide-react";
+import { Check, FileDown, FileText, MessageCircle, Sparkles, UploadCloud } from "lucide-react";
 import { EASE } from "./easing";
 import { Eyebrow, Reveal, SplitHeadline } from "./motion-primitives";
 
 const STEPS = [
   {
     n: "01",
-    title: "Start with the job, not the resume",
-    body: "Paste the description you're actually applying to. Jobsynk reads it the way a hiring manager wrote it — the competencies that repeat, the tools named outright, the seniority signals buried in the third paragraph.",
+    title: "Choose the role you want",
+    body: "Paste the description you're actually applying to. Jobsynk pulls out the repeated competencies, named tools, seniority cues, and outcomes the hiring team cares about.",
   },
   {
     n: "02",
-    title: "See what a parser sees",
-    body: "Ten checks run against your resume and score it out of 100: contact details a parser can find, standard headings, bullets that carry a number, dates on every role, and how much of the job's vocabulary you actually use. Each miss is named, in the wording to fix it.",
+    title: "Bring the resume that fits best",
+    body: "Pick an existing resume, upload one, or start from a clean template. Your original stays intact while this application gets its own focused version.",
   },
   {
     n: "03",
-    title: "Export something that survives the upload",
-    body: "Every template is single-column, real selectable text, no tables and no text boxes — the four things that break a parse. Download as PDF and apply with a document that arrives intact.",
+    title: "Review the gaps and approve every edit",
+    body: "See what a parser sees, which role keywords are missing, and which bullets need stronger evidence. Jobsynk suggests the change; you decide what belongs in your story.",
+  },
+  {
+    n: "04",
+    title: "Leave with the full application kit",
+    body: "Export a parser-safe resume, then carry the same role context into your cover letter and interview preparation. No retyping the job description or rebuilding your story from scratch.",
   },
 ] as const;
 
@@ -105,6 +110,47 @@ function JobDescriptionVisual() {
             {chip}
           </motion.span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function ResumeInputVisual() {
+  const reduce = useReducedMotion();
+  return (
+    <div className="flex h-full flex-col justify-center px-6 py-7">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--app-fg-soft)]">
+        Choose your starting point
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <motion.div
+          className="relative overflow-hidden rounded-xl border border-[var(--accent)] bg-[var(--accent-soft)] p-4"
+          initial={reduce ? undefined : { opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, ease: EASE }}
+        >
+          <span className="absolute right-2 top-2 grid size-5 place-items-center rounded-full bg-[var(--accent)] text-white"><Check className="size-3" /></span>
+          <FileText className="size-5 text-[var(--accent-text)]" />
+          <p className="mt-8 text-[12px] font-semibold text-[var(--app-fg)]">Product Design</p>
+          <p className="mt-1 text-[10px] text-[var(--app-fg-soft)]">Updated yesterday</p>
+          <div className="mt-3 space-y-1.5">{["76%", "92%", "68%"].map((width) => <span key={width} className="block h-1 rounded-full bg-[var(--app-border-strong)]" style={{ width }} />)}</div>
+        </motion.div>
+        <motion.div
+          className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface-2)] p-4 text-center"
+          initial={reduce ? undefined : { opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55, ease: EASE, delay: 0.12 }}
+        >
+          <span className="grid size-10 place-items-center rounded-full bg-[var(--app-surface)] text-[var(--app-fg-muted)]"><UploadCloud className="size-4" /></span>
+          <p className="mt-3 text-[11px] font-semibold text-[var(--app-fg)]">Upload another</p>
+          <p className="mt-1 text-[9px] text-[var(--app-fg-soft)]">PDF or DOCX</p>
+        </motion.div>
+      </div>
+      <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-[11px] text-[var(--app-fg-muted)]">
+        <Sparkles className="size-4 shrink-0 text-[var(--accent)]" />
+        We create a role-specific copy. Your original stays untouched.
       </div>
     </div>
   );
@@ -193,7 +239,7 @@ function ScoreVisual() {
   );
 }
 
-function ExportVisual() {
+function ApplicationKitVisual() {
   const reduce = useReducedMotion();
   const lines = [
     { w: "58%", h: 9 },
@@ -240,18 +286,23 @@ function ExportVisual() {
         </motion.span>
       </div>
 
-      <ul className="space-y-2.5">
-        {["Single column", "Selectable text", "No tables", "No text boxes"].map((item, index) => (
+      <ul className="min-w-0 space-y-2.5">
+        {[
+          { label: "Resume PDF", icon: FileDown },
+          { label: "Cover letter", icon: FileText },
+          { label: "Interview prep", icon: MessageCircle },
+        ].map((item, index) => (
           <motion.li
-            key={item}
-            className="flex items-center gap-2 text-[12.5px] text-[var(--app-fg-muted)]"
+            key={item.label}
+            className="flex items-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-2)] px-2.5 py-2 text-[11.5px] text-[var(--app-fg-muted)]"
             initial={reduce ? undefined : { opacity: 0, x: 10 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.45, ease: EASE, delay: 0.6 + index * 0.12 }}
           >
-            <Check className="size-3.5 text-[var(--tone-win)]" strokeWidth={3} />
-            {item}
+            <item.icon className="size-3.5 shrink-0 text-[var(--accent-text)]" />
+            <span className="truncate">{item.label}</span>
+            <Check className="ml-auto size-3.5 shrink-0 text-[var(--tone-win)]" strokeWidth={3} />
           </motion.li>
         ))}
       </ul>
@@ -259,7 +310,7 @@ function ExportVisual() {
   );
 }
 
-const VISUALS = [JobDescriptionVisual, ScoreVisual, ExportVisual] as const;
+const VISUALS = [JobDescriptionVisual, ResumeInputVisual, ScoreVisual, ApplicationKitVisual] as const;
 
 function StepVisual({ index }: { index: number }) {
   const Visual = VISUALS[index] ?? VISUALS[0];
@@ -296,17 +347,17 @@ function Step({
   }, [inView, index, onActive]);
 
   return (
-    <li ref={ref} className="lg:flex lg:min-h-[62vh] lg:flex-col lg:justify-center">
+    <li ref={ref} className="relative lg:flex lg:min-h-[52vh] lg:flex-col lg:justify-center">
       <Reveal>
-        <div className="flex items-baseline gap-4">
-          <span className="font-mono text-[13px] tracking-[0.08em] text-[var(--accent-text)]">
+        <div className="flex items-center gap-4">
+          <span className="relative z-10 grid size-8 shrink-0 place-items-center rounded-full border border-[var(--accent)]/25 bg-[var(--accent-soft)] font-mono text-[11px] tracking-[0.06em] text-[var(--accent-text)]">
             {step.n}
           </span>
           <h3 className="font-display text-2xl font-light leading-tight tracking-tight text-[var(--app-fg)] sm:text-[28px]">
             {step.title}
           </h3>
         </div>
-        <p className="mt-4 max-w-lg pl-0 text-[15px] leading-relaxed text-[var(--app-fg-muted)] sm:pl-[2.6rem]">
+        <p className="mt-4 max-w-lg pl-12 text-[15px] leading-relaxed text-[var(--app-fg-muted)]">
           {step.body}
         </p>
       </Reveal>
@@ -328,8 +379,8 @@ export default function HowItWorks() {
         <h2 className="mt-4 font-display text-[2rem] font-light leading-[1.1] tracking-tight text-[var(--app-fg)] sm:text-5xl">
           <SplitHeadline
             segments={[
-              { text: "Three steps." },
-              { text: " Then you apply.", className: "italic text-[var(--app-fg-muted)]" },
+              { text: "One role." },
+              { text: " One smooth path to ready.", className: "italic text-[var(--app-fg-muted)]" },
             ]}
           />
         </h2>
@@ -338,8 +389,8 @@ export default function HowItWorks() {
       {/* No `items-start` here on purpose: the right column has to stretch to the
           row height, or the sticky panel inside it runs out of parent to be
           sticky within and scrolls away after the first step. */}
-      <div className="mt-16 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
-        <ol className="space-y-20 lg:space-y-0">
+      <div className="mt-12 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
+        <ol className="relative space-y-14 before:absolute before:bottom-8 before:left-4 before:top-8 before:w-px before:bg-gradient-to-b before:from-[var(--accent)] before:via-[var(--app-border-strong)] before:to-transparent lg:space-y-0">
           {STEPS.map((step, index) => (
             <Step key={step.n} step={step} index={index} onActive={setActive} />
           ))}
@@ -347,17 +398,20 @@ export default function HowItWorks() {
 
         <div className="hidden lg:block">
           <div className="sticky top-28">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.35, ease: EASE }}
-              >
-                <StepVisual index={active} />
-              </motion.div>
-            </AnimatePresence>
+            <div className="relative h-[22rem]">
+              <AnimatePresence mode="sync" initial={false}>
+                <motion.div
+                  key={active}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.45, ease: EASE }}
+                >
+                  <StepVisual index={active} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
             <div className="mt-5 flex gap-1.5" aria-hidden>
               {STEPS.map((step, index) => (

@@ -31,6 +31,7 @@ const SubscriptionScreen = lazy(() => import("./components/modal/subscription"))
 const PaymentSuccess     = lazy(() => import("./components/modal/payment-success"));
 const AccountManagement  = lazy(() => import("./components/modal/account-management"));
 const InterviewScreen    = lazy(() => import("./components/modal/interview"));
+const AiInterviewsPage   = lazy(() => import("./features/ai-interviews/page"));
 const AIChatModal        = lazy(() => import("./components/modal/ai-chat"));
 const MyResumesScreen    = lazy(() => import("./components/modal/my-resumes"));
 const UserDetailsScreen  = lazy(() => import("./components/modal/user-details"));
@@ -165,6 +166,12 @@ const router = createBrowserRouter([
       { path: "/success",           element: <Page><PaymentSuccess /></Page> },
       { path: "/account",           element: <Page><AccountManagement /></Page> },
       { path: "/interview",         element: <Page><InterviewScreen /></Page> },
+      { path: "/ai-interviews",     element: <Page><AiInterviewsPage /></Page> },
+      { path: "/ai-interviews/new", element: <Page><AiInterviewsPage /></Page> },
+      { path: "/ai-interviews/:id/ready",      element: <Page><AiInterviewsPage /></Page> },
+      { path: "/ai-interviews/:id/live",       element: <Page><AiInterviewsPage /></Page> },
+      { path: "/ai-interviews/:id/processing", element: <Page><AiInterviewsPage /></Page> },
+      { path: "/ai-interviews/:id/report",     element: <Page><AiInterviewsPage /></Page> },
       { path: "/ai-chat",           element: <Page><AIChatModal /></Page> },
       { path: "/my-resumes",        element: <Page><MyResumesScreen /></Page> },
       { path: "/user-details",      element: <Page><UserDetailsScreen /></Page> },

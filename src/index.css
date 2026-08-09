@@ -393,6 +393,27 @@ html.light ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 26, 0.18);
   display: none;
 }
 
+/* Shared form control used by the AI Interviews flow. */
+.input {
+  width: 100%;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 0.75rem;
+  background: var(--app-surface-2);
+  color: var(--app-fg);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+}
+.input::placeholder { color: var(--app-fg-soft); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); background: var(--app-surface); }
+.input[aria-invalid="true"] { border-color: #dc5874; }
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:transition-\[width\] { transition: none !important; }
+}
+
 /* Password input chrome */
 .signup-password-input::-ms-reveal,
 .signup-password-input::-ms-clear,

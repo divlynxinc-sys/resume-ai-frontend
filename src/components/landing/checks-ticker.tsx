@@ -8,6 +8,8 @@
 // Animation is CSS (`.landing-ticker` in index.css), not Framer Motion: it runs
 // forever, so it belongs on the compositor rather than in a JS frame loop.
 
+import { Check } from "lucide-react";
+
 const CHECKS = [
   "Contact details are readable",
   "Uses standard section headings",
@@ -24,7 +26,7 @@ const CHECKS = [
 export default function ChecksTicker() {
   return (
     <div
-      className="landing-ticker relative overflow-hidden border-y border-[var(--app-border)] py-4"
+      className="landing-ticker relative overflow-hidden border-y border-[var(--app-border)] bg-[var(--app-surface)] py-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--app-fg)_3%,transparent)]"
       style={{
         WebkitMaskImage:
           "linear-gradient(to right, transparent 0, black 6rem, black calc(100% - 6rem), transparent 100%)",
@@ -42,12 +44,10 @@ export default function ChecksTicker() {
             {CHECKS.map((check) => (
               <span
                 key={`${copy}-${check}`}
-                className="flex items-center whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--app-fg-soft)]"
+                className="mx-1.5 flex items-center gap-2 whitespace-nowrap rounded-full border border-[var(--app-border)] bg-[var(--app-surface-2)] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--app-fg-muted)]"
               >
+                <span className="grid size-4 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)]"><Check className="size-2.5" strokeWidth={3} /></span>
                 {check}
-                <span aria-hidden className="mx-7 text-[var(--accent)]">
-                  &#9670;
-                </span>
               </span>
             ))}
           </div>

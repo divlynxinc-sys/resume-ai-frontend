@@ -17,60 +17,72 @@
 
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, FileText, Mail, MessageSquareText, ScanSearch, Send, Target, type LucideIcon } from "lucide-react";
 import { EASE } from "./easing";
 import { Eyebrow, Reveal, SplitHeadline } from "./motion-primitives";
-
-type Tier = "Free" | "Paid plan";
 
 const FEATURES: Array<{
   n: string;
   title: string;
   body: string;
   to: string;
-  tier: Tier;
+  label: string;
+  icon: LucideIcon;
+  tone: string;
 }> = [
   {
     n: "01",
     title: "ATS checker",
     body: "Ten checks, a score out of 100, and the exact line to change for each miss. No account — your file is read in the browser and never uploaded.",
     to: "/ats-checker",
-    tier: "Free",
+    label: "Check",
+    icon: ScanSearch,
+    tone: "var(--pastel-sky)",
   },
   {
     n: "02",
     title: "Resume builder",
     body: "Single-column, parser-safe layouts with real selectable text. Write it once, export a PDF that arrives at the other end intact.",
     to: "/signup?next=%2Fresumes",
-    tier: "Free",
+    label: "Build",
+    icon: FileText,
+    tone: "var(--pastel-lavender)",
   },
   {
     n: "03",
     title: "Job-description match",
     body: "Paste the posting next to your resume and see which of its words yours never says — the gap that decides whether a recruiter's search finds you.",
     to: "/ats-checker",
-    tier: "Free",
+    label: "Tailor",
+    icon: Target,
+    tone: "var(--pastel-butter)",
   },
   {
     n: "04",
     title: "Cover letters",
     body: "Written from your resume and the posting together, streamed as it drafts, in your register rather than a template's. Edit it before it goes.",
     to: "/signup?next=%2Fcover-letter",
-    tier: "Paid plan",
+    label: "Write",
+    icon: Mail,
+    tone: "var(--pastel-peach)",
   },
   {
     n: "05",
     title: "Interview answers",
     body: "The questions this role will actually ask, answered out of the experience already on your resume — so you rehearse your material, not someone else's.",
     to: "/signup?next=%2Fqa-answers",
-    tier: "Paid plan",
+    label: "Practise",
+    icon: MessageSquareText,
+    tone: "var(--pastel-mint)",
   },
   {
     n: "06",
     title: "Recruiter emails",
     body: "Short outreach and follow-ups that read like a person wrote them, built from the role and your own background.",
     to: "/signup?next=%2Fhr-email-drafts",
-    tier: "Paid plan",
+    label: "Reach out",
+    icon: Send,
+    tone: "var(--pastel-rose)",
   },
 ];
 
@@ -91,13 +103,16 @@ function FeatureRow({ feature }: { feature: (typeof FEATURES)[number] }) {
           />
 
           <div className="relative grid grid-cols-[2.25rem_1fr] items-start gap-x-4 py-7 sm:grid-cols-[3.5rem_minmax(0,1fr)_auto] sm:gap-x-8 sm:py-9">
-            <motion.span
-              className="font-mono text-[12px] tracking-[0.08em] text-[var(--app-fg-soft)]"
-              variants={{ rest: { color: "var(--app-fg-soft)" }, hover: { color: "var(--accent-text)" } }}
-              transition={{ duration: 0.25 }}
+            <motion.div
+              className="flex flex-col items-start gap-2"
+              variants={{ rest: { y: 0 }, hover: { y: -3 } }}
+              transition={{ duration: 0.35, ease: EASE }}
             >
-              {feature.n}
-            </motion.span>
+              <span className="grid size-9 place-items-center rounded-xl text-[var(--app-fg)]" style={{ backgroundColor: feature.tone }}>
+                <feature.icon className="size-4" />
+              </span>
+              <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--app-fg-soft)]">{feature.n}</span>
+            </motion.div>
 
             <motion.div
               variants={{ rest: { x: 0 }, hover: { x: 7 } }}
@@ -106,7 +121,7 @@ function FeatureRow({ feature }: { feature: (typeof FEATURES)[number] }) {
               <h3 className="font-display text-xl font-normal tracking-tight text-[var(--app-fg)] sm:text-2xl">
                 {feature.title}
                 <span className="ml-3 align-middle font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--app-fg-soft)] sm:hidden">
-                  {feature.tier}
+                  {feature.label}
                 </span>
               </h3>
               <p className="mt-2 max-w-xl text-[14.5px] leading-relaxed text-[var(--app-fg-muted)]">
@@ -115,15 +130,8 @@ function FeatureRow({ feature }: { feature: (typeof FEATURES)[number] }) {
             </motion.div>
 
             <div className="col-start-2 mt-4 hidden items-center gap-5 self-center sm:col-start-3 sm:mt-0 sm:flex">
-              <span
-                className="rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em]"
-                style={
-                  feature.tier === "Free"
-                    ? { backgroundColor: "var(--pastel-mint)", color: "var(--tone-win)" }
-                    : { backgroundColor: "var(--app-surface-2)", color: "var(--app-fg-soft)" }
-                }
-              >
-                {feature.tier}
+              <span className="rounded-full bg-[var(--app-surface-2)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--app-fg-soft)]">
+                {feature.label}
               </span>
               <motion.span
                 aria-hidden
@@ -154,14 +162,14 @@ export default function FeatureIndex() {
             <SplitHeadline
               segments={[
                 { text: "Six tools." },
-                { text: " Three are free.", className: "italic text-[var(--app-fg-muted)]" },
+                { text: " One connected workflow.", className: "italic text-[var(--app-fg-muted)]" },
               ]}
             />
           </h2>
         </div>
         <Reveal delay={0.15}>
           <p className="max-w-xs text-[14.5px] leading-relaxed text-[var(--app-fg-muted)]">
-            Nothing here is a demo. Every row links to the page that does the work.
+            Move from first check to final follow-up without losing the role context along the way.
           </p>
         </Reveal>
       </header>

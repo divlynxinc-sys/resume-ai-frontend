@@ -17,7 +17,8 @@
     "ats:test": "node scripts/test-ats-check.mjs",
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/tw.css",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/tw.css --watch",
-    "smoke:responsive": "node scripts/smoke-responsive.mjs"
+    "smoke:responsive": "node scripts/smoke-responsive.mjs",
+    "interviews:test": "node scripts/test-ai-interviews.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

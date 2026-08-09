@@ -156,10 +156,9 @@ export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: stri
         <NavItem
           icon={<MicVocal className="size-4" />}
           label="AI Interviews"
-          route="interview"
-          active={current === "interview"}
+          route="ai-interviews"
+          active={current === "ai-interviews"}
           collapsed={collapsed}
-          comingSoon
         />
         <NavItem icon={<Crown className="size-4" />} label="Pro Plans" route="pricing" active={current === "pricing"} collapsed={collapsed} paidPlanActive={isPaid} highlightPaidPlan />
         <NavItem icon={<Settings className="size-4" />} label="Settings" route="account" active={current === "account"} collapsed={collapsed} />

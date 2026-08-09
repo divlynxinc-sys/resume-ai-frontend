@@ -44,6 +44,7 @@ const PRIVATE_ROUTES = [
   "/onboarding", "/dashboard", "/resumes", "/templates", "/tailoring",
   "/cover-letter", "/hr-email-drafts", "/qa-answers", "/subscribe", "/success",
   "/account", "/interview", "/ai-chat", "/my-resumes", "/user-details",
+  "/ai-interviews", "/ai-interviews/new",
   "/user-profile", "/help-center", "/documentation", "/analytics",
   "/resume-generated", "/resume-comparison", "/pricing",
 ];
@@ -55,6 +56,7 @@ const argVal = (name) => {
   return i >= 0 ? args[i + 1] : null;
 };
 const VERBOSE = args.includes("--verbose");
+const PRIVATE_ONLY = args.includes("--private");
 const onlyRoutes = argVal("--routes")?.split(",");
 const widths = (argVal("--widths")?.split(",").map(Number)) ?? DEFAULT_WIDTHS;
 
@@ -143,8 +145,8 @@ async function runSet(routes, authed) {
   await context.close();
 }
 
-const anonRoutes = onlyRoutes ?? PUBLIC_ROUTES;
-const authRoutes = onlyRoutes ? [] : PRIVATE_ROUTES;
+const anonRoutes = PRIVATE_ONLY ? [] : (onlyRoutes ?? PUBLIC_ROUTES);
+const authRoutes = PRIVATE_ONLY ? (onlyRoutes ?? PRIVATE_ROUTES) : (onlyRoutes ? [] : PRIVATE_ROUTES);
 
 await Promise.all([
   runSet(anonRoutes, false),
