@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JobSynkAI - AI Interviews Backend Handoff</title>
+  <style>
+    @page { size: A4; margin: 15mm 14mm 17mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #20232d; font: 10.2pt/1.52 Arial, Helvetica, sans-serif; background: #fff; }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { font-size: 30pt; line-height: 1.05; letter-spacing: -1px; margin-bottom: 14px; }
+    h2 { color: #2e3f9e; font-size: 19pt; line-height: 1.15; margin: 0 0 12px; border-bottom: 1px solid #dfe3f4; padding-bottom: 8px; }
+    h3 { color: #26336f; font-size: 13pt; margin: 18px 0 8px; }
+    h4 { font-size: 10.5pt; margin: 13px 0 5px; }
+    p { margin-bottom: 8px; }
+    ul, ol { margin: 5px 0 10px 20px; padding: 0; }
+    li { margin: 3px 0; }
+    code { font: 8.8pt Consolas, monospace; background: #f2f4fa; padding: 1px 4px; border-radius: 3px; }
+    pre { white-space: pre-wrap; word-break: break-word; font: 8pt/1.42 Consolas, monospace; color: #e8ebff; background: #171a25; padding: 11px 12px; border-radius: 8px; margin: 7px 0 12px; break-inside: avoid; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 15px; font-size: 8.7pt; break-inside: avoid; }
+    th { background: #eef0fb; color: #29367d; text-align: left; }
+    th, td { border: 1px solid #dfe2ee; padding: 6px 7px; vertical-align: top; }
+    tr { break-inside: avoid; }
+    .cover { min-height: 245mm; display: flex; flex-direction: column; justify-content: center; position: relative; page-break-after: always; overflow: hidden; }
+    .cover:before { content: ""; position: absolute; width: 155mm; height: 155mm; border-radius: 50%; background: radial-gradient(circle, #e7eaff 0, rgba(231,234,255,0) 70%); right: -70mm; top: -45mm; }
+    .brand { color: #5868db; font-weight: 800; font-size: 12pt; letter-spacing: .04em; margin-bottom: 30px; }
+    .subtitle { max-width: 145mm; color: #535968; font-size: 14pt; line-height: 1.45; }
+    .meta { margin-top: 34px; color: #717788; font-size: 9pt; }
+    .pill { display: inline-block; color: #3444ae; background: #e9ecff; border: 1px solid #cfd5ff; border-radius: 99px; padding: 4px 9px; margin: 3px 3px 3px 0; font-size: 8.5pt; font-weight: 700; }
+    .callout { background: #f5f6fc; border-left: 4px solid #5a6bdd; border-radius: 5px; padding: 10px 12px; margin: 9px 0 13px; break-inside: avoid; }
+    .warning { background: #fff7e8; border-left-color: #e5a53f; }
+    .success { background: #eef9f3; border-left-color: #37a66a; }
+    .danger { background: #fff0f2; border-left-color: #d35b73; }
+    .small { font-size: 8.6pt; color: #626978; }
+    .page { page-break-before: always; }
+    .avoid { break-inside: avoid; }
+    .flow { display: flex; gap: 6px; align-items: stretch; margin: 10px 0 14px; break-inside: avoid; }
+    .flow div { flex: 1; text-align: center; padding: 8px 5px; border-radius: 7px; background: #eef0fb; color: #2e3d98; font-size: 8.3pt; font-weight: 700; }
+    .flow span { align-self: center; color: #6a74aa; }
+    .checklist { list-style: none; margin-left: 0; }
+    .checklist li:before { content: "[ ]"; font-family: Consolas, monospace; color: #5364d3; font-weight: 700; margin-right: 7px; }
+    .footer-note { border-top: 1px solid #dfe2ee; margin-top: 24px; padding-top: 9px; color: #777d8b; font-size: 8pt; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="brand">JOB SYNK AI</div>
+    <h1>AI Interviews<br />Backend Handoff</h1>
+    <p class="subtitle">Frontend implementation, required backend services, API contracts, database design, background processing, security, testing, and delivery checklist.</p>
+    <div style="margin-top:24px">
+      <span class="pill">FastAPI</span><span class="pill">PostgreSQL</span><span class="pill">Audio uploads</span><span class="pill">Transcription</span><span class="pill">Evaluation</span><span class="pill">Reports</span>
+    </div>
+    <p class="meta"><strong>Prepared for:</strong> Backend engineering handoff<br /><strong>Repository:</strong> resume-ai-app<br /><strong>Date:</strong> 23 August 2026<br /><strong>Status:</strong> Frontend mock experience complete; live adapter pending backend</p>
+  </section>
+
+  <section>
+    <h2>1. Executive summary</h2>
+    <p>The AI Interviews frontend is a complete, protected, voice-first mock interview experience. A user creates a session, configures the target role, optionally attaches a stored resume and job description, checks the microphone, records one answer at a time, submits audio, waits for transcription/evaluation, and receives a detailed readiness report.</p>
+    <div class="callout success"><strong>Frontend status:</strong> All screens, route guards, recorder controls, local mock persistence, deterministic questions, a contextual follow-up, answer evaluation, report rendering, retry UX, and history are implemented. The UI depends on an <code>InterviewApi</code> interface, so backend integration belongs in the live adapter rather than page components.</div>
+    <div class="callout warning"><strong>Backend status:</strong> No interview endpoints, tables, media storage, transcription jobs, evaluation jobs, or report generation exist yet. The mock implementation uses browser storage and simulated delays only.</div>
+    <h3>Target backend outcome</h3>
+    <p>Build an authoritative asynchronous interview service in the existing FastAPI backend. It must persist sessions across devices, safely accept audio, run transcription/evaluation outside request handlers, guarantee idempotent answer submission, enforce ownership/state transitions, and return stable view models to the frontend.</p>
+
+    <h3>Current application architecture</h3>
+    <table>
+      <tr><th>Layer</th><th>Current technology</th><th>Interview responsibility</th></tr>
+      <tr><td>Frontend</td><td>React, TypeScript, Vite, React Router</td><td>Recording, playback, forms, polling, reports, navigation</td></tr>
+      <tr><td>Application API</td><td>FastAPI, SQLAlchemy, Alembic, PostgreSQL</td><td>Auth, ownership, session state, metadata, uploads, orchestration</td></tr>
+      <tr><td>AI service</td><td>Separate FastAPI service</td><td>Question generation, transcription adapter, evaluations, report synthesis</td></tr>
+      <tr><td>Media</td><td>Not selected</td><td>Object storage required for audio assets; DB stores metadata only</td></tr>
+      <tr><td>Jobs</td><td>Not currently present</td><td>Queue/worker required or a durable interim job mechanism</td></tr>
+    </table>
+  </section>
+
+  <section class="page">
+    <h2>2. What the frontend currently implements</h2>
+    <h3>Routes and screens</h3>
+    <table>
+      <tr><th>Route</th><th>Purpose</th><th>Required server state</th></tr>
+      <tr><td><code>/ai-interviews</code></td><td>Introduction, readiness summary, completed count, history, continue/report/delete actions</td><td>List of non-deleted sessions</td></tr>
+      <tr><td><code>/ai-interviews/new</code></td><td>Role, type, seniority, duration, resume, job description, setup review</td><td>Resume options; creates a draft</td></tr>
+      <tr><td><code>/:id/ready</code></td><td>Instructions, consent, device selection, microphone test</td><td><code>draft</code> or <code>ready</code></td></tr>
+      <tr><td><code>/:id/live</code></td><td>Question, timers, record/pause/replay/re-record/submit, finish early</td><td><code>in_progress</code></td></tr>
+      <tr><td><code>/:id/processing</code></td><td>Final staged processing with refresh recovery</td><td><code>processing</code></td></tr>
+      <tr><td><code>/:id/report</code></td><td>Overall score, dimensions, strengths, improvements, plan, per-question feedback</td><td><code>report_ready</code></td></tr>
+    </table>
+
+    <h3>Frontend modules</h3>
+    <table>
+      <tr><th>File</th><th>Responsibility</th></tr>
+      <tr><td><code>src/features/ai-interviews/page.tsx</code></td><td>All route-level screens and navigation behavior</td></tr>
+      <tr><td><code>components.tsx</code></td><td>Recorder controls, score bars, report feedback, loading/error panels</td></tr>
+      <tr><td><code>hooks.ts</code></td><td><code>useAudioRecorder</code>, microphone test, session loading</td></tr>
+      <tr><td><code>types.ts</code></td><td>UI domain types and <code>InterviewApi</code> interface</td></tr>
+      <tr><td><code>utils.ts</code></td><td>Validation, weighted score, time/date/status formatting, route destination</td></tr>
+      <tr><td><code>api.ts</code></td><td><code>MockInterviewApi</code> and unimplemented <code>LiveInterviewApi</code></td></tr>
+    </table>
+
+    <h3>Recording behavior</h3>
+    <ul>
+      <li>Microphone access is requested only after a user action.</li>
+      <li>Uses browser <code>MediaRecorder</code>; maximum answer recording is 3 minutes.</li>
+      <li>Device test recording is capped at 10 seconds.</li>
+      <li>The user can pause, resume, stop, replay, and re-record.</li>
+      <li>An empty <code>Blob</code> cannot be submitted.</li>
+      <li>The audio <code>Blob</code> stays in browser memory until upload registration and answer submission succeed.</li>
+      <li>A before-unload warning protects an unsent recording.</li>
+      <li>Media tracks and object URLs are released on replacement/unmount.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>3. Domain model and state machines</h2>
+    <h3>Session states</h3>
+    <div class="flow"><div>draft</div><span>→</span><div>ready</div><span>→</span><div>in_progress</div><span>→</span><div>processing</div><span>→</span><div>report_ready</div></div>
+    <p>Terminal/exception states: <code>abandoned</code>, <code>failed</code>, <code>deleted</code>.</p>
+    <table>
+      <tr><th>State</th><th>Meaning</th><th>Allowed actions</th></tr>
+      <tr><td>draft</td><td>Setup saved, preparation not finalized</td><td>Prepare, delete</td></tr>
+      <tr><td>ready</td><td>Questions/context prepared; device check may proceed</td><td>Start, delete</td></tr>
+      <tr><td>in_progress</td><td>Interview is accepting one authoritative current answer</td><td>Get question, register upload, submit answer, complete/abandon</td></tr>
+      <tr><td>processing</td><td>Final report jobs running</td><td>Get session/report status only</td></tr>
+      <tr><td>report_ready</td><td>Immutable report available</td><td>Get report, delete, practice again via new session</td></tr>
+      <tr><td>abandoned</td><td>User explicitly ended early</td><td>List/get/delete; no more answers</td></tr>
+      <tr><td>failed</td><td>Non-recoverable or exhausted processing failure</td><td>Retry if retryable, delete</td></tr>
+      <tr><td>deleted</td><td>Soft-deleted and hidden from normal list</td><td>None</td></tr>
+    </table>
+
+    <h3>Answer states</h3>
+    <div class="flow"><div>uploading</div><span>→</span><div>queued</div><span>→</span><div>transcribing</div><span>→</span><div>evaluating</div><span>→</span><div>completed</div></div>
+    <p><code>recording</code> is primarily a client state. <code>failed</code> is a server state and must include a safe, user-facing error plus whether retry is allowed.</p>
+
+    <div class="callout danger"><strong>Server is authoritative.</strong> Reject invalid transitions with <code>409 state_conflict</code>. Never trust a client-provided session status, question index, score, transcript, evaluation, user ID, or media ownership.</div>
+
+    <h3>Scoring contract</h3>
+    <table>
+      <tr><th>Dimension</th><th>Weight</th><th>Range</th></tr>
+      <tr><td>Relevance</td><td>30%</td><td>0-100</td></tr>
+      <tr><td>Evidence</td><td>25%</td><td>0-100</td></tr>
+      <tr><td>Structure</td><td>15%</td><td>0-100</td></tr>
+      <tr><td>Role alignment</td><td>20%</td><td>0-100</td></tr>
+      <tr><td>Communication</td><td>10%</td><td>0-100</td></tr>
+    </table>
+    <pre>overall_score = round(
+  relevance * 0.30 + evidence * 0.25 + structure * 0.15
+  + role_alignment * 0.20 + communication * 0.10
+)</pre>
+  </section>
+
+  <section class="page">
+    <h2>4. Required API surface</h2>
+    <p>Base paths below assume the existing same-origin <code>/api</code> proxy. All endpoints require the current JWT bearer token and derive <code>user_id</code> from <code>get_current_user</code>.</p>
+    <table>
+      <tr><th>Method and path</th><th>Purpose</th><th>Success</th></tr>
+      <tr><td><code>POST /interviews</code></td><td>Create draft and persist setup snapshot</td><td>201 session</td></tr>
+      <tr><td><code>POST /interviews/{id}/prepare</code></td><td>Build question plan from setup/resume/JD</td><td>200 ready session</td></tr>
+      <tr><td><code>GET /interviews/{id}</code></td><td>Authoritative session and recovery state</td><td>200 session</td></tr>
+      <tr><td><code>POST /interviews/{id}/start</code></td><td>Start or idempotently return in-progress session</td><td>200 session</td></tr>
+      <tr><td><code>GET /interviews/{id}/current-question</code></td><td>Return only current unanswered question and progress</td><td>200 question</td></tr>
+      <tr><td><code>POST /interviews/{id}/uploads</code></td><td>Create media asset and signed upload instructions</td><td>201 registration</td></tr>
+      <tr><td><code>POST /interviews/{id}/answers</code></td><td>Finalize asset, create answer idempotently, enqueue processing</td><td>202 answer</td></tr>
+      <tr><td><code>GET /interviews/{id}/answers/{answer_id}</code></td><td>Poll transcription/evaluation state</td><td>200 answer</td></tr>
+      <tr><td><code>POST /interviews/{id}/complete</code></td><td>Complete normally or abandon early</td><td>202/200 session</td></tr>
+      <tr><td><code>GET /interviews/{id}/report</code></td><td>Return report or processing status</td><td>200 report / 202 status</td></tr>
+      <tr><td><code>GET /interviews</code></td><td>Paginated history and summary fields</td><td>200 list</td></tr>
+      <tr><td><code>POST /interviews/{id}/retry</code></td><td>Retry a failed recoverable job</td><td>202 session/answer</td></tr>
+      <tr><td><code>DELETE /interviews/{id}</code></td><td>Soft delete session; schedule media deletion</td><td>204</td></tr>
+    </table>
+
+    <h3>Create interview</h3>
+    <pre>POST /interviews
+{
+  "interview_type": "behavioural",
+  "role_title": "Frontend Developer",
+  "seniority": "mid",
+  "duration_minutes": 15,
+  "resume_id": 12,
+  "job_description": "Optional text, max 8000 chars",
+  "voice_enabled": true
+}</pre>
+    <p>Validate enums, duration (10/15/20), role length, job-description length, and resume ownership. Snapshot relevant resume content at creation or preparation time so later resume edits do not silently change an active interview.</p>
+
+    <h3>Prepare response</h3>
+    <pre>{
+  "id": "int_uuid",
+  "status": "ready",
+  "estimated_question_count": 4,
+  "questions": [
+    {"id":"q_uuid","prompt":"Tell me about...","category":"behavioural","is_follow_up":false,"position":0}
+  ],
+  "current_question_index": 0,
+  "follow_up_used": false,
+  "updated_at": "2026-08-23T12:00:00Z"
+}</pre>
+  </section>
+
+  <section class="page">
+    <h2>5. Audio upload and answer submission</h2>
+    <h3>Recommended two-step upload</h3>
+    <ol>
+      <li>Frontend records a <code>Blob</code> and keeps it in memory.</li>
+      <li><code>POST /interviews/{id}/uploads</code> registers expected media metadata.</li>
+      <li>Backend returns a short-lived signed object-storage upload URL.</li>
+      <li>Frontend uploads bytes directly to storage with required headers.</li>
+      <li>Frontend calls <code>POST /interviews/{id}/answers</code> with the registered media ID and stable idempotency key.</li>
+      <li>Backend verifies the media object exists, belongs to the user/session, is within limits, and is not already attached elsewhere.</li>
+      <li>Backend creates one answer transactionally and enqueues processing.</li>
+      <li>Only after success may the frontend release its recorded <code>Blob</code>.</li>
+    </ol>
+
+    <h3>Upload registration request/response</h3>
+    <pre>POST /interviews/{id}/uploads
+{
+  "content_type": "audio/webm;codecs=opus",
+  "size_bytes": 845231,
+  "duration_ms": 65000
+}
+
+201 Created
+{
+  "media_asset_id": "media_uuid",
+  "upload_url": "https://storage.example/signed-url",
+  "method": "PUT",
+  "headers": {"Content-Type":"audio/webm;codecs=opus"},
+  "expires_at": "2026-08-23T12:10:00Z",
+  "max_size_bytes": 25000000
+}</pre>
+
+    <h3>Answer submission</h3>
+    <pre>POST /interviews/{id}/answers
+Idempotency-Key: answer_int_uuid_q_uuid_...
+{
+  "question_id": "q_uuid",
+  "media_asset_id": "media_uuid",
+  "duration_ms": 65000,
+  "idempotency_key": "answer_int_uuid_q_uuid_..."
+}
+
+202 Accepted
+{
+  "id": "ans_uuid",
+  "question_id": "q_uuid",
+  "duration_ms": 65000,
+  "status": "queued",
+  "created_at": "2026-08-23T12:02:00Z",
+  "poll_after_ms": 1000
+}</pre>
+
+    <div class="callout"><strong>Idempotency requirement:</strong> Create a unique database constraint on <code>(user_id, idempotency_key)</code>. The same key with the same payload returns the original answer. The same key with a different payload returns <code>409 idempotency_conflict</code>. This must work across processes and restarts.</div>
+
+    <h3>Limits and validation</h3>
+    <ul>
+      <li>Accepted MIME types: browser formats actually supported by product testing (at minimum WebM/Opus; optionally MP4/AAC and Ogg/Opus).</li>
+      <li>Maximum declared/actual recording duration: 180 seconds.</li>
+      <li>Maximum object size: choose a safe value (recommend 25 MB) and enforce in signed upload policy and backend verification.</li>
+      <li>Reject zero-byte objects, mismatched content types, expired registrations, wrong session/user, already-consumed assets, and malware/invalid media.</li>
+      <li>Never proxy large audio through the main API unless object storage is unavailable for the first milestone.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>6. Answer processing and next-question logic</h2>
+    <h3>Worker pipeline</h3>
+    <div class="flow"><div>Verify media</div><span>→</span><div>Normalize audio</div><span>→</span><div>Transcribe</div><span>→</span><div>Evaluate</div><span>→</span><div>Choose next action</div></div>
+    <ol>
+      <li>Mark answer <code>queued</code> in the submission transaction.</li>
+      <li>Worker marks <code>transcribing</code>, downloads/streams the object, and calls the selected transcription provider.</li>
+      <li>Persist transcript text, provider IDs, language, duration, confidence where available, and sanitized failure details.</li>
+      <li>Mark <code>evaluating</code> and send question + transcript + role/JD/resume context to the AI service using a versioned structured-output schema.</li>
+      <li>Validate every score is 0-100 and all arrays/strings meet limits before saving.</li>
+      <li>Determine <code>next_action</code>: <code>follow_up</code>, <code>next_question</code>, or <code>complete</code>.</li>
+      <li>Transactionally update answer, current question position, optional follow-up question, and session timestamp.</li>
+    </ol>
+
+    <h3>Completed answer response</h3>
+    <pre>{
+  "id": "ans_uuid",
+  "question_id": "q_uuid",
+  "status": "completed",
+  "transcript": "In this example, I...",
+  "evaluation": {
+    "scores": {
+      "relevance": 82,
+      "evidence": 74,
+      "structure": 79,
+      "role_alignment": 81,
+      "communication": 84
+    },
+    "evidence": "The answer identifies...",
+    "worked": ["Clear ownership", "Specific actions"],
+    "improvements": ["Quantify the result"],
+    "improved_outline": ["Open with the outcome", "Give context", "Explain actions", "Close with result"]
+  },
+  "next_action": "follow_up",
+  "next_question": {
+    "id": "q_followup_uuid",
+    "prompt": "What trade-off did you make?",
+    "category": "contextual_follow_up",
+    "is_follow_up": true,
+    "parent_question_id": "q_uuid"
+  }
+}</pre>
+
+    <h3>Follow-up rule</h3>
+    <p>The product allows a maximum of one contextual follow-up per interview. Enforce this server-side with <code>follow_up_used</code>, not only in the prompt. A follow-up should be generated only when it materially probes missing evidence or a useful trade-off; otherwise continue to the next planned question.</p>
+
+    <h3>Polling now, SSE later</h3>
+    <p>The live adapter should poll the answer endpoint with exponential/backoff-aware intervals (for example 1s, 1.5s, 2s; cap 3s) until completed/failed. Return <code>poll_after_ms</code>. Later, expose an authenticated SSE stream for status events without changing UI domain models.</p>
+  </section>
+
+  <section class="page">
+    <h2>7. Report generation contract</h2>
+    <p>When the last answer completes, or the user normally completes the interview, transition the session to <code>processing</code> and enqueue a final report job. The report must be reproducible from stored answers/evaluations and include a schema/prompt version.</p>
+    <pre>{
+  "overall_score": 79,
+  "scores": {
+    "relevance": 82,
+    "evidence": 73,
+    "structure": 78,
+    "role_alignment": 80,
+    "communication": 84
+  },
+  "strengths": ["Answers stay relevant", "Clear decision-making"],
+  "improvements": ["Add measurable outcomes", "Use a consistent STAR structure"],
+  "action_plan": ["Prepare three achievement stories", "Practise 90-second answers"],
+  "generated_at": "2026-08-23T12:10:00Z",
+  "schema_version": "1.0",
+  "evaluation_version": "interview-eval-v1"
+}</pre>
+    <h3>Aggregation rules</h3>
+    <ul>
+      <li>Dimension scores should be aggregated consistently across completed answers (document whether equal average or weighted by question type).</li>
+      <li>Overall score must follow the frontend weights in section 3.</li>
+      <li>Report generation should not invent factual evidence not present in transcripts or resume context.</li>
+      <li>Store per-question evaluation separately; the report references it and must survive prompt/model upgrades.</li>
+      <li>If one answer failed permanently, define whether normal completion is blocked or report is generated with a visible incomplete marker.</li>
+    </ul>
+    <div class="callout warning"><strong>Current frontend assumption to change in LiveInterviewApi:</strong> the mock <code>submitAnswer</code> waits until evaluation completes. The real adapter should accept a 202 queued answer, poll <code>getAnswer</code>, then return the completed view model to the existing page flow.</div>
+  </section>
+
+  <section class="page">
+    <h2>8. Recommended database design</h2>
+    <table>
+      <tr><th>Table</th><th>Important columns</th></tr>
+      <tr><td><code>interview_sessions</code></td><td>id UUID, user_id FK, resume_id nullable, status enum/string, type, role_title, seniority, duration_minutes, job_description snapshot, resume_snapshot JSONB, current_question_index, follow_up_used, started_at, processing_started_at, completed_at, deleted_at, error_code, version, timestamps</td></tr>
+      <tr><td><code>interview_questions</code></td><td>id UUID, session_id FK, position, prompt, category, is_follow_up, parent_question_id nullable, generation_metadata JSONB, created_at</td></tr>
+      <tr><td><code>interview_media_assets</code></td><td>id UUID, user_id FK, session_id FK, storage_key, content_type, size_bytes, duration_ms, checksum, status (registered/uploaded/consumed/deleted), expires_at, created_at, consumed_at</td></tr>
+      <tr><td><code>interview_answers</code></td><td>id UUID, session_id FK, question_id FK, media_asset_id FK unique, user_id, status, idempotency_key, request_fingerprint, duration_ms, transcript, transcription_metadata JSONB, evaluation JSONB, next_action, attempt_count, error_code/message, timestamps</td></tr>
+      <tr><td><code>interview_reports</code></td><td>id UUID, session_id FK unique, overall_score, dimension_scores JSONB, strengths JSONB, improvements JSONB, action_plan JSONB, schema_version, evaluation_version, generated_at</td></tr>
+      <tr><td><code>interview_job_attempts</code> (recommended)</td><td>id, entity_type/id, job_type, attempt, provider, provider_request_id, status, error_code, started_at, finished_at</td></tr>
+    </table>
+
+    <h3>Required constraints/indexes</h3>
+    <ul>
+      <li>Foreign keys with deliberate delete behavior; do not cascade away audit-critical answer metadata accidentally.</li>
+      <li>Unique <code>(user_id, idempotency_key)</code> on answers.</li>
+      <li>Unique <code>(session_id, position)</code> on questions.</li>
+      <li>Unique completed answer per <code>(session_id, question_id)</code>, or a design that explicitly versions re-attempts.</li>
+      <li>Unique report per session.</li>
+      <li>Indexes on <code>(user_id, updated_at desc)</code>, session status, answer status, registered asset expiry, and soft-delete fields.</li>
+      <li>Optimistic <code>version</code> or row lock around current-question advancement to prevent double progression.</li>
+    </ul>
+
+    <h3>Migration/module placement</h3>
+    <ul>
+      <li><code>app/models/interview.py</code></li>
+      <li><code>app/schemas/interview_schema.py</code></li>
+      <li><code>app/routers/interviews.py</code></li>
+      <li><code>app/services/interviews/...</code> for orchestration (avoid putting the workflow in router functions)</li>
+      <li>New Alembic revision importing all interview models in migration/runtime model discovery</li>
+      <li>Register router in <code>app/main.py</code></li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>9. AI service contracts</h2>
+    <p>The application backend should remain the only service called by the browser. It may call the existing separate AI service using internal authentication/timeouts. Prefer new versioned, structured JSON endpoints rather than reusing text-stream endpoints designed for cover letters.</p>
+    <table>
+      <tr><th>Suggested internal endpoint</th><th>Input</th><th>Output</th></tr>
+      <tr><td><code>POST /v1/interviews/questions</code></td><td>Role, type, seniority, duration, sanitized JD, resume snapshot</td><td>Ordered question plan with stable categories</td></tr>
+      <tr><td><code>POST /v1/interviews/evaluate-answer</code></td><td>Question, transcript, role context, prior answer summary, rubric</td><td>Validated dimension scores and feedback; optional follow-up intent</td></tr>
+      <tr><td><code>POST /v1/interviews/report</code></td><td>Session metadata and completed evaluations</td><td>Strengths, priorities, action plan; optionally dimension aggregation explanation</td></tr>
+    </table>
+    <p>Transcription can be called from the application worker directly or behind the AI service. Whichever owns it must expose provider-neutral results and stable error categories.</p>
+    <h3>Prompt and schema controls</h3>
+    <ul>
+      <li>Use JSON-schema/structured output and validate before persistence.</li>
+      <li>Version prompts, rubrics, and response schemas.</li>
+      <li>Set deterministic/low-temperature behavior for scoring.</li>
+      <li>Do not score accent, appearance, emotion, protected characteristics, or camera data.</li>
+      <li>Never require video/camera; this product is asynchronous audio only.</li>
+      <li>Apply timeouts, bounded retries, circuit breaking, and provider request IDs.</li>
+      <li>Do not log raw resume/JD/transcript/audio in ordinary application logs.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>10. Auth, security, privacy, and product policy</h2>
+    <h3>Authentication and authorization</h3>
+    <ul>
+      <li>Use existing <code>get_current_user</code>; every query must include current user ownership.</li>
+      <li>Return 404, not 403, for another user's interview/media ID to avoid resource enumeration.</li>
+      <li>Resume IDs must be resolved using existing per-user resume semantics.</li>
+      <li>Decide product gating before launch: if paid-only, apply existing <code>require_paid_plan</code> and add an <code>ai_interviews</code> usage feature consistently across config, events, UI, and documentation.</li>
+    </ul>
+    <h3>Privacy/retention decisions required</h3>
+    <ul>
+      <li>Audio retention period (recommend short and explicit, e.g. automatic deletion after 30 days or immediately after transcription if replay history is not needed).</li>
+      <li>Transcript/report retention and account-deletion behavior.</li>
+      <li>User-visible consent language and privacy-policy update.</li>
+      <li>Encryption in transit and at rest; private buckets only.</li>
+      <li>Signed URL expiration and object key randomization; never expose permanent public URLs.</li>
+      <li>Deletion job must remove storage object and mark/delete DB records according to policy.</li>
+      <li>Redact secrets/PII from tracing and provider logs where possible.</li>
+    </ul>
+    <h3>Abuse/cost controls</h3>
+    <ul>
+      <li>Rate-limit session creation, upload registration, answer submission, polling, and retries.</li>
+      <li>Cap concurrent active sessions and queued jobs per user.</li>
+      <li>Count billable work when a transcription/evaluation job is accepted, not for harmless GET polling.</li>
+      <li>Validate declared size/duration against actual media metadata.</li>
+      <li>Set global worker concurrency and provider budget alarms.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>11. Error contract and recovery</h2>
+    <pre>{
+  "detail": {
+    "code": "state_conflict",
+    "message": "This interview is not accepting answers.",
+    "retryable": false,
+    "current_status": "processing",
+    "request_id": "req_uuid"
+  }
+}</pre>
+    <table>
+      <tr><th>HTTP</th><th>Code examples</th><th>Frontend behavior</th></tr>
+      <tr><td>400/422</td><td>validation_error, unsupported_media, empty_recording</td><td>Show field/recording guidance</td></tr>
+      <tr><td>401</td><td>authentication_required</td><td>Existing refresh/login flow</td></tr>
+      <tr><td>402</td><td>requires_plan</td><td>Existing upgrade modal, if gated</td></tr>
+      <tr><td>404</td><td>interview_not_found, answer_not_found</td><td>Recover to history with message</td></tr>
+      <tr><td>409</td><td>state_conflict, idempotency_conflict, question_already_answered</td><td>Refetch authoritative session</td></tr>
+      <tr><td>410</td><td>upload_expired</td><td>Register a new upload; retain blob</td></tr>
+      <tr><td>413/415</td><td>media_too_large, unsupported_media</td><td>Explain recording requirements</td></tr>
+      <tr><td>429</td><td>usage_limit_reached, too_many_requests</td><td>Respect Retry-After / existing modal where applicable</td></tr>
+      <tr><td>500/502/503</td><td>processing_failed, provider_unavailable</td><td>Keep recording if submission not accepted; otherwise poll/retry job</td></tr>
+    </table>
+    <h3>Retry semantics</h3>
+    <ul>
+      <li>Upload URL expired before upload: register a new media asset.</li>
+      <li>Upload succeeded, answer POST timed out: resend the exact same idempotency key/payload.</li>
+      <li>Transcription/evaluation failed after answer accepted: do not re-upload; retry the server job.</li>
+      <li>Client refresh during processing: <code>GET /interviews/{id}</code> must recover state.</li>
+      <li>Worker crash: queued/in-progress jobs must be reclaimable using leases/timeouts.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>12. Backend delivery plan</h2>
+    <h3>Milestone 1 - persistence and contract</h3>
+    <ul class="checklist">
+      <li>Add models, enums, Alembic migration, schemas, router registration.</li>
+      <li>Implement create/list/get/delete with ownership and pagination.</li>
+      <li>Implement prepare/start/current-question and transition guards.</li>
+      <li>Provide OpenAPI examples matching this document.</li>
+    </ul>
+    <h3>Milestone 2 - media and idempotent answers</h3>
+    <ul class="checklist">
+      <li>Select S3-compatible storage and configure private bucket/CORS/lifecycle rules.</li>
+      <li>Implement upload registration, object verification, checksums, limits, cleanup.</li>
+      <li>Implement transactional idempotent answer creation.</li>
+      <li>Add queue/worker and answer polling states.</li>
+    </ul>
+    <h3>Milestone 3 - intelligence pipeline</h3>
+    <ul class="checklist">
+      <li>Implement transcription provider adapter and normalization.</li>
+      <li>Add structured question-generation/evaluation/report endpoints to AI service.</li>
+      <li>Enforce one contextual follow-up.</li>
+      <li>Persist versions/provider metadata without leaking sensitive content.</li>
+    </ul>
+    <h3>Milestone 4 - reliability and launch</h3>
+    <ul class="checklist">
+      <li>Implement retries, dead-letter handling, stalled-job recovery, metrics and alerts.</li>
+      <li>Finalize plan gating, usage limits, retention policy, consent/privacy copy.</li>
+      <li>Implement <code>LiveInterviewApi</code> DTO mapping and polling in frontend.</li>
+      <li>Run full create-record-submit-process-report journey in staging.</li>
+      <li>Load/cost test concurrent transcription/evaluation jobs.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>13. Required tests and acceptance criteria</h2>
+    <h3>Backend automated tests</h3>
+    <ul>
+      <li>Setup validation, resume ownership, enum/duration/JD limits.</li>
+      <li>Every allowed and forbidden session transition.</li>
+      <li>Concurrent start and concurrent answer submission.</li>
+      <li>Same idempotency key/same payload returns same answer.</li>
+      <li>Same idempotency key/different payload returns 409.</li>
+      <li>Wrong user cannot read/delete/upload/submit against another session.</li>
+      <li>Signed upload expiry, size/MIME mismatch, missing object, consumed media.</li>
+      <li>Worker retry and stalled-job recovery.</li>
+      <li>Maximum one contextual follow-up.</li>
+      <li>Score validation and weighted overall calculation.</li>
+      <li>Normal completion, early abandonment, final report, delete/media cleanup.</li>
+      <li>Refresh/poll recovery at queued/transcribing/evaluating/processing states.</li>
+    </ul>
+    <h3>Definition of done</h3>
+    <ul class="checklist">
+      <li>A user can create an interview using a resume they own.</li>
+      <li>Refresh at any route returns the user to the authoritative stage.</li>
+      <li>An uploaded answer cannot be lost or double-billed after a network timeout.</li>
+      <li>Audio is private, bounded, and deleted according to documented policy.</li>
+      <li>Answer status is observable until completed or safely retryable.</li>
+      <li>The next question/follow-up cannot advance twice under concurrency.</li>
+      <li>The final report matches the required dimensions and weights.</li>
+      <li>Frontend can switch to <code>VITE_INTERVIEW_API_MODE=live</code> without rewriting screens.</li>
+      <li>Logs/metrics make provider failures and stuck jobs diagnosable.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>14. Decisions the team must make before coding</h2>
+    <table>
+      <tr><th>Decision</th><th>Recommended starting point</th></tr>
+      <tr><td>Paid feature?</td><td>Use existing paid-plan gate; introduce <code>ai_interviews</code> usage key</td></tr>
+      <tr><td>Object storage</td><td>S3-compatible private bucket with signed PUT and lifecycle deletion</td></tr>
+      <tr><td>Job system</td><td>Durable Redis-backed worker (Celery/RQ/Arq) rather than FastAPI BackgroundTasks</td></tr>
+      <tr><td>Transcription provider</td><td>Provider adapter; choose based on supported browser formats, latency, cost, privacy</td></tr>
+      <tr><td>Audio retention</td><td>30 days maximum or delete after successful transcription unless playback history is required</td></tr>
+      <tr><td>Report with failed answer</td><td>Require retry before normal completion; allow explicit early-abandon without report</td></tr>
+      <tr><td>Question count</td><td>10 min = 3, 15 min = 4, 20 min = 5, plus max one follow-up</td></tr>
+      <tr><td>SSE timing</td><td>Launch with polling; add SSE after contract is stable</td></tr>
+      <tr><td>Re-record after submit?</td><td>No for v1; re-record is allowed only before accepted submission</td></tr>
+    </table>
+
+    <h3>Frontend integration touchpoint</h3>
+    <p>The backend developer should provide a staging base URL/OpenAPI schema and example credentials. Frontend work then stays focused inside <code>LiveInterviewApi</code>: snake_case DTO mapping, signed upload execution, polling, auth wrapper use, and normalized errors. Page and component code should not import backend DTOs directly.</p>
+
+    <div class="callout success"><strong>Recommended handoff order:</strong> agree on state transitions and JSON schemas first; implement database/ownership second; prove idempotent media submission third; integrate AI providers only after the durable workflow is passing tests.</div>
+
+    <p class="footer-note">Source of truth used for this document: the implemented React AI Interviews feature and current FastAPI repository structure as of 23 August 2026. This is an engineering handoff, not a claim that the backend endpoints already exist.</p>
+  </section>
+</body>
+</html>
