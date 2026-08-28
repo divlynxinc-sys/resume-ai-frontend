@@ -46,6 +46,12 @@ Never surface token counts or exact quotas in UI — limits are intentionally so
 
 Single source of truth: `src/lib/launch-offer.ts` (`LAUNCH_OFFER`, `isLaunchOfferActive()`, `launchOfferPrice[Label]()`). Display-only — the real charge is discounted by Polar (backend pre-applies `POLAR_DISCOUNT_ID` to checkouts). Surfaces: `LaunchOfferBanner` (landing page top bar), pricing cards (strikethrough original + discounted, both `/pricing` and the landing `PricingSection`), offer pill in `PricingSection`, note in `UpgradeModal`, and discounted `useMinPlanPrice()`. Pricing cards are STATIC in `pricing.tsx` (`defaultPlans`, backend fetch disabled) — DB prices in `pricing_plans` must match. To retire the offer: flip `enabled` or let `endsAt` pass, and remove the Polar discount env.
 
+## AI Interviews (live voice, 2026-08-28)
+
+`src/features/ai-interviews/` — a real-time spoken mock interview over **LiveKit** (not the record-and-upload flow older docs describe). `page.tsx` = six screens by pathname; `live-room.tsx` = the LiveKit room (`livekit-client`, `@livekit/components-react`, no components-styles); `api.ts` = `LiveInterviewApi` mapping `services/interviews.ts` DTOs → UI types. Flow: `POST /interviews` → `/ready` mic test → `POST /interviews/{id}/start` returns `{url, token}` → `/live` joins room → the backend-dispatched worker (`../resumeai-AI/interview_agent`, agent "Sam") runs the interview → room closes → `/processing` polls `GET /interviews/{id}` → `/report`. Paid-only via the normal 402 path; usage feature `ai_interviews`. **The worker must be running** (`uv run python agent.py dev` in `resumeai-AI/interview_agent`) or the candidate sits in an empty room.
+
+The setup form (`page.tsx::NewInterview`) also has: an **Upload** button next to the résumé picker (`interviewApi.uploadResume` → the existing `resumeService.fromUpload`, no new endpoint) and a **Paste / Add a link** toggle for the job description, using the shared `useJobDescriptionImport` hook (→ `POST /job-description/from-url`, SSRF-guarded server-side). That same toggle is now on every job-description field in the app — cover letter, recruiter outreach, interview answers, ATS checker, résumé builder — via `src/hooks/use-job-description-import.ts` + `src/components/shared/job-description-source.tsx`. Paste stays the default and always works everywhere; link is best-effort since bot-protected sites like LinkedIn will 422.
+
 ## Conventions
 
 - Theming via CSS variables (`var(--app-surface)`, `var(--app-border)`, `var(--accent)`, ...) — use them, not hardcoded colors.

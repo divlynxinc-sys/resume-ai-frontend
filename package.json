@@ -17,16 +17,17 @@
     "ats:test": "node scripts/test-ats-check.mjs",
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/tw.css",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/tw.css --watch",
-    "smoke:responsive": "node scripts/smoke-responsive.mjs",
-    "interviews:test": "node scripts/test-ai-interviews.mjs"
+    "smoke:responsive": "node scripts/smoke-responsive.mjs"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.24",
     "@radix-ui/react-slot": "^1.2.3",
     "@react-oauth/google": "^0.13.4",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "html2pdf.js": "^0.14.0",
+    "livekit-client": "^2.22.1",
     "lucide-react": "^0.545.0",
     "mammoth": "^1.12.0",
     "motion": "^12.43.0",

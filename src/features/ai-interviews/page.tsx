@@ -1,79 +1,431 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, CheckCircle2, Circle, Clock3, FileText, Headphones, History, LoaderCircle, Mic, Plus, ShieldCheck, Sparkles, Trash2, TriangleAlert, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, CheckCircle2, Circle, Clock3, FileText, Headphones, History, LoaderCircle, Mic, Plus, RotateCcw, Sparkles, Trash2, TriangleAlert, Trophy, Upload } from "lucide-react";
 import SiteNavbar from "@/components/layout/site-navbar";
 import PageWithSidebar from "@/components/layout/page-with-sidebar";
 import { AppButton, AppButtonLink } from "@/components/ui/AppButton";
+import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
+import { JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 import { interviewApi } from "./api";
 import { AnswerFeedback, cardClass, ErrorPanel, LoadingPanel, PageHeading, RecorderControls, ScoreBreakdown } from "./components";
-import { useAudioRecorder, useInterviewSession, useMicrophoneTest } from "./hooks";
-import type { InterviewSession, InterviewSetup, ResumeOption } from "./types";
-import { formatDate, formatTime, INTERVIEW_TYPE_LABELS, SENIORITY_LABELS, sessionDestination, statusLabel, validateSetup } from "./utils";
+import { useInterviewSession, useMicrophoneTest } from "./hooks";
+import { LiveInterviewRoom, type LiveEndReason } from "./live-room";
+import type { InterviewSession, InterviewSetup, LiveConnection, ResumeOption } from "./types";
+import { formatDate, INTERVIEW_TYPE_LABELS, readinessNote, SENIORITY_LABELS, sessionDestination, statusLabel, validateSetup } from "./utils";
 
-function Shell({ children }: { children: React.ReactNode }) { return <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]"><SiteNavbar /><PageWithSidebar activeRoute="ai-interviews"><main className="mx-auto max-w-6xl py-5 sm:py-9">{children}</main></PageWithSidebar></div>; }
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]"><SiteNavbar /><PageWithSidebar activeRoute="ai-interviews"><main className="mx-auto max-w-6xl py-5 sm:py-9">{children}</main></PageWithSidebar></div>;
+}
+
+function errorMessage(e: unknown, fallback: string) {
+  return e instanceof Error && e.message ? e.message : fallback;
+}
+
+// --- Dashboard ----------------------------------------------------------------------------
 
 function Dashboard() {
-  const navigate = useNavigate(); const [sessions, setSessions] = useState<InterviewSession[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [deleting, setDeleting] = useState<string | null>(null);
-  const load = async () => { setLoading(true); setError(""); try { setSessions(await interviewApi.listInterviews()); } catch (e) { setError(e instanceof Error ? e.message : "Unable to load interview history."); } finally { setLoading(false); } };
-  useEffect(() => { void load(); }, []);
-  const completed = sessions.filter((s) => s.status === "report_ready"); const latest = completed[0]?.report?.overallScore;
-  const remove = async (id: string) => { if (!window.confirm("Delete this interview and its mock feedback? This cannot be undone.")) return; setDeleting(id); try { await interviewApi.deleteInterview(id); await load(); } finally { setDeleting(null); } };
-  return <Shell><PageHeading eyebrow="AI interview coach" title={<>Practise with <span className="italic">purpose</span></>} description="Record answers at your own pace, get structured feedback, and build confidence before the real conversation." action={<AppButton onClick={() => navigate("/ai-interviews/new")} size="lg"><Plus className="size-4" />Start new interview</AppButton>} />
-    <section className="mt-7 grid gap-4 sm:grid-cols-3"><div className={`${cardClass} p-5`}><Sparkles className="size-5 text-violet-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Latest readiness</p><p className="mt-1 text-3xl font-light">{latest ?? "—"}{latest != null && <span className="text-base text-[var(--app-fg-soft)]">/100</span>}</p></div><div className={`${cardClass} p-5`}><Trophy className="size-5 text-amber-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Completed interviews</p><p className="mt-1 text-3xl font-light">{completed.length}</p></div><div className={`${cardClass} p-5`}><Clock3 className="size-5 text-blue-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Practice time</p><p className="mt-1 text-3xl font-light">{completed.reduce((sum, s) => sum + s.setup.durationMinutes, 0)}<span className="ml-1 text-base text-[var(--app-fg-soft)]">min</span></p></div></section>
-    <section className="mt-8"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-display text-2xl font-light">Interview history</h2><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Continue a session or revisit your feedback.</p></div><History className="size-5 text-[var(--app-fg-soft)]" /></div>{loading ? <LoadingPanel label="Loading your interviews…" /> : error ? <ErrorPanel message={error} onRetry={load} /> : sessions.length === 0 ? <div className={`${cardClass} flex flex-col items-center p-10 text-center`}><div className="grid size-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><Mic className="size-6" /></div><h3 className="mt-5 font-display text-2xl font-light">Your first practice session starts here</h3><p className="mt-2 max-w-md text-sm text-[var(--app-fg-muted)]">Choose a role and interview style. You can pause, re-record, and return whenever you need.</p><AppButton className="mt-6" onClick={() => navigate("/ai-interviews/new")}>Start practising</AppButton></div> : <div className="space-y-3">{sessions.map((s) => <article key={s.id} className={`${cardClass} flex flex-col gap-4 p-5 sm:flex-row sm:items-center`}><div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><BriefcaseBusiness className="size-5" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{s.setup.roleTitle}</h3><span className="rounded-full bg-[var(--app-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-muted)]">{statusLabel(s.status)}</span></div><p className="mt-1 text-xs text-[var(--app-fg-muted)]">{INTERVIEW_TYPE_LABELS[s.setup.interviewType]} · {formatDate(s.updatedAt)} · {s.setup.durationMinutes} min {s.report ? `· ${s.report.overallScore}/100` : ""}</p></div><div className="flex gap-2"><AppButton variant="secondary" size="sm" onClick={() => navigate(sessionDestination(s.id, s.status))}>{s.status === "report_ready" ? "View report" : s.status === "abandoned" ? "Ended" : "Continue"}</AppButton><AppButton variant="ghost" size="icon" onClick={() => remove(s.id)} disabled={deleting === s.id} aria-label={`Delete ${s.setup.roleTitle} interview`}><Trash2 className="size-4" /></AppButton></div></article>)}</div>}</section>
+  const navigate = useNavigate();
+  const [sessions, setSessions] = useState<InterviewSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try { setSessions(await interviewApi.listInterviews()); }
+    catch (e) { setError(errorMessage(e, "Unable to load interview history.")); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const completed = sessions.filter((s) => s.status === "report_ready");
+  const latest = completed[0]?.report?.overallScore;
+
+  const remove = async (id: string) => {
+    if (!window.confirm("Delete this interview and its report? This cannot be undone.")) return;
+    setBusy(id);
+    try { await interviewApi.deleteInterview(id); await load(); }
+    catch (e) { setError(errorMessage(e, "Unable to delete this interview.")); }
+    finally { setBusy(null); }
+  };
+  const retry = async (id: string) => {
+    setBusy(id);
+    try { await interviewApi.retryInterview(id); navigate(`/ai-interviews/${id}/processing`); }
+    catch (e) { setError(errorMessage(e, "Unable to retry this interview.")); setBusy(null); }
+  };
+
+  const actionFor = (s: InterviewSession) => {
+    if (s.status === "report_ready") return <AppButton variant="secondary" size="sm" onClick={() => navigate(sessionDestination(s.id, s.status))}>View report</AppButton>;
+    if (s.status === "failed") return <AppButton variant="secondary" size="sm" onClick={() => retry(s.id)} disabled={busy === s.id}><RotateCcw className="size-3.5" />Retry report</AppButton>;
+    if (s.status === "abandoned") return <AppButton variant="secondary" size="sm" disabled>Ended early</AppButton>;
+    if (s.status === "in_progress") return <AppButton variant="secondary" size="sm" onClick={() => navigate(sessionDestination(s.id, s.status))}>Rejoin</AppButton>;
+    return <AppButton variant="secondary" size="sm" onClick={() => navigate(sessionDestination(s.id, s.status))}>Continue</AppButton>;
+  };
+
+  return <Shell>
+    <PageHeading eyebrow="AI interview coach" title={<>Practise with <span className="italic">purpose</span></>} description="A live, spoken mock interview built around your résumé and the job you want — then a detailed readiness report." action={<AppButton onClick={() => navigate("/ai-interviews/new")} size="lg"><Plus className="size-4" />Start new interview</AppButton>} />
+    <section className="mt-7 grid gap-4 sm:grid-cols-3">
+      <div className={`${cardClass} p-5`}><Sparkles className="size-5 text-violet-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Latest readiness</p><p className="mt-1 text-3xl font-light">{latest ?? "—"}{latest != null && <span className="text-base text-[var(--app-fg-soft)]">/100</span>}</p></div>
+      <div className={`${cardClass} p-5`}><Trophy className="size-5 text-amber-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Completed interviews</p><p className="mt-1 text-3xl font-light">{completed.length}</p></div>
+      <div className={`${cardClass} p-5`}><Clock3 className="size-5 text-blue-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Practice time</p><p className="mt-1 text-3xl font-light">{completed.reduce((sum, s) => sum + s.setup.durationMinutes, 0)}<span className="ml-1 text-base text-[var(--app-fg-soft)]">min</span></p></div>
+    </section>
+    <section className="mt-8">
+      <div className="mb-4 flex items-center justify-between"><div><h2 className="font-display text-2xl font-light">Interview history</h2><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Rejoin a session or revisit your feedback.</p></div><History className="size-5 text-[var(--app-fg-soft)]" /></div>
+      {loading ? <LoadingPanel label="Loading your interviews…" /> : error ? <ErrorPanel message={error} onRetry={load} /> : sessions.length === 0 ? (
+        <div className={`${cardClass} flex flex-col items-center p-10 text-center`}>
+          <div className="grid size-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><Mic className="size-6" /></div>
+          <h3 className="mt-5 font-display text-2xl font-light">Your first practice session starts here</h3>
+          <p className="mt-2 max-w-md text-sm text-[var(--app-fg-muted)]">Choose a role, level and interview style. Sam, your AI interviewer, asks about your real experience and adapts to your answers.</p>
+          <AppButton className="mt-6" onClick={() => navigate("/ai-interviews/new")}>Start practising</AppButton>
+        </div>
+      ) : (
+        <div className="space-y-3">{sessions.map((s) => (
+          <article key={s.id} className={`${cardClass} flex flex-col gap-4 p-5 sm:flex-row sm:items-center`}>
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><BriefcaseBusiness className="size-5" /></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{s.setup.roleTitle}</h3><span className="rounded-full bg-[var(--app-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-muted)]">{statusLabel(s.status)}</span></div>
+              <p className="mt-1 text-xs text-[var(--app-fg-muted)]">{INTERVIEW_TYPE_LABELS[s.setup.interviewType]} · {SENIORITY_LABELS[s.setup.seniority]} · {formatDate(s.updatedAt)} · {s.setup.durationMinutes} min {s.report ? `· ${s.report.overallScore}/100` : ""}</p>
+            </div>
+            <div className="flex gap-2">{actionFor(s)}<AppButton variant="ghost" size="icon" onClick={() => remove(s.id)} disabled={busy === s.id} aria-label={`Delete ${s.setup.roleTitle} interview`}><Trash2 className="size-4" /></AppButton></div>
+          </article>
+        ))}</div>
+      )}
+    </section>
   </Shell>;
 }
 
-const initialSetup: InterviewSetup = { roleTitle: "", interviewType: "behavioural", seniority: "mid", durationMinutes: 15, voiceEnabled: true };
+// --- New interview ----------------------------------------------------------------------
+
+const initialSetup: InterviewSetup = { roleTitle: "", interviewType: "general", seniority: "mid", durationMinutes: 15 };
+
 function NewInterview() {
-  const navigate = useNavigate(); const [setup, setSetup] = useState(initialSetup); const [resumes, setResumes] = useState<ResumeOption[]>([]); const [errors, setErrors] = useState<Record<string, string>>({}); const [step, setStep] = useState<"form" | "summary">("form"); const [saving, setSaving] = useState(false); const [loadError, setLoadError] = useState("");
-  useEffect(() => { interviewApi.listResumes().then(setResumes).catch(() => setLoadError("Resume options are unavailable, but you can continue without one.")); }, []);
+  const navigate = useNavigate();
+  const [setup, setSetup] = useState(initialSetup);
+  const [resumes, setResumes] = useState<ResumeOption[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [step, setStep] = useState<"form" | "summary">("form");
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const resumeFileRef = useRef<HTMLInputElement>(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeUploadError, setResumeUploadError] = useState("");
+  const {
+    mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
+    fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
+    fetchFromLink: fetchJdFromLink, clearImportedNote: clearJdImportedNote,
+  } = useJobDescriptionImport((text) => update("jobDescription", text));
+
+  useEffect(() => { interviewApi.listResumes().then(setResumes).catch(() => setLoadError("Résumé options are unavailable, but you can continue without one.")); }, []);
   const update = <K extends keyof InterviewSetup>(key: K, value: InterviewSetup[K]) => setSetup((s) => ({ ...s, [key]: value }));
   const review = () => { const next = validateSetup(setup); setErrors(next); if (!Object.keys(next).length) setStep("summary"); };
-  const create = async () => { setSaving(true); try { const resume = resumes.find((r) => r.id === setup.resumeId); const session = await interviewApi.createInterview({ ...setup, roleTitle: setup.roleTitle.trim(), resumeTitle: resume?.title }); navigate(`/ai-interviews/${session.id}/ready`); } catch (e) { setErrors({ form: e instanceof Error ? e.message : "Unable to create interview." }); setStep("form"); } finally { setSaving(false); } };
-  return <Shell><button onClick={() => step === "summary" ? setStep("form") : navigate("/ai-interviews")} className="mb-5 inline-flex items-center gap-2 text-sm text-[var(--app-fg-muted)] hover:text-[var(--app-fg)]"><ArrowLeft className="size-4" />{step === "summary" ? "Edit setup" : "Back to interviews"}</button><PageHeading eyebrow={step === "summary" ? "Review your setup" : "New practice session"} title={step === "summary" ? <>Ready when <span className="italic">you are</span></> : <>Shape your <span className="italic">interview</span></>} description={step === "summary" ? "Check the details below. You can still go back and make changes." : "A little context helps the mock interviewer ask more useful, role-specific questions."} />
-    {step === "form" ? <div className={`${cardClass} mt-7 p-5 sm:p-7`}><div className="grid gap-6 md:grid-cols-2"><Field label="Target role" error={errors.roleTitle}><input value={setup.roleTitle} onChange={(e) => update("roleTitle", e.target.value)} placeholder="e.g. Frontend Developer" className="input" aria-invalid={!!errors.roleTitle} /></Field><Field label="Interview type" error={errors.interviewType}><select value={setup.interviewType} onChange={(e) => update("interviewType", e.target.value as InterviewSetup["interviewType"])} className="input">{Object.entries(INTERVIEW_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field><Field label="Seniority" error={errors.seniority}><select value={setup.seniority} onChange={(e) => update("seniority", e.target.value as InterviewSetup["seniority"])} className="input">{Object.entries(SENIORITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field><Field label="Duration" hint="Longer sessions include more questions."><div className="grid grid-cols-3 gap-2">{([10,15,20] as const).map((m) => <button key={m} type="button" onClick={() => update("durationMinutes", m)} className={`rounded-xl border px-3 py-2.5 text-sm ${setup.durationMinutes === m ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-text)]" : "border-[var(--app-border)] bg-[var(--app-surface-2)]"}`}>{m} min</button>)}</div></Field><Field label="Resume (optional)" hint="Used only to tailor mock questions."><select value={setup.resumeId ?? ""} onChange={(e) => update("resumeId", e.target.value || undefined)} className="input"><option value="">No resume selected</option>{resumes.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</select>{loadError && <p className="mt-2 text-xs text-amber-600">{loadError}</p>}</Field><div className="md:col-span-2"><Field label="Job description (optional)" hint={`${setup.jobDescription?.length ?? 0}/8,000 characters`} error={errors.jobDescription}><textarea value={setup.jobDescription ?? ""} onChange={(e) => update("jobDescription", e.target.value)} rows={7} placeholder="Paste the role description for more targeted questions…" className="input resize-y" /></Field></div></div>{errors.form && <p className="mt-4 text-sm text-red-600">{errors.form}</p>}<div className="mt-7 flex justify-end"><AppButton onClick={review} size="lg">Review setup<ArrowRight className="size-4" /></AppButton></div></div> : <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_340px]"><div className={`${cardClass} p-6`}><dl className="divide-y divide-[var(--app-border)]">{[["Target role", setup.roleTitle], ["Interview style", INTERVIEW_TYPE_LABELS[setup.interviewType]], ["Seniority", SENIORITY_LABELS[setup.seniority]], ["Duration", `${setup.durationMinutes} minutes`], ["Resume", resumes.find((r) => r.id === setup.resumeId)?.title ?? "Not selected"]].map(([k,v]) => <div key={k} className="flex justify-between gap-4 py-4 first:pt-0 last:pb-0"><dt className="text-sm text-[var(--app-fg-muted)]">{k}</dt><dd className="text-right text-sm font-medium">{v}</dd></div>)}</dl>{setup.jobDescription && <div className="mt-6 rounded-xl bg-[var(--app-surface-2)] p-4"><p className="text-xs font-semibold uppercase text-[var(--app-fg-soft)]">Job description</p><p className="mt-2 line-clamp-5 whitespace-pre-wrap text-sm text-[var(--app-fg-muted)]">{setup.jobDescription}</p></div>}</div><div className={`${cardClass} h-fit p-6`}><ShieldCheck className="size-6 text-[var(--accent)]" /><h2 className="mt-4 font-display text-xl font-light">What happens next</h2><ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Check microphone and record a short test", "Answer one question at a time", "Review detailed, private mock feedback"].map((x) => <li key={x} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul><AppButton className="mt-6 w-full" size="lg" onClick={create} disabled={saving}>{saving ? <LoaderCircle className="size-4 animate-spin" /> : null}{saving ? "Creating…" : "Continue to device check"}</AppButton></div></div>}
+  const create = async () => {
+    setSaving(true);
+    try {
+      const resume = resumes.find((r) => r.id === setup.resumeId);
+      const session = await interviewApi.createInterview({ ...setup, roleTitle: setup.roleTitle.trim(), resumeTitle: resume?.title });
+      navigate(`/ai-interviews/${session.id}/ready`);
+    } catch (e) { setErrors({ form: errorMessage(e, "Unable to create interview.") }); setStep("form"); }
+    finally { setSaving(false); }
+  };
+
+  const onResumeFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setResumeUploading(true); setResumeUploadError("");
+    try {
+      const uploaded = await interviewApi.uploadResume(file);
+      setResumes((prev) => [uploaded, ...prev]);
+      update("resumeId", uploaded.id);
+    } catch (err) { setResumeUploadError(errorMessage(err, "Unable to upload that résumé. Use a PDF or DOCX under 10MB.")); }
+    finally { setResumeUploading(false); }
+  };
+
+  return <Shell>
+    <button onClick={() => step === "summary" ? setStep("form") : navigate("/ai-interviews")} className="mb-5 inline-flex items-center gap-2 text-sm text-[var(--app-fg-muted)] hover:text-[var(--app-fg)]"><ArrowLeft className="size-4" />{step === "summary" ? "Edit setup" : "Back to interviews"}</button>
+    <PageHeading eyebrow={step === "summary" ? "Review your setup" : "New practice session"} title={step === "summary" ? <>Ready when <span className="italic">you are</span></> : <>Shape your <span className="italic">interview</span></>} description={step === "summary" ? "Check the details below. You can still go back and make changes." : "Your résumé and the job description let Sam ask about your real projects and experience at the right level."} />
+    {step === "form" ? (
+      <div className={`${cardClass} mt-7 p-5 sm:p-7`}>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Field label="Target role" error={errors.roleTitle}><input value={setup.roleTitle} onChange={(e) => update("roleTitle", e.target.value)} placeholder="e.g. Frontend Developer" className="input" aria-invalid={!!errors.roleTitle} /></Field>
+          <Field label="Interview type" error={errors.interviewType}><select value={setup.interviewType} onChange={(e) => update("interviewType", e.target.value as InterviewSetup["interviewType"])} className="input">{Object.entries(INTERVIEW_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Level you are interviewing for" hint="Questions are calibrated to this level." error={errors.seniority}><select value={setup.seniority} onChange={(e) => update("seniority", e.target.value as InterviewSetup["seniority"])} className="input">{Object.entries(SENIORITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <Field label="Duration" hint="Longer sessions include more questions."><div className="grid grid-cols-3 gap-2">{([10, 15, 20] as const).map((m) => <button key={m} type="button" onClick={() => update("durationMinutes", m)} className={`rounded-xl border px-3 py-2.5 text-sm ${setup.durationMinutes === m ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-text)]" : "border-[var(--app-border)] bg-[var(--app-surface-2)]"}`}>{m} min</button>)}</div></Field>
+          <Field label="Résumé (recommended)" hint="Sam asks about the experience and projects on it.">
+            <div className="flex gap-2">
+              <select value={setup.resumeId ?? ""} onChange={(e) => update("resumeId", e.target.value || undefined)} className="input flex-1"><option value="">No résumé selected</option>{resumes.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</select>
+              <AppButton type="button" variant="secondary" onClick={() => resumeFileRef.current?.click()} disabled={resumeUploading} aria-label="Upload a résumé">
+                {resumeUploading ? <LoaderCircle className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                <span className="hidden sm:inline">Upload</span>
+              </AppButton>
+              <input ref={resumeFileRef} type="file" accept=".pdf,.docx" className="hidden" onChange={onResumeFileSelected} />
+            </div>
+            {loadError && <p className="mt-2 text-xs text-amber-600">{loadError}</p>}
+            {resumeUploadError && <p className="mt-2 text-xs text-red-600">{resumeUploadError}</p>}
+          </Field>
+          <div className="md:col-span-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm font-medium">Job description (optional)</span>
+              <JobDescriptionModeToggle
+                mode={jdMode}
+                onChange={setJdMode}
+                activeClassName="bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                inactiveClassName="bg-[var(--app-surface-2)] text-[var(--app-fg-muted)]"
+              />
+            </div>
+            {jdMode === "link" ? (
+              <div>
+                <div className="flex gap-2">
+                  <input value={jdUrl} onChange={(e) => setJdUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void fetchJdFromLink(); } }} placeholder="Paste the job posting URL…" className="input flex-1" inputMode="url" />
+                  <AppButton type="button" variant="secondary" onClick={fetchJdFromLink} disabled={jdFetching || !jdUrl.trim()}>{jdFetching ? <LoaderCircle className="size-4 animate-spin" /> : "Fetch"}</AppButton>
+                </div>
+                <p className="mt-2 text-xs text-[var(--app-fg-soft)]">Works best with a company careers page or job board. Some sites (e.g. LinkedIn) block this — paste the text instead if it fails.</p>
+                {jdFetchError && <p className="mt-2 text-xs text-red-600">{jdFetchError}</p>}
+              </div>
+            ) : (
+              <>
+                <textarea value={setup.jobDescription ?? ""} onChange={(e) => { update("jobDescription", e.target.value); clearJdImportedNote(); }} rows={7} placeholder="Paste the role description for more targeted questions…" className="input resize-y" />
+                <div className="mt-1.5 flex justify-between text-xs text-[var(--app-fg-soft)]">
+                  <span>{jdImportedFrom && `Imported from ${jdImportedFrom} — feel free to edit.`}</span>
+                  <span>{setup.jobDescription?.length ?? 0}/8,000 characters</span>
+                </div>
+              </>
+            )}
+            {errors.jobDescription && <p className="mt-1.5 text-xs text-red-600">{errors.jobDescription}</p>}
+          </div>
+        </div>
+        {errors.form && <p className="mt-4 text-sm text-red-600">{errors.form}</p>}
+        <div className="mt-7 flex justify-end"><AppButton onClick={review} size="lg">Review setup<ArrowRight className="size-4" /></AppButton></div>
+      </div>
+    ) : (
+      <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_340px]">
+        <div className={`${cardClass} p-6`}>
+          <dl className="divide-y divide-[var(--app-border)]">{[["Target role", setup.roleTitle], ["Interview style", INTERVIEW_TYPE_LABELS[setup.interviewType]], ["Level", SENIORITY_LABELS[setup.seniority]], ["Duration", `${setup.durationMinutes} minutes`], ["Résumé", resumes.find((r) => r.id === setup.resumeId)?.title ?? "Not selected"], ["Job description", setup.jobDescription?.trim() ? `${setup.jobDescription.trim().length} characters` : "Not provided"]].map(([k, v]) => <div key={k} className="flex justify-between gap-4 py-4 first:pt-0 last:pb-0"><dt className="text-sm text-[var(--app-fg-muted)]">{k}</dt><dd className="text-right text-sm font-medium">{v}</dd></div>)}</dl>
+        </div>
+        <aside className={`${cardClass} h-fit p-6`}>
+          <h2 className="font-display text-xl font-light">What happens next</h2>
+          <ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Test your microphone on the next screen.", "Sam starts with an introduction, then digs into your experience.", "Questions adapt to your answers — it is a real conversation.", "Your report is ready moments after you finish."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul>
+          {errors.form && <p className="mt-4 text-sm text-red-600">{errors.form}</p>}
+          <AppButton className="mt-6 w-full" size="lg" onClick={create} disabled={saving}>{saving ? <LoaderCircle className="size-4 animate-spin" /> : null}{saving ? "Creating…" : "Continue to device check"}</AppButton>
+        </aside>
+      </div>
+    )}
   </Shell>;
 }
 
-function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) { return <label className="block"><span className="mb-2 flex justify-between gap-3 text-sm font-medium"><span>{label}</span>{hint && <span className="text-xs font-normal text-[var(--app-fg-soft)]">{hint}</span>}</span>{children}{error && <span className="mt-1.5 block text-xs text-red-600">{error}</span>}</label>; }
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-2 flex justify-between gap-3 text-sm font-medium"><span>{label}</span>{hint && <span className="text-xs font-normal text-[var(--app-fg-soft)]">{hint}</span>}</span>{children}{error && <span className="mt-1.5 block text-xs text-red-600">{error}</span>}</label>;
+}
+
+// --- Ready (device check) --------------------------------------------------------------------
 
 function Ready() {
-  const { id } = useParams(); const navigate = useNavigate(); const { session, loading, error, refresh } = useInterviewSession(id); const mic = useMicrophoneTest(); const [consent, setConsent] = useState(false); const [starting, setStarting] = useState(false);
-  useEffect(() => { if (session?.status === "in_progress") navigate(`/ai-interviews/${session.id}/live`, { replace: true }); else if (session && !["draft","ready"].includes(session.status)) navigate(sessionDestination(session.id, session.status), { replace: true }); }, [session, navigate]);
-  const start = async () => { if (!session) return; setStarting(true); try { await interviewApi.prepareInterview(session.id); await interviewApi.startInterview(session.id); navigate(`/ai-interviews/${session.id}/live`); } finally { setStarting(false); } };
-  return <Shell>{loading ? <LoadingPanel /> : error || !session ? <ErrorPanel message={error || "Interview not found."} onRetry={refresh} /> : <><PageHeading eyebrow="Device check" title={<>Settle in, then <span className="italic">begin</span></>} description={`${session.questions.length}–${session.questions.length + 1} questions · about ${session.setup.durationMinutes} minutes · ${session.setup.roleTitle}`} /><div className="mt-7 grid gap-6 lg:grid-cols-[1fr_380px]"><section className={`${cardClass} p-6`}><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-[var(--accent-soft)]"><Headphones className="size-5 text-[var(--accent-text)]" /></div><div><h2 className="font-display text-xl font-light">Test your microphone</h2><p className="text-xs text-[var(--app-fg-muted)]">Record up to 10 seconds, then play it back.</p></div></div>{mic.devices.length > 1 && <label className="mt-5 block text-sm">Microphone<select className="input mt-2" value={mic.selectedDeviceId} onChange={(e) => mic.setSelectedDeviceId(e.target.value)}>{mic.devices.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{d.label || `Microphone ${i + 1}`}</option>)}</select></label>}<div className="mt-6 rounded-2xl bg-[var(--app-surface-2)] p-5"><RecorderControls recorder={mic} selectedDeviceId={mic.selectedDeviceId} /></div><p className="mt-4 text-xs leading-5 text-[var(--app-fg-muted)]">Microphone access is requested only when you press “Start recording.” If access is denied, open your browser’s site controls, allow the microphone, and retry.</p></section><aside className={`${cardClass} h-fit p-6`}><h2 className="font-display text-xl font-light">Before you start</h2><ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Find a quiet space and use headphones if possible.", "You can pause, replay, and re-record every answer.", "Aim for focused answers of 60–120 seconds.", "Recordings stay in this browser until the mock submission is accepted."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul><label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm"><input type="checkbox" className="mt-1 size-4" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>I consent to microphone recording for this mock interview. Recordings are processed locally by the mock experience.</span></label><AppButton className="mt-5 w-full" size="lg" onClick={start} disabled={!consent || starting}>{starting ? <LoaderCircle className="size-4 animate-spin" /> : null}{starting ? "Starting…" : "Start interview"}</AppButton></aside></div></>}</Shell>;
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { session, loading, error, refresh } = useInterviewSession(id);
+  const mic = useMicrophoneTest();
+  const [consent, setConsent] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState("");
+
+  useEffect(() => {
+    if (session && session.status !== "ready" && session.status !== "in_progress") navigate(sessionDestination(session.id, session.status), { replace: true });
+  }, [session, navigate]);
+
+  const start = async () => {
+    if (!session) return;
+    setStarting(true); setStartError("");
+    if (mic.state === "recording" || mic.state === "paused") mic.stop();
+    try {
+      const { connection } = await interviewApi.startInterview(session.id);
+      navigate(`/ai-interviews/${session.id}/live`, { state: { connection } });
+    } catch (e) {
+      setStartError(errorMessage(e, "We could not start the interview. Please try again."));
+      setStarting(false);
+    }
+  };
+
+  return <Shell>{loading ? <LoadingPanel /> : error || !session ? <ErrorPanel message={error || "Interview not found."} onRetry={refresh} /> : <>
+    <PageHeading eyebrow="Device check" title={<>Settle in, then <span className="italic">begin</span></>} description={`About ${session.questionTarget} main questions plus follow-ups · ${session.setup.durationMinutes} minutes · ${session.setup.roleTitle} (${SENIORITY_LABELS[session.setup.seniority]})`} />
+    <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_380px]">
+      <section className={`${cardClass} p-6`}>
+        <div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-[var(--accent-soft)]"><Headphones className="size-5 text-[var(--accent-text)]" /></div><div><h2 className="font-display text-xl font-light">Test your microphone</h2><p className="text-xs text-[var(--app-fg-muted)]">Record up to 10 seconds, then play it back.</p></div></div>
+        {mic.devices.length > 1 && <label className="mt-5 block text-sm">Microphone<select className="input mt-2" value={mic.selectedDeviceId} onChange={(e) => mic.setSelectedDeviceId(e.target.value)}>{mic.devices.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{d.label || `Microphone ${i + 1}`}</option>)}</select></label>}
+        <div className="mt-6 rounded-2xl bg-[var(--app-surface-2)] p-5"><RecorderControls recorder={mic} selectedDeviceId={mic.selectedDeviceId} /></div>
+        <p className="mt-4 text-xs leading-5 text-[var(--app-fg-muted)]">Microphone access is requested only when you press “Start recording.” If access is denied, open your browser’s site controls, allow the microphone, and retry.</p>
+      </section>
+      <aside className={`${cardClass} h-fit p-6`}>
+        <h2 className="font-display text-xl font-light">Before you start</h2>
+        <ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Find a quiet space and use headphones if you can.", "Speak naturally — Sam waits for you to finish, even if you pause to think.", "Aim for focused answers of one to two minutes.", "You can end the interview at any time; the report covers what you answered."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul>
+        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm"><input type="checkbox" className="mt-1 size-4" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>I consent to my voice being processed live by JobSynk’s AI interviewer. Audio is not stored; a text transcript is kept to build my report.</span></label>
+        {startError && <p className="mt-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-sm text-[#a13f62]" role="alert">{startError}</p>}
+        <AppButton className="mt-5 w-full" size="lg" onClick={start} disabled={!consent || starting}>{starting ? <LoaderCircle className="size-4 animate-spin" /> : null}{starting ? "Connecting…" : session.status === "in_progress" ? "Rejoin interview" : "Start interview"}</AppButton>
+      </aside>
+    </div>
+  </>}</Shell>;
 }
+
+// --- Live -----------------------------------------------------------------------------------
 
 function Live() {
-  const { id } = useParams(); const navigate = useNavigate(); const { session, setSession, loading, error, refresh } = useInterviewSession(id); const recorder = useAudioRecorder(); const [submitting, setSubmitting] = useState(false); const [stage, setStage] = useState(""); const [submitError, setSubmitError] = useState(""); const [elapsed, setElapsed] = useState(0); const idempotency = useRef("");
-  useEffect(() => { if (!session?.startedAt) return; const tick = () => setElapsed(Math.floor((Date.now() - new Date(session.startedAt!).getTime()) / 1000)); tick(); const t = window.setInterval(tick, 1000); return () => window.clearInterval(t); }, [session?.startedAt]);
-  useEffect(() => { if (!recorder.blob || submitting) return; const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; }; window.addEventListener("beforeunload", protect); return () => window.removeEventListener("beforeunload", protect); }, [recorder.blob, submitting]);
-  useEffect(() => { if (session && session.status !== "in_progress") navigate(sessionDestination(session.id, session.status), { replace: true }); }, [session, navigate]);
-  const question = session?.questions[session.currentQuestionIndex];
-  useEffect(() => { idempotency.current = question ? `answer_${session?.id}_${question.id}_${crypto.randomUUID?.() ?? Date.now()}` : ""; recorder.clearRecording(); setStage(""); setSubmitError(""); }, [question?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const submit = async () => { if (!session || !question || !recorder.blob || submitting) return; setSubmitting(true); setSubmitError(""); try { setStage("Uploading recording…"); const upload = await interviewApi.registerUpload(session.id, recorder.blob); setStage("Transcribing your answer…"); const answer = await interviewApi.submitAnswer(session.id, { questionId: question.id, mediaAssetId: upload.mediaAssetId, durationMs: recorder.durationMs, idempotencyKey: idempotency.current }); setStage(answer.status === "completed" ? "Feedback ready" : "Evaluating your response…"); const updated = await interviewApi.getInterview(session.id); setSession(updated); if (updated.currentQuestionIndex >= updated.questions.length) { await interviewApi.completeInterview(session.id); navigate(`/ai-interviews/${session.id}/processing`); } } catch (e) { setSubmitError(e instanceof Error ? e.message : "We could not submit your answer. Your recording is still here—try again."); } finally { setSubmitting(false); } };
-  const finish = async () => { if (!session || !window.confirm("Finish this interview early? You will return to interview history and this session will be marked as ended early.")) return; if (recorder.state === "recording" || recorder.state === "paused") recorder.stop(); await interviewApi.completeInterview(session.id, true); navigate("/ai-interviews"); };
-  if (loading) return <Shell><LoadingPanel /></Shell>; if (error || !session || !question) return <Shell><ErrorPanel message={error || "There is no current question."} onRetry={refresh} /></Shell>;
-  const total = session.questions.length; const number = session.currentQuestionIndex + 1; const progress = Math.round(session.currentQuestionIndex / total * 100);
-  return <Shell><div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-border)] pb-5"><div><p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-text)]">{session.setup.roleTitle} · {INTERVIEW_TYPE_LABELS[session.setup.interviewType]}</p><h1 className="mt-1 font-display text-2xl font-light">Question {number} of {total}</h1></div><div className="flex items-center gap-3"><span className="rounded-full bg-[var(--app-surface)] px-3 py-2 font-mono text-sm"><Clock3 className="mr-1.5 inline size-4" />{formatTime(elapsed)}</span><AppButton variant="ghost" size="sm" onClick={finish}>Finish early</AppButton></div></div><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--app-surface-2)]"><div className="h-full rounded-full bg-[var(--accent)] transition-all" style={{ width: `${progress}%` }} /></div><div className="mx-auto mt-8 max-w-3xl"><section className={`${cardClass} overflow-hidden`}><div className="border-b border-[var(--app-border)] bg-[linear-gradient(135deg,var(--accent-soft),var(--app-surface))] p-6 sm:p-8"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent-text)]">{question.isFollowUp ? <Sparkles className="size-4" /> : <Mic className="size-4" />}{question.isFollowUp ? "Contextual follow-up" : question.category}</div><h2 className="mt-5 font-display text-2xl font-light leading-snug sm:text-3xl">{question.prompt}</h2></div><div className="p-5 sm:p-8"><RecorderControls recorder={recorder} />{stage && <div className="mt-5 flex items-center justify-center gap-2 text-sm text-[var(--app-fg-muted)]" aria-live="polite">{submitting && <LoaderCircle className="size-4 animate-spin text-[var(--accent)]" />}{stage}</div>}{submitError && <p className="mt-5 rounded-xl bg-[var(--pastel-rose)] p-3 text-center text-sm text-[#a13f62]" role="alert">{submitError}</p>}<div className="mt-7 flex justify-center"><AppButton size="lg" onClick={submit} disabled={!recorder.blob || submitting}>{submitting ? "Submitting…" : "Submit answer"}<ArrowRight className="size-4" /></AppButton></div></div></section><p className="mt-4 text-center text-xs text-[var(--app-fg-muted)]">Pause if you need a moment. Your answer is not submitted until you choose “Submit answer.” Maximum recording length is 3 minutes.</p></div></Shell>;
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { session, loading, error, refresh } = useInterviewSession(id);
+  const [connection, setConnection] = useState<LiveConnection | null>((location.state as { connection?: LiveConnection } | null)?.connection ?? null);
+  const [connectError, setConnectError] = useState("");
+  const [endMessage, setEndMessage] = useState("");
+  const finishing = useRef(false);
+
+  useEffect(() => {
+    if (session && session.status !== "in_progress" && session.status !== "ready") navigate(sessionDestination(session.id, session.status), { replace: true });
+  }, [session, navigate]);
+
+  // No connection in router state (refresh / deep link): ask the backend for a fresh token.
+  useEffect(() => {
+    if (!session || connection || connectError) return;
+    if (session.status !== "in_progress" && session.status !== "ready") return;
+    let cancelled = false;
+    interviewApi.startInterview(session.id)
+      .then((r) => { if (!cancelled) setConnection(r.connection); })
+      .catch((e) => { if (!cancelled) setConnectError(errorMessage(e, "We could not join the interview room.")); });
+    return () => { cancelled = true; };
+  }, [session, connection, connectError]);
+
+  useEffect(() => {
+    if (!connection || finishing.current) return;
+    const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [connection]);
+
+  const onEnded = async (reason: LiveEndReason, detail?: string) => {
+    if (!session || finishing.current) return;
+    finishing.current = true;
+    if (reason === "error") setEndMessage(detail || "The connection was lost.");
+    try { await interviewApi.completeInterview(session.id); } catch { /* the processing page reconciles */ }
+    navigate(`/ai-interviews/${session.id}/processing`, { replace: true });
+  };
+
+  if (loading) return <Shell><LoadingPanel /></Shell>;
+  if (error || !session) return <Shell><ErrorPanel message={error || "Interview not found."} onRetry={refresh} /></Shell>;
+  if (connectError) return <Shell><ErrorPanel message={connectError} onRetry={() => { setConnectError(""); }} /><div className="mt-4 text-center"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink></div></Shell>;
+  if (!connection) return <Shell><LoadingPanel label="Joining your interview room…" /></Shell>;
+  return <Shell>
+    {endMessage && <p className="mb-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-center text-sm text-[#a13f62]" role="alert">{endMessage}</p>}
+    <LiveInterviewRoom key={connection.token} connection={connection} roleTitle={session.setup.roleTitle} durationMinutes={session.setup.durationMinutes} startedAt={session.startedAt} onEnded={onEnded} />
+  </Shell>;
 }
+
+// --- Processing ----------------------------------------------------------------------------
 
 function Processing() {
-  const { id } = useParams(); const navigate = useNavigate(); const { session, loading, error, refresh } = useInterviewSession(id); const [elapsed, setElapsed] = useState(0);
-  useEffect(() => { if (!session) return; if (session.status === "report_ready") { navigate(`/ai-interviews/${session.id}/report`, { replace: true }); return; } if (session.status !== "processing") { navigate(sessionDestination(session.id, session.status), { replace: true }); return; } const started = new Date(session.processingStartedAt ?? Date.now()).getTime(); const timer = window.setInterval(async () => { const seconds = Math.floor((Date.now() - started) / 1000); setElapsed(seconds); if (seconds >= 6) { const next = await interviewApi.getInterview(session.id); if (next.status === "report_ready") navigate(`/ai-interviews/${session.id}/report`, { replace: true }); } }, 800); return () => window.clearInterval(timer); }, [session, navigate]);
-  const stages = ["Finalising recordings", "Reviewing responses", "Calculating scores", "Preparing recommendations"]; const current = Math.min(3, Math.floor(elapsed / 1.5));
-  return <Shell>{loading ? <LoadingPanel /> : error || !session ? <ErrorPanel message={error || "Interview not found."} onRetry={refresh} /> : <div className="mx-auto max-w-2xl py-8 text-center"><div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[var(--accent-soft)]"><Sparkles className="size-7 animate-pulse text-[var(--accent)]" /></div><h1 className="mt-6 font-display text-4xl font-light">Building your feedback</h1><p className="mt-3 text-sm text-[var(--app-fg-muted)]">You can safely refresh this page. Your progress is stored in this browser.</p><div className={`${cardClass} mt-8 p-6 text-left`}>{stages.map((label, i) => <div key={label} className="flex items-center gap-4 py-3"><div className={`grid size-8 place-items-center rounded-full ${i < current ? "bg-emerald-500 text-white" : i === current ? "bg-[var(--accent)] text-white" : "bg-[var(--app-surface-2)] text-[var(--app-fg-soft)]"}`}>{i < current ? <Check className="size-4" /> : i === current ? <LoaderCircle className="size-4 animate-spin" /> : <Circle className="size-3" />}</div><span className={i <= current ? "text-[var(--app-fg)]" : "text-[var(--app-fg-soft)]"}>{label}</span></div>)}</div></div>}</Shell>;
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { session, setSession, loading, error, refresh } = useInterviewSession(id);
+  const [elapsed, setElapsed] = useState(0);
+  const [retrying, setRetrying] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    if (session.status === "report_ready") { navigate(`/ai-interviews/${session.id}/report`, { replace: true }); return; }
+    if (session.status === "ready" || session.status === "in_progress") { navigate(sessionDestination(session.id, session.status), { replace: true }); return; }
+    if (session.status !== "processing") return;
+    const started = new Date(session.processingStartedAt ?? Date.now()).getTime();
+    const tick = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    const poll = window.setInterval(async () => {
+      try {
+        const next = await interviewApi.getInterview(session.id);
+        if (next.status !== "processing") setSession(next);
+      } catch { /* keep polling; the next tick retries */ }
+    }, 2500);
+    return () => { window.clearInterval(tick); window.clearInterval(poll); };
+  }, [session, navigate, setSession]);
+
+  const retry = async () => {
+    if (!session) return;
+    setRetrying(true);
+    try { setSession(await interviewApi.retryInterview(session.id)); }
+    catch (e) { setSession({ ...session, error: errorMessage(e, "Unable to retry right now.") }); }
+    finally { setRetrying(false); }
+  };
+
+  const stages = ["Saving your conversation", "Reviewing each answer", "Calculating scores", "Preparing recommendations"];
+  const current = Math.min(3, Math.floor(elapsed / 6));
+
+  if (loading) return <Shell><LoadingPanel /></Shell>;
+  if (error || !session) return <Shell><ErrorPanel message={error || "Interview not found."} onRetry={refresh} /></Shell>;
+
+  if (session.status === "failed") return <Shell>
+    <ErrorPanel message={session.error || "We couldn't build your report this time."} onRetry={retrying ? undefined : retry} />
+    <div className="mt-4 flex justify-center gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Start a new interview</AppButton></div>
+  </Shell>;
+
+  if (session.status === "abandoned") return <Shell>
+    <div className={`${cardClass} mx-auto max-w-2xl p-8 text-center`}>
+      <TriangleAlert className="mx-auto size-8 text-amber-500" />
+      <h1 className="mt-4 font-display text-3xl font-light">This interview ended early</h1>
+      <p className="mt-3 text-sm text-[var(--app-fg-muted)]">It finished before you answered a question, so there is nothing to score yet. Start a new session whenever you are ready.</p>
+      <div className="mt-6 flex justify-center gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Start a new interview</AppButton></div>
+    </div>
+  </Shell>;
+
+  return <Shell>
+    <div className="mx-auto max-w-2xl py-8 text-center">
+      <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[var(--accent-soft)]"><Sparkles className="size-7 animate-pulse text-[var(--accent)]" /></div>
+      <h1 className="mt-6 font-display text-4xl font-light">Building your feedback</h1>
+      <p className="mt-3 text-sm text-[var(--app-fg-muted)]">This usually takes under a minute. You can safely refresh this page.</p>
+      <div className={`${cardClass} mt-8 p-6 text-left`}>{stages.map((label, i) => <div key={label} className="flex items-center gap-4 py-3"><div className={`grid size-8 place-items-center rounded-full ${i < current ? "bg-emerald-500 text-white" : i === current ? "bg-[var(--accent)] text-white" : "bg-[var(--app-surface-2)] text-[var(--app-fg-soft)]"}`}>{i < current ? <Check className="size-4" /> : i === current ? <LoaderCircle className="size-4 animate-spin" /> : <Circle className="size-3" />}</div><span className={i <= current ? "text-[var(--app-fg)]" : "text-[var(--app-fg-soft)]"}>{label}</span></div>)}</div>
+    </div>
+  </Shell>;
 }
 
+// --- Report ---------------------------------------------------------------------------------
+
 function Report() {
-  const { id } = useParams(); const navigate = useNavigate(); const { session, loading, error, refresh } = useInterviewSession(id);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { session, loading, error, refresh } = useInterviewSession(id);
   useEffect(() => { if (session && session.status !== "report_ready") navigate(sessionDestination(session.id, session.status), { replace: true }); }, [session, navigate]);
-  if (loading) return <Shell><LoadingPanel label="Loading your feedback…" /></Shell>; if (error || !session?.report) return <Shell><ErrorPanel message={error || "This report is not ready yet."} onRetry={refresh} /></Shell>;
+  if (loading) return <Shell><LoadingPanel label="Loading your feedback…" /></Shell>;
+  if (error || !session?.report) return <Shell><ErrorPanel message={error || "This report is not ready yet."} onRetry={refresh} /></Shell>;
   const report = session.report;
-  return <Shell><PageHeading eyebrow="Interview report" title={<>Your readiness <span className="italic">review</span></>} description={`${session.setup.roleTitle} · ${INTERVIEW_TYPE_LABELS[session.setup.interviewType]} · ${SENIORITY_LABELS[session.setup.seniority]} · ${formatDate(report.generatedAt)}`} action={<div className="flex gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Practice again</AppButton></div>} /><section className="mt-7 grid gap-6 lg:grid-cols-[300px_1fr]"><div className={`${cardClass} flex flex-col items-center justify-center p-7 text-center`}><div className="relative grid size-40 place-items-center rounded-full" style={{ background: `conic-gradient(var(--accent) ${report.overallScore * 3.6}deg, var(--app-surface-2) 0)` }}><div className="grid size-32 place-items-center rounded-full bg-[var(--app-surface)]"><div><p className="text-5xl font-light">{report.overallScore}</p><p className="text-xs text-[var(--app-fg-muted)]">out of 100</p></div></div></div><h2 className="mt-5 font-display text-xl font-light">Overall readiness</h2><p className="mt-2 text-sm text-[var(--app-fg-muted)]">A strong foundation. Focus on evidence and sharper outcomes next.</p></div><div className={`${cardClass} p-6`}><h2 className="font-display text-2xl font-light">Score breakdown</h2><p className="mb-6 mt-1 text-sm text-[var(--app-fg-muted)]">Weighted toward relevance, evidence, and role alignment.</p><ScoreBreakdown scores={report.scores} /></div></section><section className="mt-6 grid gap-5 lg:grid-cols-3"><ReportList title="Strengths" icon={<Trophy className="size-5 text-emerald-500" />} items={report.strengths} /><ReportList title="Priority improvements" icon={<TriangleAlert className="size-5 text-amber-500" />} items={report.improvements} /><ReportList title="Recommended action plan" icon={<FileText className="size-5 text-blue-500" />} items={report.actionPlan} ordered /></section><section className="mt-8"><h2 className="font-display text-2xl font-light">Question-by-question feedback</h2><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Expand each answer to review the transcript, evidence, and a stronger outline.</p><div className="mt-4 space-y-3">{session.answers.filter((a) => a.evaluation).map((a) => <AnswerFeedback key={a.id} answer={a} question={session.questions.find((q) => q.id === a.questionId)?.prompt ?? "Interview question"} />)}</div></section><div className="mt-8 flex flex-wrap justify-center gap-3"><AppButtonLink to="/ai-interviews" variant="secondary" size="lg">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")} size="lg">Practice again</AppButton></div></Shell>;
+  const answered = session.answers.filter((a) => a.evaluation);
+  return <Shell>
+    <PageHeading eyebrow="Interview report" title={<>Your readiness <span className="italic">review</span></>} description={`${session.setup.roleTitle} · ${INTERVIEW_TYPE_LABELS[session.setup.interviewType]} · ${SENIORITY_LABELS[session.setup.seniority]} · ${formatDate(report.generatedAt)}`} action={<div className="flex gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Practise again</AppButton></div>} />
+    <section className="mt-7 grid gap-6 lg:grid-cols-[300px_1fr]">
+      <div className={`${cardClass} flex flex-col items-center justify-center p-7 text-center`}>
+        <div className="relative grid size-40 place-items-center rounded-full" style={{ background: `conic-gradient(var(--accent) ${report.overallScore * 3.6}deg, var(--app-surface-2) 0)` }}><div className="grid size-32 place-items-center rounded-full bg-[var(--app-surface)]"><div><p className="text-5xl font-light">{report.overallScore}</p><p className="text-xs text-[var(--app-fg-muted)]">out of 100</p></div></div></div>
+        <h2 className="mt-5 font-display text-xl font-light">Overall readiness</h2>
+        <p className="mt-2 text-sm text-[var(--app-fg-muted)]">{report.summary || readinessNote(report.overallScore)}</p>
+      </div>
+      <div className={`${cardClass} p-6`}><h2 className="font-display text-2xl font-light">Score breakdown</h2><p className="mb-6 mt-1 text-sm text-[var(--app-fg-muted)]">Weighted toward relevance, evidence, and role alignment.</p><ScoreBreakdown scores={report.scores} /></div>
+    </section>
+    <section className="mt-6 grid gap-5 lg:grid-cols-3">
+      <ReportList title="Strengths" icon={<Trophy className="size-5 text-emerald-500" />} items={report.strengths} />
+      <ReportList title="Priority improvements" icon={<TriangleAlert className="size-5 text-amber-500" />} items={report.improvements} />
+      <ReportList title="Recommended action plan" icon={<FileText className="size-5 text-blue-500" />} items={report.actionPlan} ordered />
+    </section>
+    <section className="mt-8">
+      <h2 className="font-display text-2xl font-light">Question-by-question feedback</h2>
+      <p className="mt-1 text-sm text-[var(--app-fg-muted)]">Expand each answer to review what you said, the evidence behind the scores, and a stronger outline.</p>
+      <div className="mt-4 space-y-3">{answered.length ? answered.map((a) => <AnswerFeedback key={a.id} answer={a} question={session.questions.find((q) => q.id === a.questionId)?.prompt ?? "Interview question"} />) : <p className="text-sm text-[var(--app-fg-soft)]">No individual answers were scored in this session.</p>}</div>
+    </section>
+    {session.transcript && session.transcript.length > 0 && (
+      <section className="mt-8">
+        <details className={`${cardClass} group overflow-hidden`}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5"><div><p className="text-xs font-medium uppercase tracking-wider text-[var(--accent-text)]">Full transcript</p><h3 className="mt-1 text-sm font-medium">Everything Sam and you said, in order</h3></div><span className="text-xs text-[var(--app-fg-soft)]">{session.transcript.length} turns</span></summary>
+          <div className="space-y-3 border-t border-[var(--app-border)] p-5 text-sm">{session.transcript.map((t, i) => <p key={i} className={t.role === "user" ? "text-[var(--app-fg)]" : "text-[var(--app-fg-muted)]"}><span className="mr-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-soft)]">{t.role === "user" ? "You" : "Sam"}</span>{t.text}</p>)}</div>
+        </details>
+      </section>
+    )}
+  </Shell>;
 }
-function ReportList({ title, icon, items, ordered }: { title: string; icon: React.ReactNode; items: string[]; ordered?: boolean }) { const Tag = ordered ? "ol" : "ul"; return <div className={`${cardClass} p-5`}><div className="flex items-center gap-2">{icon}<h3 className="font-medium">{title}</h3></div><Tag className={`${ordered ? "list-decimal" : "list-disc"} mt-4 space-y-2 pl-5 text-sm leading-5 text-[var(--app-fg-muted)]`}>{items.map((x) => <li key={x}>{x}</li>)}</Tag></div>; }
+
+function ReportList({ title, icon, items, ordered }: { title: string; icon: React.ReactNode; items: string[]; ordered?: boolean }) {
+  const Tag = ordered ? "ol" : "ul";
+  return <div className={`${cardClass} p-5`}><div className="flex items-center gap-2">{icon}<h3 className="font-medium">{title}</h3></div><Tag className={`${ordered ? "list-decimal" : "list-disc"} mt-4 space-y-2 pl-5 text-sm leading-5 text-[var(--app-fg-muted)]`}>{items.map((x) => <li key={x}>{x}</li>)}</Tag></div>;
+}
 
 export default function AiInterviewsPage() {
   const { pathname } = useLocation();

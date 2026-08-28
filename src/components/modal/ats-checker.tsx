@@ -29,6 +29,8 @@ import { ATS_CHECKER_FAQ as FAQ } from "@/content/site-faq";
 import { useSeo } from "@/lib/seo";
 import { useConfettiBurst } from "@/hooks/use-confetti-burst";
 import { useAuth } from "@/contexts/AuthContext";
+import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
+import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 
 /**
  * The free, ungated ATS checker.
@@ -295,6 +297,11 @@ export default function AtsCheckerScreen() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [resume, setResume] = useState("");
   const [jd, setJd] = useState("");
+  const {
+    mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
+    fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
+    fetchFromLink: fetchJdFromLink, clearImportedNote: clearJdImportedNote,
+  } = useJobDescriptionImport(setJd);
   const [submitted, setSubmitted] = useState(false);
 
   const [fileName, setFileName] = useState<string | null>(null);
@@ -312,6 +319,8 @@ export default function AtsCheckerScreen() {
   const reset = () => {
     setResume("");
     setJd("");
+    setJdMode("paste");
+    clearJdImportedNote();
     setFileName(null);
     setError(null);
     setSubmitted(false);
@@ -691,25 +700,52 @@ export default function AtsCheckerScreen() {
               </div>
             )}
 
-            {/* The JD is always a paste — you copy it out of a job posting, there is
-                no file to upload. */}
+            {/* There is no file to upload for the JD — it's paste, or (signed-in users
+                only, since the fetch needs an authenticated backend call) a link. */}
             {resume && (
               <div className="mt-6 border-t border-[var(--app-border)] pt-6">
-                <label htmlFor="jd-text" className="block text-sm font-medium text-[var(--app-fg)]">
-                  Job description{" "}
-                  <span className="font-normal text-[var(--app-fg-soft)]">(optional)</span>
-                </label>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="jd-text" className="block text-sm font-medium text-[var(--app-fg)]">
+                    Job description{" "}
+                    <span className="font-normal text-[var(--app-fg-soft)]">(optional)</span>
+                  </label>
+                  {isAuthenticated && (
+                    <JobDescriptionModeToggle
+                      mode={jdMode}
+                      onChange={setJdMode}
+                      activeClassName="bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                      inactiveClassName="bg-[var(--app-surface-2)] text-[var(--app-fg-muted)]"
+                    />
+                  )}
+                </div>
                 <p className="mt-1 text-xs leading-6 text-[var(--app-fg-soft)]">
                   Paste one and we'll also check how well your vocabulary matches the role.
                 </p>
-                <textarea
-                  id="jd-text"
-                  value={jd}
-                  onChange={(event) => setJd(event.target.value)}
-                  rows={4}
-                  placeholder="Paste the job description…"
-                  className="mt-3 w-full resize-y rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] p-4 font-mono text-[13px] leading-6 text-[var(--app-fg)] outline-none transition-colors placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/10"
-                />
+                {jdMode === "link" && isAuthenticated ? (
+                  <div className="mt-3">
+                    <JobDescriptionLinkPanel
+                      url={jdUrl}
+                      onUrlChange={setJdUrl}
+                      fetching={jdFetching}
+                      error={jdFetchError}
+                      onFetch={fetchJdFromLink}
+                      inputClassName="w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] p-4 font-mono text-[13px] leading-6 text-[var(--app-fg)] outline-none transition-colors placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/10"
+                      buttonClassName="shrink-0 rounded-xl bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      id="jd-text"
+                      value={jd}
+                      onChange={(event) => { setJd(event.target.value); clearJdImportedNote(); }}
+                      rows={4}
+                      placeholder="Paste the job description…"
+                      className="mt-3 w-full resize-y rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] p-4 font-mono text-[13px] leading-6 text-[var(--app-fg)] outline-none transition-colors placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/10"
+                    />
+                    {jdImportedFrom && <p className="mt-2 text-xs text-[var(--app-fg-soft)]">Imported from {jdImportedFrom} — feel free to edit.</p>}
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={reset}

@@ -11,6 +11,8 @@ import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { usePlan } from "@/contexts/PlanContext";
 import { FREE_TEMPLATE_SLUG, isTemplateLockedForFree } from "@/lib/template-access";
+import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
+import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
@@ -607,6 +609,12 @@ function JobDescriptionForm({ resume, setResume, errors }: { resume: ResumeData;
   const updateJob = (patch: Partial<JobDetails>) => {
     setResume({ ...resume, job: { ...resume.job, ...patch } });
   };
+  const {
+    mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
+    fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
+    fetchFromLink: fetchJdFromLink, clearImportedNote: clearJdImportedNote,
+  } = useJobDescriptionImport((text) => updateJob({ description: text }));
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
@@ -624,8 +632,34 @@ function JobDescriptionForm({ resume, setResume, errors }: { resume: ResumeData;
         <TextInput value={resume.job.location ?? ""} onChange={(v) => updateJob({ location: v })} placeholder="City, Country or Remote" />
       </div>
       <div className="md:col-span-2">
-        <Label>Job Description / Key Requirements</Label>
-        <TextArea value={resume.job.description} onChange={(v) => updateJob({ description: v })} rows={8} placeholder="Paste the job description here." error={errors?.description} />
+        <div className="mb-2 flex items-center justify-between">
+          <Label>Job Description / Key Requirements</Label>
+          <JobDescriptionModeToggle
+            mode={jdMode}
+            onChange={setJdMode}
+            activeClassName="bg-white/15 text-white"
+            inactiveClassName="bg-transparent text-white/50"
+            borderClassName="border-white/15"
+          />
+        </div>
+        {jdMode === "link" ? (
+          <JobDescriptionLinkPanel
+            url={jdUrl}
+            onUrlChange={setJdUrl}
+            fetching={jdFetching}
+            error={jdFetchError}
+            onFetch={fetchJdFromLink}
+            inputClassName="w-full rounded-lg border border-white/15 bg-[#0C1426] px-4 py-3 text-sm text-white outline-none placeholder:text-white/40 transition-colors focus:border-white/25"
+            buttonClassName="shrink-0 rounded-lg bg-[oklch(0.488_0.243_264.376)] px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+            helperClassName="text-xs text-white/40"
+            errorClassName="text-xs text-red-400"
+          />
+        ) : (
+          <>
+            <TextArea value={resume.job.description} onChange={(v) => { updateJob({ description: v }); clearJdImportedNote(); }} rows={8} placeholder="Paste the job description here." error={errors?.description} />
+            {jdImportedFrom && <div className="mt-1 text-xs text-white/40">Imported from {jdImportedFrom} — feel free to edit.</div>}
+          </>
+        )}
         {errors?.description && <div className="mt-1 text-xs text-red-400">Job description is required</div>}
       </div>
     </div>

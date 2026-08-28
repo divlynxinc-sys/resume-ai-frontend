@@ -14,6 +14,7 @@ export function validateSetup(setup: Partial<InterviewSetup>) {
   return errors;
 }
 
+/** Same weights as the backend/AI service (relevance 30, evidence 25, structure 15, role alignment 20, communication 10). */
 export function weightedScore(scores: DimensionScores) {
   return Math.round(scores.relevance * .3 + scores.evidence * .25 + scores.structure * .15 + scores.roleAlignment * .2 + scores.communication * .1);
 }
@@ -28,13 +29,21 @@ export function formatTime(totalSeconds: number) {
 }
 
 export function statusLabel(status: InterviewStatus) {
-  return ({ draft: "Draft", ready: "Ready", in_progress: "In progress", processing: "Processing", report_ready: "Report ready", abandoned: "Ended early", failed: "Needs attention", deleted: "Deleted" } as const)[status];
+  return ({ ready: "Ready", in_progress: "In progress", processing: "Building report", report_ready: "Report ready", abandoned: "Ended early", failed: "Needs attention", deleted: "Deleted" } as const)[status];
 }
 
+/** Where a session should open from history / after a refresh, given its server state. */
 export function sessionDestination(id: string, status: InterviewStatus) {
-  if (status === "draft" || status === "ready") return `/ai-interviews/${id}/ready`;
+  if (status === "ready") return `/ai-interviews/${id}/ready`;
   if (status === "in_progress") return `/ai-interviews/${id}/live`;
-  if (status === "processing") return `/ai-interviews/${id}/processing`;
+  if (status === "processing" || status === "failed") return `/ai-interviews/${id}/processing`;
   if (status === "report_ready") return `/ai-interviews/${id}/report`;
   return "/ai-interviews";
+}
+
+export function readinessNote(score: number) {
+  if (score >= 85) return "Interview-ready. Keep your examples sharp and specific.";
+  if (score >= 70) return "A strong foundation. Focus on evidence and sharper outcomes next.";
+  if (score >= 55) return "Getting there. Tighten structure and lead with results.";
+  return "Plenty of room to grow. Work through the action plan and try again.";
 }
