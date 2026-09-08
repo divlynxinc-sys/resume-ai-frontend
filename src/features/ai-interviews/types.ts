@@ -1,3 +1,9 @@
+/** A band array for the voice visualiser: either a plain array (re-rendered by its owner) or a ref mutated in place at frame rate. */
+export type BandSource = readonly number[] | { readonly current: readonly number[] };
+
+/** Who currently holds the floor — drives the visualiser's colour. */
+export type WaveTone = "sam" | "you" | "thinking" | "idle" | "muted";
+
 export type InterviewType = "general" | "behavioural" | "technical" | "hr_screening" | "leadership";
 export type Seniority = "entry" | "mid" | "senior" | "lead";
 export type InterviewStatus = "ready" | "in_progress" | "processing" | "report_ready" | "abandoned" | "failed" | "deleted";

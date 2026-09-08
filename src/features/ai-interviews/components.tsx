@@ -1,7 +1,8 @@
 import { ChevronDown, LoaderCircle, Mic, Pause, Play, RotateCcw, Square } from "lucide-react";
 import { AppButton } from "@/components/ui/AppButton";
-import type { DimensionScores, InterviewAnswer } from "./types";
-import { formatTime } from "./utils";
+import type { BandSource, DimensionScores, InterviewAnswer, WaveTone } from "./types";
+import { formatTime, WAVE_TONE } from "./utils";
+import { VoiceWave } from "./voice-wave";
 
 export const cardClass = "rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--shadow-soft)]";
 
@@ -12,21 +13,29 @@ export function PageHeading({ eyebrow, title, description, action }: { eyebrow: 
 export function LoadingPanel({ label = "Loading interview…" }: { label?: string }) { return <div className={`${cardClass} flex min-h-64 items-center justify-center gap-3 p-8 text-sm text-[var(--app-fg-muted)]`}><LoaderCircle className="size-5 animate-spin text-[var(--accent)]" />{label}</div>; }
 export function ErrorPanel({ message, onRetry }: { message: string; onRetry?: () => void }) { return <div className={`${cardClass} p-8 text-center`} role="alert"><h2 className="font-display text-2xl font-light text-[var(--app-fg)]">We hit a snag</h2><p className="mx-auto mt-2 max-w-lg text-sm text-[var(--app-fg-muted)]">{message}</p>{onRetry ? <AppButton className="mt-5" onClick={onRetry}>Try again</AppButton> : null}</div>; }
 
-export function LevelMeter({ level, active }: { level: number; active: boolean }) {
-  return <div className="flex h-12 items-center justify-center gap-1" aria-label={active ? `Microphone level ${level} percent` : "Microphone inactive"}>{Array.from({ length: 24 }, (_, i) => <span key={i} className={`w-1 rounded-full transition-all ${active && i < Math.ceil(level / 4.2) ? "bg-[var(--accent)]" : "bg-[var(--app-border-strong)]"}`} style={{ height: `${10 + (i % 6) * 5}px` }} />)}</div>;
+/** Same visualiser as the live room, so the mic test previews exactly what the interview looks like. */
+export function LevelMeter({ level, active, bands }: { level: number; active: boolean; bands: BandSource }) {
+  const quiet = active && level < 8;
+  const tone: WaveTone = !active ? "idle" : quiet ? "muted" : "you";
+  return <div className="flex flex-col items-center" style={{ ["--wave" as string]: WAVE_TONE[tone] }}>
+    <div role="meter" aria-valuenow={active ? level : 0} aria-valuemin={0} aria-valuemax={100} aria-label={active ? `Microphone level ${level} percent` : "Microphone inactive"}>
+      <VoiceWave source={bands} active={active} bars={9} height={56} barWidth={6} gap={7} />
+    </div>
+    <p className="mt-3 h-4 text-xs text-[var(--app-fg-muted)]">{!active ? "" : quiet ? "We can barely hear you — move closer or raise your voice." : "Sounding good."}</p>
+  </div>;
 }
 
 export function RecorderControls({ recorder, selectedDeviceId }: { recorder: ReturnType<typeof import("./hooks").useAudioRecorder>; selectedDeviceId?: string }) {
   const isActive = recorder.state === "recording" || recorder.state === "paused";
   return <div>
-    <LevelMeter level={recorder.level} active={recorder.state === "recording"} />
+    <LevelMeter level={recorder.level} active={recorder.state === "recording"} bands={recorder.bands} />
     <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
       {recorder.state === "idle" || recorder.state === "unsupported" ? <AppButton onClick={() => recorder.start(selectedDeviceId)} disabled={recorder.state === "unsupported"}><Mic className="size-4" />Start recording</AppButton> : null}
       {recorder.state === "recording" ? <AppButton variant="secondary" onClick={recorder.pause}><Pause className="size-4" />Pause</AppButton> : null}
       {recorder.state === "paused" ? <AppButton variant="secondary" onClick={recorder.resume}><Play className="size-4" />Resume</AppButton> : null}
       {isActive ? <AppButton variant="secondary" onClick={recorder.stop}><Square className="size-4" />Stop</AppButton> : null}
       {recorder.state === "recorded" ? <AppButton variant="secondary" onClick={recorder.clearRecording}><RotateCcw className="size-4" />Re-record</AppButton> : null}
-      <span className="min-w-16 text-center font-mono text-sm text-[var(--app-fg-muted)]">{formatTime(Math.round(recorder.durationMs / 1000))}</span>
+      <span className="min-w-16 text-center font-mono text-sm tabular-nums text-[var(--app-fg-muted)]">{formatTime(Math.round(recorder.durationMs / 1000))}</span>
     </div>
     {recorder.url ? <audio className="mx-auto mt-4 w-full max-w-md" src={recorder.url} controls aria-label="Recorded answer playback" /> : null}
     {recorder.error ? <p className="mt-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-sm text-[#a13f62]" role="alert">{recorder.error}</p> : null}

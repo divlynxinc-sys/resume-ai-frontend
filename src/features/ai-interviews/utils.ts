@@ -1,4 +1,22 @@
-import type { DimensionScores, InterviewSetup, InterviewStatus } from "./types";
+import type { DimensionScores, InterviewSetup, InterviewStatus, WaveTone } from "./types";
+
+/** Bars are coloured through a `--wave` custom property so tone changes cross-fade. */
+export const WAVE_TONE: Record<WaveTone, string> = {
+  sam: "var(--accent)",
+  you: "#10b981",
+  thinking: "#8b5cf6",
+  idle: "var(--app-border-strong)",
+  muted: "#f59e0b",
+};
+
+export type TimerPhase = "normal" | "warning" | "critical" | "overtime";
+
+export function timerPhase(remaining: number): TimerPhase {
+  if (remaining <= 0) return "overtime";
+  if (remaining <= 30) return "critical";
+  if (remaining <= 120) return "warning";
+  return "normal";
+}
 
 export const INTERVIEW_TYPE_LABELS = { general: "General", behavioural: "Behavioural", technical: "Technical", hr_screening: "HR screening", leadership: "Leadership" } as const;
 export const SENIORITY_LABELS = { entry: "Entry level", mid: "Mid-level", senior: "Senior", lead: "Lead / Manager" } as const;
