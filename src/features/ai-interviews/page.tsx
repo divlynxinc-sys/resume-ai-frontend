@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, CheckCircle2, Circle, Clock3, FileText, Headphones, History, LoaderCircle, Mic, Plus, RotateCcw, Sparkles, Trash2, TriangleAlert, Trophy, Upload } from "lucide-react";
 import SiteNavbar from "@/components/layout/site-navbar";
 import PageWithSidebar from "@/components/layout/page-with-sidebar";
@@ -12,9 +12,31 @@ import { useInterviewSession, useMicrophoneTest } from "./hooks";
 import { LiveInterviewRoom, type LiveEndReason } from "./live-room";
 import type { InterviewSession, InterviewSetup, LiveConnection, ResumeOption } from "./types";
 import { formatDate, INTERVIEW_TYPE_LABELS, readinessNote, SENIORITY_LABELS, sessionDestination, statusLabel, validateSetup } from "./utils";
+import { ProctorChecklist, ProctorFailedScreen, ProctorMonitor } from "./proctor/components";
+import { PROCTOR } from "./proctor/config";
+import { enterFullscreen, exitFullscreen } from "./proctor/fullscreen";
+import { useCameraCheck, useLiveProctor, useProctorSession, useProctorVerdict, useScreenCheck } from "./proctor/hooks";
+import { preloadFaceLandmarker } from "./proctor/gaze";
+import { clearProctorVerdict, readProctorVerdict } from "./proctor/storage";
+import type { ProctorVerdict } from "./proctor/types";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]"><SiteNavbar /><PageWithSidebar activeRoute="ai-interviews"><main className="mx-auto max-w-6xl py-5 sm:py-9">{children}</main></PageWithSidebar></div>;
+}
+
+/**
+ * The live proctored interview runs with **no app chrome** — no navbar, no
+ * sidebar, no links. Fullscreen alone does not hide those, and while they are on
+ * screen they are both a distraction and an escape hatch: one click on a sidebar
+ * item navigates away and silently ends the interview. Nothing here is clickable
+ * except the room's own controls.
+ */
+function ExamShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-svh bg-[var(--app-bg)] text-[var(--app-fg)]">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">{children}</main>
+    </div>
+  );
 }
 
 function errorMessage(e: unknown, fallback: string) {
@@ -38,13 +60,14 @@ function Dashboard() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const completed = sessions.filter((s) => s.status === "report_ready");
+  // A proctor-failed interview never counts towards practice stats, even if the backend built a report.
+  const completed = sessions.filter((s) => s.status === "report_ready" && !readProctorVerdict(s.id));
   const latest = completed[0]?.report?.overallScore;
 
   const remove = async (id: string) => {
     if (!window.confirm("Delete this interview and its report? This cannot be undone.")) return;
     setBusy(id);
-    try { await interviewApi.deleteInterview(id); await load(); }
+    try { await interviewApi.deleteInterview(id); clearProctorVerdict(id); await load(); }
     catch (e) { setError(errorMessage(e, "Unable to delete this interview.")); }
     finally { setBusy(null); }
   };
@@ -55,6 +78,7 @@ function Dashboard() {
   };
 
   const actionFor = (s: InterviewSession) => {
+    if (readProctorVerdict(s.id)) return <AppButton variant="secondary" size="sm" onClick={() => navigate(`/ai-interviews/${s.id}/report`)}>Why it failed</AppButton>;
     if (s.status === "report_ready") return <AppButton variant="secondary" size="sm" onClick={() => navigate(sessionDestination(s.id, s.status))}>View report</AppButton>;
     if (s.status === "failed") return <AppButton variant="secondary" size="sm" onClick={() => retry(s.id)} disabled={busy === s.id}><RotateCcw className="size-3.5" />Retry report</AppButton>;
     if (s.status === "abandoned") return <AppButton variant="secondary" size="sm" disabled>Ended early</AppButton>;
@@ -83,7 +107,9 @@ function Dashboard() {
           <article key={s.id} className={`${cardClass} flex flex-col gap-4 p-5 sm:flex-row sm:items-center`}>
             <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><BriefcaseBusiness className="size-5" /></div>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{s.setup.roleTitle}</h3><span className="rounded-full bg-[var(--app-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-muted)]">{statusLabel(s.status)}</span></div>
+              <div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{s.setup.roleTitle}</h3>{readProctorVerdict(s.id)
+                ? <span className="rounded-full bg-[var(--pastel-rose)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#a13f62]">Failed · proctoring</span>
+                : <span className="rounded-full bg-[var(--app-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-muted)]">{statusLabel(s.status)}</span>}</div>
               <p className="mt-1 text-xs text-[var(--app-fg-muted)]">{INTERVIEW_TYPE_LABELS[s.setup.interviewType]} · {SENIORITY_LABELS[s.setup.seniority]} · {formatDate(s.updatedAt)} · {s.setup.durationMinutes} min {s.report ? `· ${s.report.overallScore}/100` : ""}</p>
             </div>
             <div className="flex gap-2">{actionFor(s)}<AppButton variant="ghost" size="icon" onClick={() => remove(s.id)} disabled={busy === s.id} aria-label={`Delete ${s.setup.roleTitle} interview`}><Trash2 className="size-4" /></AppButton></div>
@@ -227,19 +253,39 @@ function Ready() {
   const [consent, setConsent] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState("");
+  const proctoring = PROCTOR.enabled;
+  const { session: proctor, handOff } = useProctorSession(id, proctoring);
+  const screenCheck = useScreenCheck(proctoring);
+  const camera = useCameraCheck(proctor);
+
+  // The face model is ~4 MB; fetching it while the candidate reads this screen keeps the camera check instant.
+  useEffect(() => { if (proctoring) preloadFaceLandmarker(); }, [proctoring]);
 
   useEffect(() => {
     if (session && session.status !== "ready" && session.status !== "in_progress") navigate(sessionDestination(session.id, session.status), { replace: true });
   }, [session, navigate]);
 
+  const screenOk = !proctoring || screenCheck === "single" || (screenCheck === "unsupported" && !PROCTOR.requireScreenCheckSupport);
+  const proctorReady = !proctoring || (screenOk && camera.passed);
+  const blockedReason = !proctoring || proctorReady ? ""
+    : !screenOk ? (screenCheck === "extended" ? "Disconnect the additional display to start." : screenCheck === "unsupported" ? "This browser cannot verify your displays. Use Chrome or Edge on a desktop computer." : "Checking your displays…")
+    : "Turn on your camera and look at the screen to finish the eye-tracking check.";
+
   const start = async () => {
-    if (!session) return;
+    if (!session || !proctorReady) return;
     setStarting(true); setStartError("");
     if (mic.state === "recording" || mic.state === "paused") mic.stop();
+    // Fullscreen must be requested inside the click gesture, before any await.
+    if (proctoring) {
+      try { await enterFullscreen(); }
+      catch { setStartError("The interview must run in fullscreen. Allow fullscreen for this site, then press Start again."); setStarting(false); return; }
+    }
     try {
       const { connection } = await interviewApi.startInterview(session.id);
+      handOff(); // the live screen adopts this proctor (and its camera) as-is
       navigate(`/ai-interviews/${session.id}/live`, { state: { connection } });
     } catch (e) {
+      if (proctoring) await exitFullscreen();
       setStartError(errorMessage(e, "We could not start the interview. Please try again."));
       setStarting(false);
     }
@@ -254,12 +300,14 @@ function Ready() {
         <div className="mt-6 rounded-2xl bg-[var(--app-surface-2)] p-5"><RecorderControls recorder={mic} selectedDeviceId={mic.selectedDeviceId} /></div>
         <p className="mt-4 text-xs leading-5 text-[var(--app-fg-muted)]">Microphone access is requested only when you press “Start recording.” If access is denied, open your browser’s site controls, allow the microphone, and retry.</p>
       </section>
+      {proctoring && <div className="lg:col-start-1"><ProctorChecklist screen={screenCheck} camera={camera} session={proctor} /></div>}
       <aside className={`${cardClass} h-fit p-6`}>
         <h2 className="font-display text-xl font-light">Before you start</h2>
         <ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Find a quiet space and use headphones if you can.", "Speak naturally — Sam waits for you to finish, even if you pause to think.", "Aim for focused answers of one to two minutes.", "You can end the interview at any time; the report covers what you answered."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul>
-        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm"><input type="checkbox" className="mt-1 size-4" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>I consent to my voice being processed live by JobSynk’s AI interviewer. Audio is not stored; a text transcript is kept to build my report.</span></label>
+        <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm"><input type="checkbox" className="mt-1 size-4" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>I consent to my voice being processed live by JobSynk’s AI interviewer. Audio is not stored; a text transcript is kept to build my report.{proctoring && " I understand this interview is proctored: my camera is analysed on this device to check that I stay on screen, and the interview is failed if I break the rules above."}</span></label>
         {startError && <p className="mt-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-sm text-[#a13f62]" role="alert">{startError}</p>}
-        <AppButton className="mt-5 w-full" size="lg" onClick={start} disabled={!consent || starting}>{starting ? <LoaderCircle className="size-4 animate-spin" /> : null}{starting ? "Connecting…" : session.status === "in_progress" ? "Rejoin interview" : "Start interview"}</AppButton>
+        <AppButton className="mt-5 w-full" size="lg" onClick={start} disabled={!consent || starting || !proctorReady}>{starting ? <LoaderCircle className="size-4 animate-spin" /> : null}{starting ? "Connecting…" : session.status === "in_progress" ? "Rejoin interview" : "Start interview"}</AppButton>
+        {blockedReason && <p className="mt-2 text-center text-xs text-[var(--app-fg-muted)]">{blockedReason}</p>}
       </aside>
     </div>
   </>}</Shell>;
@@ -276,6 +324,10 @@ function Live() {
   const [connectError, setConnectError] = useState("");
   const [endMessage, setEndMessage] = useState("");
   const finishing = useRef(false);
+  const proctoring = PROCTOR.enabled;
+  // The proctor was created on /ready; adopt it (already calibrated, camera running) rather than restarting it.
+  const { session: proctor } = useProctorSession(id, proctoring);
+  const [failedByProctor, setFailedByProctor] = useState<ProctorVerdict | null>(null);
 
   useEffect(() => {
     if (session && session.status !== "in_progress" && session.status !== "ready") navigate(sessionDestination(session.id, session.status), { replace: true });
@@ -303,18 +355,61 @@ function Live() {
     if (!session || finishing.current) return;
     finishing.current = true;
     if (reason === "error") setEndMessage(detail || "The connection was lost.");
+    // Disarm first: leaving fullscreen is what we are about to do deliberately, and an
+    // armed proctor would read that `fullscreenchange` as a violation.
+    proctor?.disarm();
+    if (proctoring) await exitFullscreen();
     try { await interviewApi.completeInterview(session.id); } catch { /* the processing page reconciles */ }
     navigate(`/ai-interviews/${session.id}/processing`, { replace: true });
   };
 
-  if (loading) return <Shell><LoadingPanel /></Shell>;
+  // A proctoring violation ends the interview: unmounting the room disconnects LiveKit, then the
+  // normal completion path runs and /processing shows the failure reason instead of a report.
+  const onProctorFail = useCallback((verdict: ProctorVerdict) => {
+    setFailedByProctor(verdict);
+    if (!id || finishing.current) return;
+    finishing.current = true;
+    void exitFullscreen();
+    void interviewApi.completeInterview(id).catch(() => { /* the processing page reconciles */ });
+  }, [id]);
+
+  // A reload during the interview fires `pagehide` -> `left_page`, so a verdict may already
+  // exist when this screen mounts. A proctored interview cannot be resumed, so nothing is armed.
+  const priorVerdict = useProctorVerdict(id);
+  const liveProctor = useLiveProctor(priorVerdict ? null : proctor, session?.startedAt, onProctorFail);
+
+  // The failure happened during unload, so the room was never closed server-side. Do it now.
+  useEffect(() => {
+    if (!priorVerdict || !id || finishing.current) return;
+    finishing.current = true;
+    void interviewApi.completeInterview(id).catch(() => { /* reconciled server-side */ });
+  }, [priorVerdict, id]);
+
+  // `ExamShell` removes every in-app link, but the back button is still a way out of a
+  // running interview — and letting it through would silently end the session. Block it
+  // while the proctor is armed; `finishing.current` lets our own completion navigate.
+  const guarding = proctoring && !!connection && !failedByProctor && !priorVerdict;
+  const blocker = useBlocker(() => guarding && !finishing.current);
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    // A deliberate attempt to leave a proctored interview is treated as leaving it.
+    if (proctor?.armed) proctor.fail("left_page");
+    // Always reset: the navigation is cancelled either way, and leaving the blocker
+    // stuck in "blocked" would break the links on the failure screen we just showed.
+    blocker.reset();
+  }, [blocker, proctor]);
+
+  const Frame = proctoring ? ExamShell : Shell;
+  if (failedByProctor || priorVerdict) return <Shell><ProctorFailedScreen verdict={failedByProctor ?? priorVerdict!} roleTitle={session?.setup.roleTitle} /></Shell>;
+  if (loading) return <Frame><LoadingPanel /></Frame>;
   if (error || !session) return <Shell><ErrorPanel message={error || "Interview not found."} onRetry={refresh} /></Shell>;
   if (connectError) return <Shell><ErrorPanel message={connectError} onRetry={() => { setConnectError(""); }} /><div className="mt-4 text-center"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink></div></Shell>;
-  if (!connection) return <Shell><LoadingPanel label="Joining your interview room…" /></Shell>;
-  return <Shell>
+  if (!connection) return <Frame><LoadingPanel label="Joining your interview room…" /></Frame>;
+  return <Frame>
     {endMessage && <p className="mb-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-center text-sm text-[#a13f62]" role="alert">{endMessage}</p>}
     <LiveInterviewRoom key={connection.token} connection={connection} roleTitle={session.setup.roleTitle} durationMinutes={session.setup.durationMinutes} startedAt={session.startedAt} onEnded={onEnded} />
-  </Shell>;
+    {proctor && <ProctorMonitor session={proctor} {...liveProctor} />}
+  </Frame>;
 }
 
 // --- Processing ----------------------------------------------------------------------------
@@ -325,9 +420,11 @@ function Processing() {
   const { session, setSession, loading, error, refresh } = useInterviewSession(id);
   const [elapsed, setElapsed] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  // A proctoring failure overrides whatever the backend makes of the session — no report is shown.
+  const proctorVerdict = useProctorVerdict(id);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || proctorVerdict) return;
     if (session.status === "report_ready") { navigate(`/ai-interviews/${session.id}/report`, { replace: true }); return; }
     if (session.status === "ready" || session.status === "in_progress") { navigate(sessionDestination(session.id, session.status), { replace: true }); return; }
     if (session.status !== "processing") return;
@@ -340,7 +437,7 @@ function Processing() {
       } catch { /* keep polling; the next tick retries */ }
     }, 2500);
     return () => { window.clearInterval(tick); window.clearInterval(poll); };
-  }, [session, navigate, setSession]);
+  }, [session, navigate, setSession, proctorVerdict]);
 
   const retry = async () => {
     if (!session) return;
@@ -353,6 +450,7 @@ function Processing() {
   const stages = ["Saving your conversation", "Reviewing each answer", "Calculating scores", "Preparing recommendations"];
   const current = Math.min(3, Math.floor(elapsed / 6));
 
+  if (proctorVerdict) return <Shell><ProctorFailedScreen verdict={proctorVerdict} roleTitle={session?.setup.roleTitle} /></Shell>;
   if (loading) return <Shell><LoadingPanel /></Shell>;
   if (error || !session) return <Shell><ErrorPanel message={error || "Interview not found."} onRetry={refresh} /></Shell>;
 
@@ -386,7 +484,9 @@ function Report() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { session, loading, error, refresh } = useInterviewSession(id);
-  useEffect(() => { if (session && session.status !== "report_ready") navigate(sessionDestination(session.id, session.status), { replace: true }); }, [session, navigate]);
+  const proctorVerdict = useProctorVerdict(id);
+  useEffect(() => { if (session && !proctorVerdict && session.status !== "report_ready") navigate(sessionDestination(session.id, session.status), { replace: true }); }, [session, navigate, proctorVerdict]);
+  if (proctorVerdict) return <Shell><ProctorFailedScreen verdict={proctorVerdict} roleTitle={session?.setup.roleTitle} /></Shell>;
   if (loading) return <Shell><LoadingPanel label="Loading your feedback…" /></Shell>;
   if (error || !session?.report) return <Shell><ErrorPanel message={error || "This report is not ready yet."} onRetry={refresh} /></Shell>;
   const report = session.report;
