@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, CheckCircle2, Circle, Clock3, FileText, Headphones, History, LoaderCircle, Mic, Plus, RotateCcw, Sparkles, Trash2, TriangleAlert, Trophy, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, CheckCircle2, Circle, Clock3, FileText, Headphones, History, LoaderCircle, Mic, Plus, RotateCcw, Sparkles, Ticket, Trash2, TriangleAlert, Trophy, Upload } from "lucide-react";
 import SiteNavbar from "@/components/layout/site-navbar";
 import PageWithSidebar from "@/components/layout/page-with-sidebar";
 import { AppButton, AppButtonLink } from "@/components/ui/AppButton";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { InterviewCreditsModal, openInterviewCreditsModal, useInterviewCredits } from "@/components/shared/interview-credits";
 import { interviewApi } from "./api";
 import { AnswerFeedback, cardClass, ErrorPanel, LoadingPanel, PageHeading, RecorderControls, ScoreBreakdown } from "./components";
 import { useInterviewSession, useMicrophoneTest } from "./hooks";
@@ -43,6 +44,33 @@ function errorMessage(e: unknown, fallback: string) {
   return e instanceof Error && e.message ? e.message : fallback;
 }
 
+/** lib/api.ts tags a 402 interview_credits_required; the modal is already open by then. */
+function isCreditsRequired(e: unknown) {
+  return (e as { code?: string } | null)?.code === "interview_credits_required";
+}
+
+type Credits = ReturnType<typeof useInterviewCredits>;
+
+/** True once we know this user has nothing to spend (admins never run out). */
+function outOfCredits(credits: Credits) {
+  return !credits.loading && !credits.error && !!credits.data && !credits.unlimited && credits.balance < 1;
+}
+
+function CreditsStrip({ credits }: { credits: Credits }) {
+  if (credits.loading || credits.unlimited || !credits.data) return null;
+  const { balance } = credits;
+  return <section className={`${cardClass} mt-7 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between`}>
+    <div className="flex items-center gap-4">
+      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><Ticket className="size-5" /></div>
+      <div><p className="text-xs text-[var(--app-fg-muted)]">Interview credits</p><p className="mt-0.5 text-2xl font-light">{balance}<span className="ml-1.5 text-sm text-[var(--app-fg-soft)]">{balance === 1 ? "interview" : "interviews"} left</span></p></div>
+    </div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <p className="text-xs text-[var(--app-fg-muted)] sm:max-w-60 sm:text-right">1 credit = 1 live interview plus its report. Credits never expire.</p>
+      <AppButton variant={balance > 0 ? "secondary" : "primary"} onClick={() => openInterviewCreditsModal(balance > 0 ? "Top up any time, since credits stack." : undefined)}>Buy credits</AppButton>
+    </div>
+  </section>;
+}
+
 // --- Dashboard ----------------------------------------------------------------------------
 
 function Dashboard() {
@@ -51,6 +79,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const credits = useInterviewCredits();
+  const startNew = () => outOfCredits(credits) ? openInterviewCreditsModal() : navigate("/ai-interviews/new");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -87,7 +117,8 @@ function Dashboard() {
   };
 
   return <Shell>
-    <PageHeading eyebrow="AI interview coach" title={<>Practise with <span className="italic">purpose</span></>} description="A live, spoken mock interview built around your résumé and the job you want — then a detailed readiness report." action={<AppButton onClick={() => navigate("/ai-interviews/new")} size="lg"><Plus className="size-4" />Start new interview</AppButton>} />
+    <PageHeading eyebrow="AI interview coach" title={<>Practise with <span className="italic">purpose</span></>} description="A live, spoken mock interview built around your résumé and the job you want — then a detailed readiness report." action={<AppButton onClick={startNew} size="lg"><Plus className="size-4" />Start new interview</AppButton>} />
+    <CreditsStrip credits={credits} />
     <section className="mt-7 grid gap-4 sm:grid-cols-3">
       <div className={`${cardClass} p-5`}><Sparkles className="size-5 text-violet-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Latest readiness</p><p className="mt-1 text-3xl font-light">{latest ?? "—"}{latest != null && <span className="text-base text-[var(--app-fg-soft)]">/100</span>}</p></div>
       <div className={`${cardClass} p-5`}><Trophy className="size-5 text-amber-500" /><p className="mt-5 text-xs text-[var(--app-fg-muted)]">Completed interviews</p><p className="mt-1 text-3xl font-light">{completed.length}</p></div>
@@ -100,7 +131,7 @@ function Dashboard() {
           <div className="grid size-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)]"><Mic className="size-6" /></div>
           <h3 className="mt-5 font-display text-2xl font-light">Your first practice session starts here</h3>
           <p className="mt-2 max-w-md text-sm text-[var(--app-fg-muted)]">Choose a role, level and interview style. Sam, your AI interviewer, asks about your real experience and adapts to your answers.</p>
-          <AppButton className="mt-6" onClick={() => navigate("/ai-interviews/new")}>Start practising</AppButton>
+          <AppButton className="mt-6" onClick={startNew}>Start practising</AppButton>
         </div>
       ) : (
         <div className="space-y-3">{sessions.map((s) => (
@@ -110,7 +141,7 @@ function Dashboard() {
               <div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{s.setup.roleTitle}</h3>{readProctorVerdict(s.id)
                 ? <span className="rounded-full bg-[var(--pastel-rose)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#a13f62]">Failed · proctoring</span>
                 : <span className="rounded-full bg-[var(--app-surface-2)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--app-fg-muted)]">{statusLabel(s.status)}</span>}</div>
-              <p className="mt-1 text-xs text-[var(--app-fg-muted)]">{INTERVIEW_TYPE_LABELS[s.setup.interviewType]} · {SENIORITY_LABELS[s.setup.seniority]} · {formatDate(s.updatedAt)} · {s.setup.durationMinutes} min {s.report ? `· ${s.report.overallScore}/100` : ""}</p>
+              <p className="mt-1 text-xs text-[var(--app-fg-muted)]">{INTERVIEW_TYPE_LABELS[s.setup.interviewType]} · {SENIORITY_LABELS[s.setup.seniority]} · {formatDate(s.updatedAt)} · {s.setup.durationMinutes} min {s.report ? `· ${s.report.overallScore}/100` : ""}{s.creditStatus === "refunded" ? " · credit returned" : ""}</p>
             </div>
             <div className="flex gap-2">{actionFor(s)}<AppButton variant="ghost" size="icon" onClick={() => remove(s.id)} disabled={busy === s.id} aria-label={`Delete ${s.setup.roleTitle} interview`}><Trash2 className="size-4" /></AppButton></div>
           </article>
@@ -135,6 +166,7 @@ function NewInterview() {
   const resumeFileRef = useRef<HTMLInputElement>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeUploadError, setResumeUploadError] = useState("");
+  const credits = useInterviewCredits();
   const {
     mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
     fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
@@ -150,7 +182,11 @@ function NewInterview() {
       const resume = resumes.find((r) => r.id === setup.resumeId);
       const session = await interviewApi.createInterview({ ...setup, roleTitle: setup.roleTitle.trim(), resumeTitle: resume?.title });
       navigate(`/ai-interviews/${session.id}/ready`);
-    } catch (e) { setErrors({ form: errorMessage(e, "Unable to create interview.") }); setStep("form"); }
+    } catch (e) {
+      // Out of credits: the buy modal is already open, so keep the reviewed setup on screen.
+      if (isCreditsRequired(e)) { void credits.refresh(); return; }
+      setErrors({ form: errorMessage(e, "Unable to create interview.") }); setStep("form");
+    }
     finally { setSaving(false); }
   };
 
@@ -170,6 +206,12 @@ function NewInterview() {
   return <Shell>
     <button onClick={() => step === "summary" ? setStep("form") : navigate("/ai-interviews")} className="mb-5 inline-flex items-center gap-2 text-sm text-[var(--app-fg-muted)] hover:text-[var(--app-fg)]"><ArrowLeft className="size-4" />{step === "summary" ? "Edit setup" : "Back to interviews"}</button>
     <PageHeading eyebrow={step === "summary" ? "Review your setup" : "New practice session"} title={step === "summary" ? <>Ready when <span className="italic">you are</span></> : <>Shape your <span className="italic">interview</span></>} description={step === "summary" ? "Check the details below. You can still go back and make changes." : "Your résumé and the job description let Sam ask about your real projects and experience at the right level."} />
+    {outOfCredits(credits) && (
+      <div className="mt-7 flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+        <p className="text-sm">You need an interview credit to start. Buy a pack first so this setup isn't lost at checkout.</p>
+        <AppButton size="sm" onClick={() => openInterviewCreditsModal()}><Ticket className="size-4" />Buy credits</AppButton>
+      </div>
+    )}
     {step === "form" ? (
       <div className={`${cardClass} mt-7 p-5 sm:p-7`}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -231,6 +273,7 @@ function NewInterview() {
         <aside className={`${cardClass} h-fit p-6`}>
           <h2 className="font-display text-xl font-light">What happens next</h2>
           <ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Test your microphone on the next screen.", "Sam starts with an introduction, then digs into your experience.", "Questions adapt to your answers — it is a real conversation.", "Your report is ready moments after you finish."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul>
+          {credits.data && !credits.unlimited && <p className="mt-5 flex gap-2 rounded-xl bg-[var(--app-surface-2)] p-3 text-xs leading-5 text-[var(--app-fg-muted)]"><Ticket className="mt-0.5 size-4 shrink-0 text-[var(--accent-text)]" /><span>Uses 1 interview credit when you press Start, report included. You have {credits.balance}.</span></p>}
           {errors.form && <p className="mt-4 text-sm text-red-600">{errors.form}</p>}
           <AppButton className="mt-6 w-full" size="lg" onClick={create} disabled={saving}>{saving ? <LoaderCircle className="size-4 animate-spin" /> : null}{saving ? "Creating…" : "Continue to device check"}</AppButton>
         </aside>
@@ -305,6 +348,7 @@ function Ready() {
         <h2 className="font-display text-xl font-light">Before you start</h2>
         <ul className="mt-4 space-y-3 text-sm text-[var(--app-fg-muted)]">{["Find a quiet space and use headphones if you can.", "Speak naturally — Sam waits for you to finish, even if you pause to think.", "Aim for focused answers of one to two minutes.", "You can end the interview at any time; the report covers what you answered."].map((x) => <li key={x} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />{x}</li>)}</ul>
         <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-2)] p-3 text-sm"><input type="checkbox" className="mt-1 size-4" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>I consent to my voice being processed live by JobSynk’s AI interviewer. Audio is not stored; a text transcript is kept to build my report.{proctoring && " I understand this interview is proctored: my camera is analysed on this device to check that I stay on screen, and the interview is failed if I break the rules above."}</span></label>
+        {session.status === "ready" && <p className="mt-4 flex gap-2 text-xs leading-5 text-[var(--app-fg-muted)]"><Ticket className="mt-0.5 size-4 shrink-0 text-[var(--accent-text)]" />Starting uses 1 interview credit, report included. If the interview fails on our side, the credit comes back automatically.</p>}
         {startError && <p className="mt-4 rounded-xl bg-[var(--pastel-rose)] p-3 text-sm text-[#a13f62]" role="alert">{startError}</p>}
         <AppButton className="mt-5 w-full" size="lg" onClick={start} disabled={!consent || starting || !proctorReady}>{starting ? <LoaderCircle className="size-4 animate-spin" /> : null}{starting ? "Connecting…" : session.status === "in_progress" ? "Rejoin interview" : "Start interview"}</AppButton>
         {blockedReason && <p className="mt-2 text-center text-xs text-[var(--app-fg-muted)]">{blockedReason}</p>}
@@ -456,6 +500,7 @@ function Processing() {
 
   if (session.status === "failed") return <Shell>
     <ErrorPanel message={session.error || "We couldn't build your report this time."} onRetry={retrying ? undefined : retry} />
+    <p className="mt-4 text-center text-sm text-[var(--app-fg-muted)]">{session.creditStatus === "refunded" ? "This interview didn't run properly on our side, so we've returned your interview credit." : "Retrying the report is free, since it's included in this interview's credit."}</p>
     <div className="mt-4 flex justify-center gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Start a new interview</AppButton></div>
   </Shell>;
 
@@ -463,7 +508,9 @@ function Processing() {
     <div className={`${cardClass} mx-auto max-w-2xl p-8 text-center`}>
       <TriangleAlert className="mx-auto size-8 text-amber-500" />
       <h1 className="mt-4 font-display text-3xl font-light">This interview ended early</h1>
-      <p className="mt-3 text-sm text-[var(--app-fg-muted)]">It finished before you answered a question, so there is nothing to score yet. Start a new session whenever you are ready.</p>
+      <p className="mt-3 text-sm text-[var(--app-fg-muted)]">{session.creditStatus === "refunded"
+        ? "Something went wrong on our side before the interview got going, so there is nothing to score. We've returned your interview credit. Start a new session whenever you are ready."
+        : "It finished before you answered a question, so there is nothing to score yet. Start a new session whenever you are ready."}</p>
       <div className="mt-6 flex justify-center gap-2"><AppButtonLink to="/ai-interviews" variant="secondary">Back to interviews</AppButtonLink><AppButton onClick={() => navigate("/ai-interviews/new")}>Start a new interview</AppButton></div>
     </div>
   </Shell>;
@@ -527,8 +574,7 @@ function ReportList({ title, icon, items, ordered }: { title: string; icon: Reac
   return <div className={`${cardClass} p-5`}><div className="flex items-center gap-2">{icon}<h3 className="font-medium">{title}</h3></div><Tag className={`${ordered ? "list-decimal" : "list-disc"} mt-4 space-y-2 pl-5 text-sm leading-5 text-[var(--app-fg-muted)]`}>{items.map((x) => <li key={x}>{x}</li>)}</Tag></div>;
 }
 
-export default function AiInterviewsPage() {
-  const { pathname } = useLocation();
+function Screen({ pathname }: { pathname: string }) {
   if (pathname === "/ai-interviews") return <Dashboard />;
   if (pathname === "/ai-interviews/new") return <NewInterview />;
   if (pathname.endsWith("/ready")) return <Ready />;
@@ -536,4 +582,10 @@ export default function AiInterviewsPage() {
   if (pathname.endsWith("/processing")) return <Processing />;
   if (pathname.endsWith("/report")) return <Report />;
   return <Shell><ErrorPanel message="This interview page does not exist." /></Shell>;
+}
+
+export default function AiInterviewsPage() {
+  const { pathname } = useLocation();
+  // One modal for every screen: it opens on any 402 interview_credits_required.
+  return <><Screen pathname={pathname} /><InterviewCreditsModal /></>;
 }

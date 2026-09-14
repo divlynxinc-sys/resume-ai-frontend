@@ -9,6 +9,7 @@ import { usePlan } from "@/contexts/PlanContext";
 import { pricingService } from "@/services";
 import { settingsService } from "@/services/settings";
 import { LAUNCH_OFFER, isLaunchOfferActive, launchOfferPriceLabel } from "@/lib/launch-offer";
+import { InterviewCreditsAddon } from "../shared/interview-credits";
 
 type PlanProps = {
   title: string;
@@ -341,16 +342,22 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
         The resume builder and ATS checker are free forever. A plan unlocks the AI toolkit —
         tailoring, cover letters, recruiter outreach, and interview answers — plus every template.
       </p>
+
+      {/* AI Interview credits: compact, above the plans so it's seen first and the plans still show below. */}
+      <div className="mt-9">
+        <InterviewCreditsAddon />
+      </div>
+
       {offerActive && (
         <div
-          className="mt-6 inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
+          className="mt-9 inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-4 py-1.5 text-sm font-medium"
           style={{ color: "var(--app-fg)" }}
         >
           {LAUNCH_OFFER.label}: {LAUNCH_OFFER.percentOff}% off every plan — applied automatically at checkout, no code needed.
         </div>
       )}
 
-      <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto">
+      <div className={`${offerActive ? "mt-10" : "mt-12"} grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch max-w-5xl mx-auto`}>
         {displayPlans.map((plan) => (
           <PlanCard
             key={plan.title}

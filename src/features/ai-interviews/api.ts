@@ -85,6 +85,7 @@ export function toSession(dto: InterviewSessionDto): InterviewSession {
     transcript: dto.transcript?.map((t) => ({ role: t.role, text: t.text, at: t.at ?? undefined })),
     error: dto.error ?? undefined,
     endedReason: dto.ended_reason ?? undefined,
+    creditStatus: dto.credit_status ?? undefined,
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
     startedAt: dto.started_at ?? undefined,

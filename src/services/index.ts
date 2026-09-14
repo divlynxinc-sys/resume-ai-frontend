@@ -12,5 +12,7 @@ export { hrEmailDraftsService } from "./hrEmailDrafts";
 export type { HREmailDraftsRequest } from "./hrEmailDrafts";
 export { qaAnswersService } from "./qaAnswers";
 export type { QAAnswersRequest } from "./qaAnswers";
+export { interviewCreditsService } from "./interviewCredits";
+export type { InterviewCreditsDto, InterviewCreditsSyncDto } from "./interviewCredits";
 export { jobDescriptionService } from "./jobDescription";
 export type { JobDescriptionFromUrlDto } from "./jobDescription";

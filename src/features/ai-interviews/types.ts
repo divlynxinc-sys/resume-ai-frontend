@@ -75,6 +75,8 @@ export interface InterviewSession {
   transcript?: TranscriptTurn[];
   error?: string;
   endedReason?: string;
+  /** The interview credit this session used; "refunded" means it was given back automatically. */
+  creditStatus?: "charged" | "refunded";
   createdAt: string;
   updatedAt: string;
   startedAt?: string;

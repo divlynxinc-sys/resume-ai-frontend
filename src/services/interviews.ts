@@ -76,6 +76,8 @@ export interface InterviewSessionDto {
   transcript?: TranscriptTurnDto[];
   error: string | null;
   ended_reason: string | null;
+  /** null until started (or for admins); "refunded" when the interview never ran on our side. */
+  credit_status: "charged" | "refunded" | null;
   started_at: string | null;
   processing_started_at: string | null;
   completed_at: string | null;
