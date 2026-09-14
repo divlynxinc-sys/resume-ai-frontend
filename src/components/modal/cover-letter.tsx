@@ -17,6 +17,8 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { resumeService, coverLetterService } from "@/services";
 import { usePlan } from "@/contexts/PlanContext";
+import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
+import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -396,6 +398,11 @@ export default function CoverLetterScreen() {
   const [jobDescription, setJobDescription] = useState(() => {
     try { return sessionStorage.getItem("cl_jd") ?? ""; } catch { return ""; }
   });
+  const {
+    mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
+    fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
+    fetchFromLink: fetchJdFromLink, clearImportedNote: clearJdImportedNote,
+  } = useJobDescriptionImport(setJobDescription);
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [tone, setTone] = useState<Tone>("professional");
@@ -608,21 +615,42 @@ export default function CoverLetterScreen() {
 
                 {/* Job description */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm font-medium text-[var(--app-fg)]">
                       Job description <span className="text-red-500">*</span>
                     </div>
-                    <div className="text-xs text-[var(--app-fg-soft)]">
-                      {jobDescription.length} chars
+                    <div className="flex items-center gap-3">
+                      <JobDescriptionModeToggle
+                        mode={jdMode}
+                        onChange={setJdMode}
+                        activeClassName="bg-[var(--accent-soft)] text-[var(--accent-text)]"
+                        inactiveClassName="bg-[var(--btn-secondary-bg)] text-[var(--app-fg-muted)]"
+                      />
+                      {jdMode === "paste" && <div className="text-xs text-[var(--app-fg-soft)]">{jobDescription.length} chars</div>}
                     </div>
                   </div>
-                  <textarea
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Paste the full job description — responsibilities, qualifications, all of it."
-                    rows={6}
-                    className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
-                  />
+                  {jdMode === "link" ? (
+                    <JobDescriptionLinkPanel
+                      url={jdUrl}
+                      onUrlChange={setJdUrl}
+                      fetching={jdFetching}
+                      error={jdFetchError}
+                      onFetch={fetchJdFromLink}
+                      inputClassName="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15"
+                      buttonClassName="shrink-0 rounded-lg bg-[var(--btn-primary-bg)] px-4 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                  ) : (
+                    <>
+                      <textarea
+                        value={jobDescription}
+                        onChange={(e) => { setJobDescription(e.target.value); clearJdImportedNote(); }}
+                        placeholder="Paste the full job description — responsibilities, qualifications, all of it."
+                        rows={6}
+                        className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
+                      />
+                      {jdImportedFrom && <p className="text-xs text-[var(--app-fg-soft)]">Imported from {jdImportedFrom} — feel free to edit.</p>}
+                    </>
+                  )}
                 </div>
 
                 {/* Optional details */}

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
-import { pricingService } from "@/services";
+import { interviewCreditsService, pricingService } from "@/services";
 import { useConfettiBurst } from "@/hooks/use-confetti-burst";
+import { INTERVIEW_CREDITS_UPDATED_EVENT } from "@/lib/interview-credits";
 
 type Plan = {
   title: string;
@@ -53,7 +54,128 @@ type SyncState =
   | { status: "ok"; planName: string | null }
   | { status: "error"; message: string };
 
+type CreditsSyncState =
+  | { status: "pending" }
+  | { status: "ok"; credits: number; balance: number }
+  | { status: "delayed"; balance: number }
+  | { status: "error"; message: string };
+
+// Polar can redirect back a few seconds before the order is marked paid, so poll.
+const CREDITS_SYNC_ATTEMPTS = 8;
+const CREDITS_SYNC_INTERVAL_MS = 2500;
+
+/** /success?purchase=interview_credits — a one-time AI Interview credit pack, not a plan. */
+function CreditsPurchaseSuccess({ checkoutId }: { checkoutId: string | null }) {
+  const confettiRef = useConfettiBurst();
+  const [sync, setSync] = useState<CreditsSyncState>({ status: "pending" });
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+    const attempt = async (n: number) => {
+      try {
+        const res = await interviewCreditsService.sync(checkoutId);
+        if (cancelled) return;
+        if (res.checkout_confirmed) {
+          setSync({ status: "ok", credits: res.checkout_credits, balance: res.balance });
+          window.dispatchEvent(new CustomEvent(INTERVIEW_CREDITS_UPDATED_EVENT));
+          return;
+        }
+        if (n + 1 >= CREDITS_SYNC_ATTEMPTS) {
+          setSync({ status: "delayed", balance: res.balance });
+          return;
+        }
+        timer = window.setTimeout(() => void attempt(n + 1), CREDITS_SYNC_INTERVAL_MS);
+      } catch (err) {
+        if (cancelled) return;
+        setSync({ status: "error", message: err instanceof Error ? err.message : "Couldn't confirm your purchase." });
+      }
+    };
+    void attempt(0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [checkoutId]);
+
+  return (
+    <div className="min-h-screen w-full" style={{ backgroundColor: "var(--app-bg)", color: "var(--app-fg)" }}>
+      <SiteNavbar />
+      <canvas ref={confettiRef} aria-hidden="true" className="pointer-events-none fixed inset-0 z-50" />
+      <main className="mx-auto max-w-2xl px-6 py-12 text-center">
+        <SuccessBadge />
+        <h1 className="mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
+          {sync.status === "ok" ? `${sync.credits} interview credits added` : "Thanks for your purchase!"}
+        </h1>
+        <p className="mt-2" style={{ color: "var(--app-fg-muted)" }}>
+          Each credit is one live AI interview plus its full readiness report. Credits never expire.
+        </p>
+
+        <div
+          className="mt-8 rounded-2xl p-6 text-left"
+          style={{ backgroundColor: "var(--app-surface)", border: "1px solid var(--app-border)", boxShadow: "var(--shadow-soft)" }}
+          aria-live="polite"
+        >
+          {sync.status === "pending" && (
+            <span className="inline-flex items-center gap-2 text-sm" style={{ color: "var(--app-fg-muted)" }}>
+              <span className="inline-block size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Adding credits to your account…
+            </span>
+          )}
+          {sync.status === "ok" && (
+            <p className="text-sm">
+              You now have <strong>{sync.balance}</strong> interview {sync.balance === 1 ? "credit" : "credits"}.
+            </p>
+          )}
+          {sync.status === "delayed" && (
+            <p className="text-sm" style={{ color: "var(--app-fg-muted)" }}>
+              Payment received. Your credits are still on their way and usually arrive within a minute. You currently
+              have <strong>{sync.balance}</strong>. Refresh this page, or check AI Interviews shortly.
+            </p>
+          )}
+          {sync.status === "error" && (
+            <p className="text-sm text-rose-600 dark:text-rose-300">
+              We couldn't confirm your credits automatically ({sync.message}). They'll appear once your payment
+              clears. Refresh this page to check again.
+            </p>
+          )}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/ai-interviews/new"
+              className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/30 hover:bg-emerald-400"
+            >
+              Start an interview
+            </Link>
+            <Link
+              to="/ai-interviews"
+              className="rounded-lg px-5 py-2 text-sm font-medium"
+              style={{
+                backgroundColor: "var(--btn-secondary-bg)",
+                border: "1px solid var(--btn-secondary-border)",
+                color: "var(--btn-secondary-text)",
+              }}
+            >
+              Back to AI Interviews
+            </Link>
+          </div>
+        </div>
+        <p className="mt-4 text-xs" style={{ color: "var(--app-fg-muted)" }}>
+          You'll receive an email receipt from Polar shortly.
+        </p>
+      </main>
+    </div>
+  );
+}
+
 export default function PaymentSuccessScreen() {
+  const [params] = useSearchParams();
+  if (params.get("purchase") === "interview_credits") {
+    return <CreditsPurchaseSuccess checkoutId={params.get("checkout_id")} />;
+  }
+  return <SubscriptionSuccess />;
+}
+
+function SubscriptionSuccess() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);

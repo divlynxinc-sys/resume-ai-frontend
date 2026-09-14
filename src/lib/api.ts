@@ -192,6 +192,26 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
       throw err;
     }
 
+    // 402 interview_credits_required → AI Interviews are prepaid per interview
+    // (not a plan feature), so this opens the buy-credits modal, not UpgradeModal.
+    if (
+      res.status === 402 &&
+      data?.detail &&
+      typeof data.detail === "object" &&
+      data.detail.code === "interview_credits_required"
+    ) {
+      window.dispatchEvent(
+        new CustomEvent("interview-credits-required", {
+          detail: { path, message: data.detail.message },
+        }),
+      );
+      const err = new Error(data.detail.message || "Interview credits required") as Error & {
+        code?: string;
+      };
+      err.code = "interview_credits_required";
+      throw err;
+    }
+
     const fallbackMessage =
       res.status === 404
         ? "API endpoint not found. Check the backend URL or deployment."

@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
-import { CreditCard, Download, Lock, Mail, Shield, Trash2, User } from "lucide-react";
+import { CreditCard, Download, Lock, Mail, Shield, Ticket, Trash2, User } from "lucide-react";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
+import { useInterviewCredits } from "../shared/interview-credits";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -171,6 +172,7 @@ export default function AccountManagementScreen() {
 
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [subDetails, setSubDetails] = useState<PolarSubscriptionDetails | null>(null);
+  const interviewCredits = useInterviewCredits();
 
   const [twoFA, setTwoFA] = useState(false);
   const [emailNotif, setEmailNotif] = useState(true);
@@ -460,6 +462,24 @@ export default function AccountManagementScreen() {
                     </div>
                   </div>
                 </div>
+
+                {interviewCredits.data && !interviewCredits.unlimited ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--app-border)] pt-5">
+                    <div className="flex items-center gap-3">
+                      <Ticket className="size-5 text-[var(--accent-text)]" aria-hidden="true" />
+                      <div>
+                        <div className="text-xs text-[var(--app-fg-muted)]">AI Interview credits</div>
+                        <div className="mt-0.5 text-sm font-medium text-[var(--app-fg)]">
+                          {interviewCredits.balance} {interviewCredits.balance === 1 ? "interview" : "interviews"} left
+                          <span className="font-normal text-[var(--app-fg-muted)]"> · separate from your plan, never expire</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link to="/pricing#interview-credits" className="text-sm font-medium text-[var(--accent-text)] hover:underline">
+                      Buy credits
+                    </Link>
+                  </div>
+                ) : null}
 
                 {subDetails?.can_reactivate_free ? (
                   <div className="w-fit rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-300">

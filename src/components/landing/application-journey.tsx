@@ -1,416 +1,272 @@
-// The hero visual: a job search told as an application timeline.
-//
-// It replaces the ATS upload panel that used to sit here. That panel asked for
-// work (find your file, drag it in) before the visitor had been given a reason
-// to care. This asks for nothing and states the premise instead: three
-// applications go out and die, the resume gets tailored, the next one converts.
-//
-// Everything is one `beat` counter. Each row derives its own state from it, so
-// there is a single timeline to reason about and a single place to retime the
-// story. The loop restarts from the top, which matters — most visitors arrive
-// mid-sequence after scrolling back up.
-//
-// HONESTY: this is a drawn illustration, not a customer record, and the caption
-// says so on the page. The same reasoning killed the invented testimonials that
-// used to live further down (see `landing-page.tsx`): a claim a visitor cannot
-// check is worth less than nothing on a page that also sells an ATS checker
-// whose whole pitch is "no tool can give you a real ATS score".
-
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { Sparkles } from "lucide-react";
+import { Check, FileSearch, Sparkles } from "lucide-react";
 import { EASE } from "./easing";
 
-/* ── Timeline ──────────────────────────────────────────────────────────────
-   BEAT_MS[n] is how long beat n holds before advancing. The last entry is the
-   pause on the finished state before the loop restarts. */
-const BEAT_MS = [
-  450,  //  0  empty
-  900,  //  1  Northwind applied
-  620,  //  2  Northwind goes quiet
-  900,  //  3  Lumen applied
-  620,  //  4  Lumen rejects
-  900,  //  5  Cobalt applied
-  1150, //  6  Cobalt rejects
-  1500, //  7  tailored with Jobsynk
-  900,  //  8  the rewrite lands
-  900,  //  9  Meridian applied
-  900,  // 10  screening
-  1000, // 11  interview
-  3400, // 12  offer — hold, then loop
-];
+const BEAT_MS = [900, 1500, 1800, 2100, 1600, 3500];
+const FINAL_BEAT = BEAT_MS.length - 1;
 
-const LAST_BEAT = BEAT_MS.length - 1;
-/** Beat at which the rail is fully drawn. */
-const RAIL_FULL = 12;
+const SKILLS = ["Figma", "Prototyping", "Design systems", "User research"];
 
-type Tone = "idle" | "reject" | "progress" | "win";
-
-const TONE: Record<Tone, { bg: string; fg: string }> = {
-  idle: { bg: "var(--app-surface-2)", fg: "var(--app-fg-muted)" },
-  reject: { bg: "var(--pastel-rose)", fg: "var(--tone-reject)" },
-  progress: { bg: "var(--accent-soft)", fg: "var(--accent-text)" },
-  win: { bg: "var(--pastel-mint)", fg: "var(--tone-win)" },
-};
-
-const REJECTIONS = [
-  {
-    role: "Product Designer",
-    company: "Northwind Studio",
-    monogram: "N",
-    tint: "var(--pastel-sky)",
-    outcome: "No reply",
-    appearsAt: 1,
-    resolvesAt: 2,
-  },
-  {
-    role: "UX Designer",
-    company: "Lumen Health",
-    monogram: "L",
-    tint: "var(--pastel-butter)",
-    outcome: "Rejected",
-    appearsAt: 3,
-    resolvesAt: 4,
-  },
-  {
-    role: "Senior Product Designer",
-    company: "Cobalt Labs",
-    monogram: "C",
-    tint: "var(--pastel-peach)",
-    outcome: "Rejected",
-    appearsAt: 5,
-    resolvesAt: 6,
-  },
-] as const;
-
-/** Beat → stage for the final application. */
-const WIN_STAGES: Array<{ at: number; label: string; tone: Tone }> = [
-  { at: 9, label: "Applied", tone: "idle" },
-  { at: 10, label: "Screening", tone: "progress" },
-  { at: 11, label: "Interview", tone: "progress" },
-  { at: 12, label: "Offer", tone: "win" },
-];
-
-/* ── Pieces ────────────────────────────────────────────────────────────────*/
-
-/**
- * Fixed-width so a status change never reflows the row — the chip swapping from
- * "Applied" to "Rejected" should read as the same object changing, not as the
- * row rebuilding itself.
- */
-function StatusChip({ label, tone }: { label: string; tone: Tone }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative h-6 w-[5.25rem] shrink-0 sm:w-[5.75rem]">
-      <AnimatePresence initial={false} mode="wait">
-        <motion.span
-          key={label}
-          initial={{ opacity: 0, y: 7 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -7 }}
-          transition={{ duration: 0.26, ease: EASE }}
-          className="absolute inset-0 inline-flex items-center justify-center rounded-full text-[11px] font-semibold"
-          style={{ backgroundColor: TONE[tone].bg, color: TONE[tone].fg }}
-        >
-          {label}
-        </motion.span>
+    <div className="mb-1.5 flex items-center gap-2">
+      <span className="text-[7px] font-bold uppercase tracking-[0.18em] text-[#20222a] sm:text-[8px]">
+        {children}
+      </span>
+      <span className="h-px flex-1 bg-[#d9dbe2]" />
+    </div>
+  );
+}
+
+function ResumeSheet({ beat, reduce }: { beat: number; reduce: boolean }) {
+  const tailored = beat >= 3;
+  const skillsAdded = beat >= 4;
+
+  return (
+    <motion.div
+      className="relative mx-auto aspect-[0.76] w-full max-w-[310px] overflow-hidden rounded-[3px] bg-[#fbfbfc] px-[7%] py-[6%] text-[#4d505b] shadow-[0_18px_50px_rgba(0,0,0,.24)]"
+      initial={reduce ? undefined : { rotate: -2.5, y: 16, opacity: 0 }}
+      animate={{ rotate: beat >= 1 ? 0 : -2.5, y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: EASE }}
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-[#d9dbe2] pb-[4%]">
+        <div>
+          <div className="font-display text-[15px] font-semibold leading-none tracking-tight text-[#171920] sm:text-[18px]">
+            Maya Chen
+          </div>
+          <div className="mt-1 text-[7px] font-semibold uppercase tracking-[0.18em] text-[#5865d8] sm:text-[8px]">
+            Senior Product Designer
+          </div>
+        </div>
+        <div className="space-y-0.5 text-right text-[5.5px] leading-tight text-[#777b87] sm:text-[6.5px]">
+          <p>maya.chen@email.com</p>
+          <p>London, UK · mayachen.design</p>
+        </div>
+      </div>
+
+      <div className="mt-[5%]">
+        <SectionLabel>Profile</SectionLabel>
+        <p className="text-[6.5px] leading-[1.55] sm:text-[7.5px]">
+          Product designer creating clear, accessible experiences for growing digital products.
+        </p>
+      </div>
+
+      <div className="mt-[5%]">
+        <SectionLabel>Experience</SectionLabel>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[7px] font-bold text-[#20222a] sm:text-[8px]">Product Designer</p>
+            <p className="text-[6px] text-[#777b87] sm:text-[7px]">Northstar Labs</p>
+          </div>
+          <p className="shrink-0 text-[5.5px] text-[#8a8d97] sm:text-[6.5px]">2022 — Present</p>
+        </div>
+
+        <ul className="mt-2 space-y-1.5 pl-2.5 text-[6.2px] leading-[1.45] sm:text-[7.2px]">
+          <li className="list-disc">Led product design across web and mobile experiences.</li>
+          <li className="relative list-disc">
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                key={tailored ? "tailored" : "original"}
+                initial={reduce ? undefined : { opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? undefined : { opacity: 0, y: -4 }}
+                transition={{ duration: 0.45, ease: EASE }}
+                className={tailored ? "font-medium text-[#252a45]" : "text-[#737783]"}
+              >
+                {tailored
+                  ? "Built a reusable design system that cut handoff time by 35% across three product teams."
+                  : "Responsible for maintaining the company design system."}
+              </motion.span>
+            </AnimatePresence>
+            {beat === 2 && (
+              <motion.span
+                aria-hidden
+                className="absolute -inset-x-1 -inset-y-0.5 rounded-sm border border-[#e7a45e] bg-[#f8e4c8]/45"
+                initial={{ opacity: 0, scaleX: 0, transformOrigin: "left" }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{ duration: 0.65, ease: EASE }}
+              />
+            )}
+          </li>
+          <li className="list-disc">Partnered with research and engineering from discovery to launch.</li>
+        </ul>
+
+        <div className="mt-[5%] flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[7px] font-bold text-[#20222a] sm:text-[8px]">UX Designer</p>
+            <p className="text-[6px] text-[#777b87] sm:text-[7px]">Orbit Financial</p>
+          </div>
+          <p className="shrink-0 text-[5.5px] text-[#8a8d97] sm:text-[6.5px]">2020 — 2022</p>
+        </div>
+        <ul className="mt-2 space-y-1.5 pl-2.5 text-[6.2px] leading-[1.45] sm:text-[7.2px]">
+          <li className="list-disc">Simplified onboarding flows through interviews and usability testing.</li>
+          <li className="list-disc">Created prototypes used to align product and engineering teams.</li>
+        </ul>
+      </div>
+
+      <div className="mt-[5%]">
+        <SectionLabel>Skills</SectionLabel>
+        <div className="flex flex-wrap gap-1">
+          {SKILLS.map((skill, index) => (
+            <motion.span
+              key={skill}
+              className={`rounded-sm px-1.5 py-0.5 text-[5.5px] sm:text-[6.5px] ${index >= 2 ? "bg-[#e8eaff] text-[#434fb8]" : "bg-[#eff0f3]"}`}
+              initial={index >= 2 && !reduce ? { opacity: 0, y: 4 } : undefined}
+              animate={{ opacity: index < 2 || skillsAdded ? 1 : 0.28, y: 0 }}
+              transition={{ duration: 0.45, delay: index * 0.08, ease: EASE }}
+            >
+              {skill}
+            </motion.span>
+          ))}
+        </div>
+      </div>
+
+      {beat >= 1 && beat <= 2 && (
+        <motion.div
+          aria-hidden
+          className="absolute inset-x-0 h-px bg-[#6876ff] shadow-[0_0_12px_3px_rgba(104,118,255,.48)]"
+          initial={{ top: "6%", opacity: 0 }}
+          animate={{ top: "92%", opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 1.65, ease: "linear" }}
+        />
+      )}
+
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[3px] border-2 border-[#6876ff]"
+        animate={{ opacity: beat === FINAL_BEAT ? 0.65 : 0 }}
+        transition={{ duration: 0.5 }}
+      />
+    </motion.div>
+  );
+}
+
+function AnalysisRail({ beat, reduce }: { beat: number; reduce: boolean }) {
+  const finished = beat >= FINAL_BEAT;
+  const score = beat < 2 ? 62 : beat < 3 ? 71 : beat < 4 ? 84 : 92;
+
+  const status =
+    beat === 0 ? "Resume loaded" :
+    beat === 1 ? "Reading structure" :
+    beat === 2 ? "Weak bullet found" :
+    beat === 3 ? "Bullet strengthened" :
+    beat === 4 ? "Keywords aligned" : "Ready to apply";
+
+  return (
+    <div className="flex h-full min-w-0 flex-col gap-2.5">
+      <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--shadow-soft)]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-mono text-[8px] uppercase tracking-[0.15em] text-[var(--app-fg-soft)]">Role match</span>
+          <span className="text-[10px] font-semibold text-[var(--accent-text)]">{score}%</span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--app-surface-2)]">
+          <motion.div
+            className="h-full rounded-full bg-[var(--accent)]"
+            animate={{ width: `${score}%` }}
+            transition={{ duration: 0.7, ease: EASE }}
+          />
+        </div>
+        <p className="mt-2 text-[8px] leading-snug text-[var(--app-fg-muted)]">Senior Product Designer</p>
+      </div>
+
+      <div className="flex-1 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-[var(--shadow-soft)]">
+        <div className="flex items-center gap-2">
+          <motion.span
+            className={`grid size-6 shrink-0 place-items-center rounded-lg ${finished ? "bg-[var(--pastel-mint)] text-[var(--tone-win)]" : "bg-[var(--accent-soft)] text-[var(--accent-text)]"}`}
+            animate={reduce || finished ? undefined : { scale: [1, 1.08, 1] }}
+            transition={{ duration: 1.3, repeat: Infinity }}
+          >
+            {finished ? <Check className="size-3.5" /> : beat < 2 ? <FileSearch className="size-3.5" /> : <Sparkles className="size-3.5" />}
+          </motion.span>
+          <AnimatePresence initial={false} mode="wait">
+            <motion.span
+              key={status}
+              initial={reduce ? undefined : { opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? undefined : { opacity: 0, y: -4 }}
+              className="text-[8.5px] font-semibold leading-tight text-[var(--app-fg)]"
+            >
+              {status}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {[
+            ["Structure", beat >= 1],
+            ["Impact", beat >= 3],
+            ["Keywords", beat >= 4],
+          ].map(([label, done]) => (
+            <div key={String(label)} className="flex items-center gap-2">
+              <span className={`grid size-3.5 place-items-center rounded-full border ${done ? "border-emerald-500 bg-emerald-500 text-white" : "border-[var(--app-border-strong)]"}`}>
+                {done && <Check className="size-2.5" />}
+              </span>
+              <span className={`text-[8px] ${done ? "text-[var(--app-fg)]" : "text-[var(--app-fg-soft)]"}`}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {finished && (
+          <motion.div
+            initial={reduce ? undefined : { opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="rounded-xl border border-emerald-500/25 bg-[var(--pastel-mint)] p-3 text-center"
+          >
+            <p className="text-[9px] font-semibold text-[var(--tone-win)]">Resume tailored</p>
+            <p className="mt-0.5 text-[7px] text-[var(--app-fg-muted)]">Every change stays yours.</p>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
 }
 
-function Row({
-  visible,
-  dimmed,
-  monogram,
-  tint,
-  role,
-  company,
-  chip,
-  highlight = false,
-}: {
-  visible: boolean;
-  dimmed: boolean;
-  monogram: string;
-  tint: string;
-  role: string;
-  company: string;
-  chip: React.ReactNode;
-  highlight?: boolean;
-}) {
-  return (
-    <li className="relative">
-      {/* Empty slot. Rows keep their space from the first frame so nothing
-          reflows as the story plays; without this the panel would be mostly
-          blank for the first half of the loop, which reads as broken rather
-          than as a tracker waiting to fill. */}
-      <motion.span
-        aria-hidden
-        className="absolute inset-0 flex items-center gap-3.5"
-        animate={{ opacity: visible ? 0 : 1 }}
-        transition={{ duration: 0.4, ease: EASE }}
-      >
-        <span className="size-9 shrink-0 rounded-[11px] border border-dashed border-[var(--app-border)]" />
-        <span className="h-full flex-1 rounded-xl border border-dashed border-[var(--app-border)]" />
-      </motion.span>
-
-      <motion.div
-        className="relative flex items-center gap-3.5"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: visible ? (dimmed ? 0.42 : 1) : 0, x: visible ? 0 : 20 }}
-        transition={{ duration: 0.55, ease: EASE }}
-      >
-        <span
-          aria-hidden
-          className="relative z-10 grid size-9 shrink-0 place-items-center rounded-[11px] text-[12.5px] font-semibold text-[var(--app-fg)]"
-          style={{ backgroundColor: tint }}
-        >
-          {monogram}
-        </span>
-
-        <motion.div
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border bg-[var(--app-surface)] px-3.5 py-2.5"
-          animate={{
-            borderColor: highlight ? "var(--tone-win)" : "var(--app-border)",
-            boxShadow: highlight
-              ? "0 0 0 4px color-mix(in srgb, var(--pastel-mint) 70%, transparent)"
-              : "0 0 0 0px rgba(0,0,0,0)",
-          }}
-          transition={{ duration: 0.5, ease: EASE }}
-        >
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[13.5px] font-medium leading-tight text-[var(--app-fg)]">
-              {role}
-            </div>
-            <div className="mt-0.5 truncate text-[11.5px] leading-tight text-[var(--app-fg-soft)]">
-              {company}
-            </div>
-          </div>
-          {chip}
-        </motion.div>
-      </motion.div>
-    </li>
-  );
-}
-
-/**
- * The turn in the story. The old bullet fades and strikes through while the
- * rewritten one wipes in from the left — a clip-path wipe rather than a
- * character-by-character typewriter, because the rewritten line wraps to two
- * lines at this width and a typewriter would reflow it mid-animation.
- */
-function PivotRow({ visible, rewriting }: { visible: boolean; rewriting: boolean }) {
-  return (
-    <li className="relative">
-      <motion.span
-        aria-hidden
-        className="absolute inset-0 flex items-start gap-3.5"
-        animate={{ opacity: visible ? 0 : 1 }}
-        transition={{ duration: 0.4, ease: EASE }}
-      >
-        <span className="size-9 shrink-0 rounded-full border border-dashed border-[var(--app-border)]" />
-        <span className="h-full flex-1 rounded-xl border border-dashed border-[var(--app-border)]" />
-      </motion.span>
-
-      <motion.div
-        className="relative flex items-start gap-3.5"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: visible ? 1 : 0, x: visible ? 0 : 20 }}
-        transition={{ duration: 0.55, ease: EASE }}
-      >
-        <span className="relative z-10 grid size-9 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-white">
-          <Sparkles className="size-4" />
-          {visible && (
-            <motion.span
-              aria-hidden
-              className="absolute inset-0 rounded-full border-2 border-[var(--accent)]"
-              animate={{ scale: [1, 1.75], opacity: [0.55, 0] }}
-              transition={{ duration: 1.9, repeat: Infinity, ease: "easeOut" }}
-            />
-          )}
-        </span>
-
-        <div className="min-w-0 flex-1 rounded-xl border border-dashed border-[var(--accent)]/45 bg-[var(--accent-soft)] px-3.5 py-3">
-          <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--accent-text)]">
-            Rewritten for the role
-          </div>
-
-          <motion.p
-            className="mt-2 text-[12px] leading-relaxed text-[var(--app-fg-muted)] line-through decoration-[var(--app-fg-soft)]/70"
-            animate={{ opacity: rewriting ? 0.4 : 0.85 }}
-            transition={{ duration: 0.5, ease: EASE }}
-          >
-            Responsible for managing the company's social media accounts.
-          </motion.p>
-
-          <motion.p
-            className="mt-1.5 text-[12px] font-medium leading-relaxed text-[var(--app-fg)]"
-            initial={{ clipPath: "inset(0 100% 0 0)" }}
-            animate={{ clipPath: rewriting ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
-            transition={{ duration: 0.85, ease: EASE }}
-          >
-            Grew Instagram from{" "}
-            <span className="rounded px-1" style={{ backgroundColor: "var(--pastel-mint)" }}>
-              4k to 27k
-            </span>{" "}
-            followers in 11 months — now ~18% of site traffic.
-          </motion.p>
-        </div>
-      </motion.div>
-    </li>
-  );
-}
-
-/* ── Component ─────────────────────────────────────────────────────────────*/
-
 export default function ApplicationJourney() {
   const reduce = useReducedMotion();
   const wrapRef = useRef<HTMLElement>(null);
-  // Nothing should tick while the hero is scrolled past — this loops forever,
-  // and an off-screen animation is pure battery cost.
-  //
-  // `amount: "some"` (any part visible), NOT a fraction: on a 390px viewport the
-  // panel sits below the fold with only its top ~140px of ~570px on screen, so
-  // anything above ~0.2 meant the story never started on a phone at all — you'd
-  // scroll to an empty tracker and past it.
   const inView = useInView(wrapRef, { amount: "some" });
   const [beat, setBeat] = useState(0);
 
   useEffect(() => {
-    if (reduce) {
-      setBeat(LAST_BEAT);
-      return;
-    }
+    if (reduce) { setBeat(FINAL_BEAT); return; }
     if (!inView) return;
-
     let timer: ReturnType<typeof setTimeout>;
     const advance = (current: number) => {
       timer = setTimeout(() => {
-        const next = current >= LAST_BEAT ? 0 : current + 1;
+        const next = current >= FINAL_BEAT ? 0 : current + 1;
         setBeat(next);
         advance(next);
       }, BEAT_MS[current]);
     };
     advance(beat);
     return () => clearTimeout(timer);
-    // `beat` is intentionally excluded: including it would tear down and rebuild
-    // the timer on every tick, and the recursion already carries it forward.
+    // The recursive timer owns the current beat and is restarted only when visibility changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce, inView]);
 
-  const pivotVisible = beat >= 7;
-  const winStage = WIN_STAGES.filter((stage) => beat >= stage.at).at(-1);
-  const hired = beat >= 12;
-
   return (
-    <figure ref={wrapRef} className="mx-auto w-full max-w-md lg:max-w-none">
-      {/* The sheet and the panel share this wrapper so the backdrop tracks the
-          panel's height — parenting it to the <figure> would stretch it over the
-          caption underneath. */}
-      <div className="relative">
-        {/* Depth without a drop shadow doing all the work: a second sheet,
-            rotated a degree and a half, reading as the stack of applications
-            underneath. */}
-        <div
-          aria-hidden
-          className="absolute inset-x-3 -bottom-2 top-4 -rotate-[1.4deg] rounded-[22px] border border-[var(--app-border)] bg-[var(--app-surface)] opacity-60"
-        />
+    <figure ref={wrapRef} className="mx-auto w-full max-w-[500px] lg:max-w-none">
+      <div className="relative rounded-[24px] border border-[var(--app-border)] bg-[linear-gradient(145deg,var(--app-surface-2),var(--app-surface))] p-3 shadow-[var(--shadow-pop)] sm:p-5">
+        <div aria-hidden className="absolute -inset-px -z-10 rotate-2 rounded-[24px] border border-[var(--app-border)] bg-[var(--app-surface)] opacity-60" />
+        <div className="mb-3 flex items-center justify-between gap-4 px-1">
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--app-fg-soft)]">Live resume workspace</span>
+          <span className="flex items-center gap-1.5 text-[8px] uppercase tracking-[0.12em] text-[var(--app-fg-soft)]">
+            <motion.span className="size-1.5 rounded-full bg-[var(--accent)]" animate={reduce ? undefined : { opacity: [1, 0.25, 1] }} transition={{ duration: 1.8, repeat: Infinity }} />
+            Jobsynk AI
+          </span>
+        </div>
 
-        <div className="relative rounded-[22px] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--shadow-pop)] sm:p-6">
-          <div className="flex items-center justify-between gap-4 pb-4">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--app-fg-soft)]">
-              Your applications
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--app-fg-soft)]">
-              <motion.span
-                aria-hidden
-                className="size-1.5 rounded-full"
-                style={{ backgroundColor: hired ? "var(--tone-win)" : "var(--tone-reject)" }}
-                animate={reduce ? undefined : { opacity: [1, 0.25, 1] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              Live
-            </span>
-          </div>
-
-          <div className="relative">
-            {/* Rail. The grey track is always there; the accent line grows over it
-                so the eye has something to follow between rows. */}
-            <div
-              aria-hidden
-              className="absolute left-[18px] top-4 bottom-4 w-px -translate-x-1/2 bg-[var(--app-border)]"
-            />
-            <motion.div
-              aria-hidden
-              className="absolute left-[18px] top-4 bottom-4 w-px -translate-x-1/2 origin-top bg-[var(--accent)]"
-              animate={{ scaleY: Math.min(beat / RAIL_FULL, 1) }}
-              transition={{ duration: 0.6, ease: EASE }}
-            />
-
-            <ul className="relative space-y-2.5">
-              {REJECTIONS.map((item) => (
-                <Row
-                  key={item.company}
-                  visible={beat >= item.appearsAt}
-                  dimmed={pivotVisible}
-                  monogram={item.monogram}
-                  tint={item.tint}
-                  role={item.role}
-                  company={item.company}
-                  chip={
-                    <StatusChip
-                      label={beat >= item.resolvesAt ? item.outcome : "Applied"}
-                      tone={beat >= item.resolvesAt ? "reject" : "idle"}
-                    />
-                  }
-                />
-              ))}
-
-              <PivotRow visible={pivotVisible} rewriting={beat >= 8} />
-
-              <Row
-                visible={beat >= 9}
-                dimmed={false}
-                monogram="M"
-                tint="var(--pastel-lavender)"
-                role="Product Designer"
-                company="Meridian Systems"
-                highlight={hired}
-                chip={<StatusChip label={winStage?.label ?? "Applied"} tone={winStage?.tone ?? "idle"} />}
-              />
-            </ul>
-          </div>
-
-          {/* The tally. It is the punchline, so it gets the swap animation. */}
-          <div className="mt-5 flex h-5 items-center border-t border-[var(--app-border)] pt-4">
-            <AnimatePresence initial={false} mode="wait">
-              <motion.p
-                key={hired ? "after" : "before"}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.3, ease: EASE }}
-                className="text-[12px] text-[var(--app-fg-muted)]"
-              >
-                {hired ? (
-                  <>
-                    <span className="font-semibold text-[var(--tone-win)]">1 offer</span> from the
-                    first tailored application.
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold text-[var(--tone-reject)]">0 replies</span> from
-                    three untailored applications.
-                  </>
-                )}
-              </motion.p>
-            </AnimatePresence>
-          </div>
+        <div className="grid min-h-[390px] grid-cols-[minmax(0,1fr)_92px] gap-3 rounded-[18px] border border-[var(--app-border)] bg-[var(--app-bg)] p-3 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--app-fg)_4%,transparent)] sm:min-h-[440px] sm:grid-cols-[minmax(0,1fr)_118px] sm:gap-4 sm:p-4">
+          <ResumeSheet beat={beat} reduce={Boolean(reduce)} />
+          <AnalysisRail beat={beat} reduce={Boolean(reduce)} />
         </div>
       </div>
 
-      <figcaption className="mt-6 text-center text-[11.5px] leading-relaxed text-[var(--app-fg-soft)] lg:text-left">
-        An illustration of the problem, not a customer record. We don't publish
-        outcome statistics we can't prove.
+      <figcaption className="mt-4 text-center text-[11.5px] leading-relaxed text-[var(--app-fg-soft)] lg:text-left">
+        An illustrative resume workflow. Suggestions are always reviewable before you apply.
       </figcaption>
     </figure>
   );

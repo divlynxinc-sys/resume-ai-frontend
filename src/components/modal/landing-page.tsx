@@ -132,9 +132,9 @@ function Hero() {
           >
             <Link
               to="/signup"
-              className="group inline-flex h-13 items-center gap-2.5 rounded-full bg-[var(--app-fg)] px-8 text-[15px] font-semibold text-[var(--app-bg)] transition-transform duration-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+              className="group inline-flex h-13 items-center gap-2.5 rounded-full bg-[var(--accent)] px-8 text-[15px] font-semibold text-white shadow-[0_10px_28px_color-mix(in_srgb,var(--accent)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
             >
-              Build my resume — free
+              Build my resume
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
 
@@ -152,8 +152,7 @@ function Hero() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, ease: EASE, delay: 0.75 }}
           >
-            No credit card &nbsp;&#9670;&nbsp; Free plan stays free &nbsp;&#9670;&nbsp; Nothing
-            uploaded
+            No credit card &nbsp;&#9670;&nbsp; Start in minutes &nbsp;&#9670;&nbsp; Nothing uploaded
           </motion.p>
         </div>
 
