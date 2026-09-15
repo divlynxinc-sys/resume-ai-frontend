@@ -221,6 +221,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         ? data.detail
         : Array.isArray(data?.detail)
         ? data.detail[0]?.msg ?? fallbackMessage
+        : typeof data?.detail?.message === "string"
+        ? data.detail.message
         : fallbackMessage;
     throw new Error(msg);
   }
