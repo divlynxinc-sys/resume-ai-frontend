@@ -5,9 +5,11 @@ type TurnstileOptions = {
   theme: "auto" | "light" | "dark";
   size: "flexible";
   action: string;
+  retry: "auto";
+  "refresh-expired": "auto";
   callback: (token: string) => void;
   "expired-callback": () => void;
-  "error-callback": () => void;
+  "error-callback": (errorCode?: string) => void;
 };
 
 type TurnstileApi = {
@@ -84,9 +86,15 @@ export function TurnstileWidget({
           theme: "auto",
           size: "flexible",
           action,
+          retry: "auto",
+          "refresh-expired": "auto",
           callback: (token) => onVerify(token),
           "expired-callback": () => onVerify(null),
-          "error-callback": () => {
+          "error-callback": (errorCode) => {
+            // Cloudflare's numeric code is safe to expose in developer tools and
+            // is essential for distinguishing hostname/site-key configuration
+            // errors from transient browser or network failures.
+            console.error("Cloudflare Turnstile failed", { errorCode, action });
             onVerify(null);
             onError?.("Security verification failed. Please try again.");
           },
