@@ -1345,10 +1345,10 @@ export default function ResumeBuilderScreen() {
       <PageWithSidebar
         activeRoute="my-resumes"
         defaultOpen={false}
-        mainClassName="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8"
+        mainClassName="w-full max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-8"
       >
         {/* Left (main form) */}
-        <div>
+        <div className="min-w-0">
           <PageHeader mode={previewMode} setMode={setPreviewMode} />
 
           <div className="mt-4 mb-2">
@@ -1382,7 +1382,7 @@ export default function ResumeBuilderScreen() {
         </div>
 
         {/* Right side — Preview */}
-        <div className="xl:sticky xl:top-[80px] xl:self-start xl:pt-4">
+        <div className="min-w-0 max-w-full xl:sticky xl:top-[80px] xl:self-start xl:pt-4">
           <ResumePreview mode={previewMode} resume={resume} ats={null} liveAts={liveAts} fileName={resumeFileName} templateSlug={effectiveTemplateSlug} />
         </div>
       </PageWithSidebar>
