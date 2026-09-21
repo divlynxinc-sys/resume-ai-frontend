@@ -2,7 +2,7 @@
 // a stale VITE_API_URL deployment variable, which previously sent browsers
 // directly to an old Railway hostname and caused CORS/DNS "Failed to fetch"
 // errors. Local development may still opt into a custom API URL.
-const BASE_URL = import.meta.env.DEV
+export const BASE_URL = import.meta.env.DEV
   ? (import.meta.env.VITE_API_URL ?? "/api")
   : "/api";
 const AUTH_REQUEST_TIMEOUT_MS = 45_000;
