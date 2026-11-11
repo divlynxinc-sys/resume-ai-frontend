@@ -16,6 +16,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { qaAnswersService, resumeService } from "@/services";
+import { usePlan } from "@/contexts/PlanContext";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 import GeneratingLoader from "./generating-loader";
@@ -382,6 +383,7 @@ function parseQaFallback(text: string): QAItem[] {
 }
 
 export default function QAAnswersScreen() {
+  const { isPaid, isLoading: planLoading, openUpgradeModal } = usePlan();
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
@@ -484,7 +486,11 @@ export default function QAAnswersScreen() {
   }, [output, streaming]);
 
   const handleGenerate = async () => {
-    if (!canGenerate) return;
+    if (!canGenerate || planLoading) return;
+    if (!isPaid) {
+      openUpgradeModal("Interview answers are a paid feature. Upgrade to generate answers tailored to your target role.");
+      return;
+    }
     setError(null);
     setOutput("");
     setCopied(false);
@@ -733,7 +739,7 @@ export default function QAAnswersScreen() {
                   <AppButton
                     variant="primary"
                     size="lg"
-                    disabled={!canGenerate}
+                    disabled={!canGenerate || planLoading}
                     onClick={handleGenerate}
                     className="flex-1"
                   >

@@ -40,6 +40,16 @@ export const qaAnswersService = {
       try {
         const data = await res.json();
         if (
+          res.status === 402 &&
+          data?.detail &&
+          typeof data.detail === "object" &&
+          data.detail.code === "requires_plan"
+        ) {
+          detail = data.detail.message || "Subscription required";
+          window.dispatchEvent(new CustomEvent("upgrade-required", {
+            detail: { path: "/qa-answers/generate", message: detail },
+          }));
+        } else if (
           res.status === 429 &&
           data?.detail &&
           typeof data.detail === "object" &&

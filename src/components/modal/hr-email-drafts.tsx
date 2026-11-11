@@ -19,6 +19,7 @@ import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
 import { hrEmailDraftsService, resumeService } from "@/services";
+import { usePlan } from "@/contexts/PlanContext";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
 import GeneratingLoader from "./generating-loader";
@@ -384,6 +385,7 @@ function mailtoHref(subject: string, body: string): string {
 }
 
 export default function HREmailDraftsScreen() {
+  const { isPaid, isLoading: planLoading, openUpgradeModal } = usePlan();
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
@@ -481,7 +483,11 @@ export default function HREmailDraftsScreen() {
   }, [output, streaming]);
 
   const handleGenerate = async () => {
-    if (!canGenerate) return;
+    if (!canGenerate || planLoading) return;
+    if (!isPaid) {
+      openUpgradeModal("Recruiter outreach is a paid feature. Upgrade to generate tailored email drafts.");
+      return;
+    }
     setError(null);
     setOutput("");
     setCopied(false);
@@ -774,7 +780,7 @@ export default function HREmailDraftsScreen() {
                   <AppButton
                     variant="primary"
                     size="lg"
-                    disabled={!canGenerate}
+                    disabled={!canGenerate || planLoading}
                     onClick={handleGenerate}
                     className="flex-1"
                   >
