@@ -6,6 +6,7 @@ import PageWithSidebar from "@/components/layout/page-with-sidebar";
 import { AppButton, AppButtonLink } from "@/components/ui/AppButton";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { SavedJobDescription } from "@/components/shared/saved-job-description";
 import { InterviewCreditsModal, openInterviewCreditsModal, useInterviewCredits } from "@/components/shared/interview-credits";
 import { interviewApi } from "./api";
 import { AnswerFeedback, cardClass, ErrorPanel, LoadingPanel, PageHeading, RecorderControls, ScoreBreakdown } from "./components";
@@ -259,6 +260,13 @@ function NewInterview() {
                 </div>
               </>
             )}
+            <div className="mt-3">
+              <SavedJobDescription
+                hasText={!!setup.jobDescription?.trim()}
+                maxLength={8000}
+                onChoose={(description) => { update("jobDescription", description); clearJdImportedNote(); setJdMode("paste"); }}
+              />
+            </div>
             {errors.jobDescription && <p className="mt-1.5 text-xs text-red-600">{errors.jobDescription}</p>}
           </div>
         </div>

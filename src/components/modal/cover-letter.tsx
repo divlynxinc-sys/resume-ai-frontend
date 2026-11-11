@@ -19,6 +19,7 @@ import { resumeService, coverLetterService } from "@/services";
 import { usePlan } from "@/contexts/PlanContext";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { SavedJobDescription } from "@/components/shared/saved-job-description";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
 type ResumeSource = "saved" | "paste";
@@ -651,6 +652,10 @@ export default function CoverLetterScreen() {
                       {jdImportedFrom && <p className="text-xs text-[var(--app-fg-soft)]">Imported from {jdImportedFrom} — feel free to edit.</p>}
                     </>
                   )}
+                  <SavedJobDescription
+                    hasText={!!jobDescription.trim()}
+                    onChoose={(description) => { setJobDescription(description); clearJdImportedNote(); setJdMode("paste"); }}
+                  />
                 </div>
 
                 {/* Optional details */}

@@ -31,6 +31,7 @@ import { useConfettiBurst } from "@/hooks/use-confetti-burst";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { SavedJobDescription } from "@/components/shared/saved-job-description";
 
 /**
  * The free, ungated ATS checker.
@@ -745,6 +746,14 @@ export default function AtsCheckerScreen() {
                     />
                     {jdImportedFrom && <p className="mt-2 text-xs text-[var(--app-fg-soft)]">Imported from {jdImportedFrom} — feel free to edit.</p>}
                   </>
+                )}
+                {isAuthenticated && (
+                  <div className="mt-3">
+                    <SavedJobDescription
+                      hasText={!!jd.trim()}
+                      onChoose={(description) => { setJd(description); clearJdImportedNote(); setJdMode("paste"); }}
+                    />
+                  </div>
                 )}
                 <button
                   type="button"

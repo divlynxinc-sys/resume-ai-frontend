@@ -21,6 +21,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { hrEmailDraftsService, resumeService } from "@/services";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { SavedJobDescription } from "@/components/shared/saved-job-description";
 import GeneratingLoader from "./generating-loader";
 
 type Tone = "professional" | "enthusiastic" | "concise" | "warm";
@@ -679,6 +680,10 @@ export default function HREmailDraftsScreen() {
                       {jdImportedFrom && <p className="text-xs text-[var(--app-fg-soft)]">Imported from {jdImportedFrom} — feel free to edit.</p>}
                     </>
                   )}
+                  <SavedJobDescription
+                    hasText={!!jobDescription.trim()}
+                    onChoose={(description) => { setJobDescription(description); clearJdImportedNote(); setJdMode("paste"); }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
