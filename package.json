@@ -15,6 +15,7 @@
     "broken:test": "node scripts/test-broken-backend.mjs",
     "templates:test": "node scripts/test-all-templates.mjs",
     "ats:test": "node scripts/test-ats-check.mjs",
+    "plan-gating:test": "node scripts/test-plan-gating.mjs",
     "proctor:test": "node scripts/test-proctor.mjs",
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/tw.css",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/tw.css --watch",
