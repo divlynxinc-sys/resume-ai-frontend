@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -294,9 +294,11 @@ function ShareRow({ report }: { report: AtsReport }) {
 
 export default function AtsCheckerScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const incomingDescription = (location.state as { jobDescription?: unknown } | null)?.jobDescription;
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [resume, setResume] = useState("");
-  const [jd, setJd] = useState("");
+  const [jd, setJd] = useState(typeof incomingDescription === "string" ? incomingDescription : "");
   const {
     mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
     fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
