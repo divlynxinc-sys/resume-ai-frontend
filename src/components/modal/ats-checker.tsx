@@ -388,8 +388,10 @@ export default function AtsCheckerScreen() {
     if (!incomingResumeId || !isAuthenticated || authLoading) return;
     const id = Number(incomingResumeId);
     if (Number.isNaN(id)) return;
+    let cancelled = false;
     resumeService.get(id)
       .then((r) => {
+        if (cancelled) return;
         const text = resumeDataToPlainText(mapContentToLocal(r.content, blankResume));
         if (!text.trim()) return;
         setResume(text);
@@ -400,6 +402,7 @@ export default function AtsCheckerScreen() {
         // Deleted/inaccessible résumé — fall back to the manual upload flow below,
         // the notice banner still points the user at the job description we carried over.
       });
+    return () => { cancelled = true; };
   }, [incomingResumeId, isAuthenticated, authLoading]);
 
   useSeo({

@@ -1154,8 +1154,10 @@ export default function ResumeBuilderScreen() {
     if (!editId) return;
     const id = Number(editId);
     if (Number.isNaN(id)) return;
+    let cancelled = false;
     resumeService.get(id)
       .then((r) => {
+        if (cancelled) return;
         setResumeId(r.id);
         if (r.title) setResumeFileName(r.title);
         if (r.content) setResume(mapContentToLocal(r.content));
@@ -1167,11 +1169,13 @@ export default function ResumeBuilderScreen() {
         if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
       })
       .catch(() => {
+        if (cancelled) return;
         showToast("That résumé no longer exists. Start a new one or open another.", "error");
         setStartModalOpen(true);
       });
     // Persisted AI optimization reports are intentionally not loaded here.
     // The builder now presents the live ATS readiness score only.
+    return () => { cancelled = true; };
   }, [editId, showToast]);
 
   // Persist mid-session edits (and the chosen template) per-resume so they survive
