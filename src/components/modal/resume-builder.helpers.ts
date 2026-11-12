@@ -278,6 +278,45 @@ export function mapContentToLocal(content: ResumeContent, emptyResume: ResumeDat
   };
 }
 
+export const blankResume: ResumeData = {
+  name: "",
+  email: "",
+  phone: "",
+  location: "",
+  linkedin: "",
+  portfolio: "",
+  experiences: [],
+  education: [],
+  skills: [],
+  skillCategories: [],
+  summary: "",
+  job: { title: "", company: "", location: "", description: "" },
+  customSections: [],
+};
+
+/** Flatten a ResumeData to plain text, for tools (the ATS checker) that score raw text rather than a template. */
+export function resumeDataToPlainText(r: ResumeData): string {
+  const lines: string[] = [];
+  if (r.name) lines.push(r.name);
+  const contact = [r.email, r.phone, r.location].filter(Boolean).join(" | ");
+  if (contact) lines.push(contact);
+  if (r.summary) lines.push("", "Summary", r.summary);
+  if (r.experiences.length) {
+    lines.push("", "Experience");
+    for (const e of r.experiences) {
+      lines.push(`${e.role} — ${e.company}${e.location ? `, ${e.location}` : ""} (${e.startDate || "?"} – ${e.endDate || "Present"})`);
+      lines.push(...e.bullets.map((b) => `• ${b}`));
+    }
+  }
+  if (r.education.length) {
+    lines.push("", "Education");
+    for (const ed of r.education) lines.push(`${ed.degree ? `${ed.degree}, ` : ""}${ed.school}${ed.endDate ? ` (${ed.endDate})` : ""}`);
+  }
+  const skillsList = r.skillCategories?.length ? r.skillCategories.flatMap((c) => c.skills) : r.skills;
+  if (skillsList.length) lines.push("", "Skills", skillsList.join(", "));
+  return lines.join("\n");
+}
+
 // --- Per-resume local draft persistence ---------------------------------------
 // Shared by the builder (which writes drafts) and the My Resumes previews (which
 // read them) so the card preview reflects the latest local edits AND the chosen

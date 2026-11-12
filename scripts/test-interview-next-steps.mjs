@@ -14,6 +14,16 @@ const chrome = [
 assert.ok(chrome, "Chrome or Edge is required; set CHROME_PATH.");
 
 const scores = { relevance: 72, evidence: 51, structure: 66, role_alignment: 58, communication: 74 };
+const resume = {
+  id: 7, title: "Frontend résumé", template_id: null, status: "draft",
+  content: {
+    info: { full_name: "Jamie Lee", email: "jamie@example.com", phone: "555-0100" },
+    experience: [{ role: "Frontend Developer", company: "Acme", start_date: "2023-01", end_date: "2025-01", description: "Built accessible React interfaces" }],
+    education: [], skills: ["React", "TypeScript"], summary: "Frontend developer with React project experience.",
+    job_description: {}, custom: {},
+  },
+  created_at: "2026-11-11T12:00:00Z", updated_at: "2026-11-11T12:00:00Z",
+};
 const session = {
   id: "smoke-report", status: "report_ready", interview_type: "general", role_title: "Frontend Developer",
   seniority: "entry", duration_minutes: 15, resume_id: 7, resume_title: "Frontend résumé",
@@ -51,6 +61,7 @@ try {
       : path === "/api/settings/account/summary" ? { current_plan: null, credits_remaining: 0 }
       : path === "/api/interviews/smoke-report" ? session
       : path === "/api/interview-credits" ? { balance: 0, unlimited: false, packs: [], recent: [] }
+      : path === "/api/resumes/7" ? resume
       : {};
     request.respond({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
@@ -63,15 +74,14 @@ try {
   await page.click('a[href$="#question-feedback"]');
   assert.ok((await page.url()).endsWith("#question-feedback"));
   await page.click('a[href="/ats-checker"]');
-  await page.waitForSelector("button");
-  await page.evaluate(() => {
-    const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.includes("or paste the text instead"));
-    button?.click();
-  });
-  await page.waitForSelector("#resume-text");
-  await page.type("#resume-text", "Frontend developer with React project experience.");
+  // The carried-over résumé (id 7) and job description should both be live without
+  // any upload or paste — this is the whole point of the handoff.
   await page.waitForSelector("#jd-text");
   assert.equal(await page.$eval("#jd-text", (field) => field.value), session.job_description);
+  await page.waitForFunction(
+    () => [...document.querySelectorAll("span")].some((el) => el.textContent?.includes("Frontend résumé")),
+    { timeout: 5000 },
+  );
   assert.ok((await page.url()).endsWith("/ats-checker"));
   session.resume_id = null;
   await page.goto(`${base}/ai-interviews/smoke-report/report`, { waitUntil: "networkidle2" });

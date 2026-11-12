@@ -567,7 +567,7 @@ function Report() {
         </div>
         <div className="flex flex-col gap-3 py-4 pb-0 first:pt-0 lg:flex-row lg:items-center lg:justify-between">
           <div><h3 className="font-medium">Check the résumé against the role</h3><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Run the free ATS check to review parsing and job-description match.</p></div>
-          <AppButtonLink to="/ats-checker" state={{ jobDescription: session.setup.jobDescription }} variant="secondary" className="shrink-0">Run free ATS check <ArrowRight className="size-4" /></AppButtonLink>
+          <AppButtonLink to="/ats-checker" state={{ jobDescription: session.setup.jobDescription, roleTitle: session.setup.roleTitle, resumeId: session.setup.resumeId }} variant="secondary" className="shrink-0">Run free ATS check <ArrowRight className="size-4" /></AppButtonLink>
         </div>
       </div>
     </section>
