@@ -553,7 +553,25 @@ function Report() {
       <ReportList title="Priority improvements" icon={<TriangleAlert className="size-5 text-amber-500" />} items={report.improvements} />
       <ReportList title="Recommended action plan" icon={<FileText className="size-5 text-blue-500" />} items={report.actionPlan} ordered />
     </section>
-    <section className="mt-8">
+    <section className={`${cardClass} mt-6 p-6`} aria-labelledby="report-next-steps">
+      <h2 id="report-next-steps" className="font-display text-2xl font-light">Put this feedback to work</h2>
+      <p className="mt-2 text-sm text-[var(--app-fg-muted)]">Start with a recommendation above, then use the tools below to make a specific change.</p>
+      <div className="mt-5 divide-y divide-[var(--app-border)]">
+        {answered.length > 0 && <div className="flex flex-col gap-3 py-4 first:pt-0 lg:flex-row lg:items-center lg:justify-between">
+          <div><h3 className="font-medium">Strengthen an answer</h3><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Use the stronger outlines for the questions that need work.</p></div>
+          <AppButtonLink to="#question-feedback" variant="secondary" className="shrink-0">Review answer feedback <ArrowRight className="size-4" /></AppButtonLink>
+        </div>}
+        <div className="flex flex-col gap-3 py-4 first:pt-0 lg:flex-row lg:items-center lg:justify-between">
+          <div><h3 className="font-medium">Improve your résumé evidence</h3><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Add truthful examples and outcomes that support the role you practised for.</p></div>
+          <AppButtonLink to={session.setup.resumeId ? `/resumes?id=${encodeURIComponent(session.setup.resumeId)}` : "/my-resumes"} variant="secondary" className="shrink-0">{session.setup.resumeId ? "Edit selected résumé" : "Open my résumés"} <ArrowRight className="size-4" /></AppButtonLink>
+        </div>
+        <div className="flex flex-col gap-3 py-4 pb-0 first:pt-0 lg:flex-row lg:items-center lg:justify-between">
+          <div><h3 className="font-medium">Check the résumé against the role</h3><p className="mt-1 text-sm text-[var(--app-fg-muted)]">Run the free ATS check to review parsing and job-description match.</p></div>
+          <AppButtonLink to="/ats-checker" state={{ jobDescription: session.setup.jobDescription, roleTitle: session.setup.roleTitle, resumeId: session.setup.resumeId }} variant="secondary" className="shrink-0">Run free ATS check <ArrowRight className="size-4" /></AppButtonLink>
+        </div>
+      </div>
+    </section>
+    <section id="question-feedback" className="mt-8 scroll-mt-24">
       <h2 className="font-display text-2xl font-light">Question-by-question feedback</h2>
       <p className="mt-1 text-sm text-[var(--app-fg-muted)]">Expand each answer to review what you said, the evidence behind the scores, and a stronger outline.</p>
       <div className="mt-4 space-y-3">{answered.length ? answered.map((a) => <AnswerFeedback key={a.id} answer={a} question={session.questions.find((q) => q.id === a.questionId)?.prompt ?? "Interview question"} />) : <p className="text-sm text-[var(--app-fg-soft)]">No individual answers were scored in this session.</p>}</div>
