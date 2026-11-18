@@ -15,6 +15,7 @@ import html2pdf from "html2pdf.js";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
+import { usePlan } from "@/contexts/PlanContext";
 import { qaAnswersService, resumeService } from "@/services";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
@@ -382,6 +383,7 @@ function parseQaFallback(text: string): QAItem[] {
 }
 
 export default function QAAnswersScreen() {
+  const { isPaid, openUpgradeModal } = usePlan();
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
@@ -485,6 +487,10 @@ export default function QAAnswersScreen() {
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
+    if (!isPaid) {
+      openUpgradeModal("Interview answers are a paid feature. Upgrade to generate tailored answers.");
+      return;
+    }
     setError(null);
     setOutput("");
     setCopied(false);

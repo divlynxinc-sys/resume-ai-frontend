@@ -18,6 +18,7 @@ import html2pdf from "html2pdf.js";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import { AppButton } from "@/components/ui/AppButton";
+import { usePlan } from "@/contexts/PlanContext";
 import { hrEmailDraftsService, resumeService } from "@/services";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
@@ -384,6 +385,7 @@ function mailtoHref(subject: string, body: string): string {
 }
 
 export default function HREmailDraftsScreen() {
+  const { isPaid, openUpgradeModal } = usePlan();
   const [source, setSource] = useState<ResumeSource>("saved");
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loadingResumes, setLoadingResumes] = useState(true);
@@ -482,6 +484,10 @@ export default function HREmailDraftsScreen() {
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
+    if (!isPaid) {
+      openUpgradeModal("Recruiter outreach emails are a paid feature. Upgrade to generate drafts.");
+      return;
+    }
     setError(null);
     setOutput("");
     setCopied(false);
