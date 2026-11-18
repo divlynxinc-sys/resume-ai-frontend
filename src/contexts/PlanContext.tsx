@@ -17,6 +17,15 @@ import { LAUNCH_OFFER, isLaunchOfferActive, launchOfferPrice } from "@/lib/launc
 // Polar on every navigation for genuinely free users.
 const RECONCILE_FLAG = "polar-reconciled";
 
+// These modals are mounted by PlanProvider, which wraps <App/> (see main.tsx)
+// and therefore sits OUTSIDE the RouterProvider tree — useNavigate() isn't
+// available here. Dispatch a CustomEvent instead; a listener mounted inside
+// the router (App.tsx's RootLayout) performs the actual navigation. Same
+// pattern as the existing upgrade-required/usage-limit-reached event bus.
+function navigateToPricing() {
+  window.dispatchEvent(new CustomEvent("navigate-to", { detail: { path: "/pricing" } }));
+}
+
 /** A recorded "weekly usage cap hit" for one feature, persisted until it resets. */
 export interface UsageLimitHit {
   feature: string;
@@ -324,14 +333,16 @@ function UpgradeModal({ reason, onClose }: { reason: string | null; onClose: () 
           >
             Maybe later
           </button>
-          <a
-            href="/pricing"
-            onClick={onClose}
+          <button
+            onClick={() => {
+              onClose();
+              navigateToPricing();
+            }}
             className="rounded-lg px-4 py-2 text-sm font-medium text-white"
             style={{ backgroundColor: "var(--accent)" }}
           >
             View plans
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -467,14 +478,16 @@ function UsageLimitModal({
               >
                 Maybe later
               </button>
-              <a
-                href="/pricing"
-                onClick={onClose}
+              <button
+                onClick={() => {
+                  onClose();
+                  navigateToPricing();
+                }}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-white"
                 style={{ backgroundColor: "var(--accent)" }}
               >
                 View plans
-              </a>
+              </button>
             </>
           )}
         </div>
