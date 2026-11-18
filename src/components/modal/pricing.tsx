@@ -3,8 +3,10 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
 import SiteNavbar from "../layout/site-navbar";
+import SiteFooter from "../layout/site-footer";
 import PageWithSidebar from "../layout/page-with-sidebar";
 import LaunchOfferBanner from "../layout/launch-offer-banner";
+import { useAuth } from "@/contexts/AuthContext";
 import { usePlan } from "@/contexts/PlanContext";
 import { pricingService } from "@/services";
 import { settingsService } from "@/services/settings";
@@ -439,6 +441,18 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
 }
 
 export default function PricingScreen() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
+        <SiteNavbar marketingMode />
+        <PricingSection />
+        <SiteFooter publicOnly />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
       <SiteNavbar />
