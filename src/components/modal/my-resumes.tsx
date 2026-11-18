@@ -6,6 +6,8 @@ import PageWithSidebar from "../layout/page-with-sidebar";
 import noResumeIllustration from "../../assets/no-resume.png";
 import { resumeService, type ResumeContent } from "@/services";
 import { renderTemplate } from "@/lib/resume-templates";
+import { usePlan } from "@/contexts/PlanContext";
+import { FREE_TEMPLATE_SLUG, isTemplateLockedForFree } from "@/lib/template-access";
 
 import {
   downloadResumeContentAsDocx,
@@ -85,6 +87,7 @@ function renderResumeCardHtml(resume: ResumeData, templateSlug: string): string 
 }
 
 function MiniResumePreview({ id }: { id: string }) {
+  const { isPaid } = usePlan();
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
@@ -131,7 +134,8 @@ function MiniResumePreview({ id }: { id: string }) {
     // Prefer the local draft (latest edits + chosen template) so the card matches
     // what the user last saw in the builder; otherwise use the saved server content.
     const draft = readResumeDraft(Number(id));
-    const slug = draft?.templateSlug || "modern-minimal";
+    const rawSlug = draft?.templateSlug || FREE_TEMPLATE_SLUG;
+    const slug = isTemplateLockedForFree(rawSlug, isPaid) ? FREE_TEMPLATE_SLUG : rawSlug;
     if (draft?.resume) {
       renderInto(draft.resume, slug);
       return () => {
@@ -151,7 +155,7 @@ function MiniResumePreview({ id }: { id: string }) {
       cancelled = true;
       resizeObserver.disconnect();
     };
-  }, [id]);
+  }, [id, isPaid]);
 
   return (
     <div ref={containerRef} className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-white select-none pointer-events-none shadow-[0_1px_3px_rgba(26,26,26,0.08)]">
@@ -328,6 +332,7 @@ function ResumeCard({
 
 export default function MyResumesScreen() {
   const navigate = useNavigate();
+  const { isPaid } = usePlan();
   const [resumes, setResumes] = useState<ResumeItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -385,7 +390,9 @@ export default function MyResumesScreen() {
       if (!resume.content) throw new Error("This resume does not have any content to download.");
 
       const baseName = safeFileName(resume.title || downloadTarget.title);
-      const html = resumeContentToHtml(resume.content, baseName);
+      const draftSlug = readResumeDraft(Number(downloadTarget.id))?.templateSlug ?? FREE_TEMPLATE_SLUG;
+      const effectiveSlug = isTemplateLockedForFree(draftSlug, isPaid) ? FREE_TEMPLATE_SLUG : draftSlug;
+      const html = resumeContentToHtml(resume.content, baseName, effectiveSlug);
 
       if (format === "pdf") {
         await downloadResumeHtmlAsPdf(html, `${baseName}.pdf`);

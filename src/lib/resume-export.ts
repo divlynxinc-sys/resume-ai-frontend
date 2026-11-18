@@ -1,6 +1,7 @@
 import type { ResumeContent } from "@/services/resume";
 import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 import { apiRequestBlob } from "@/lib/api";
+import { FREE_TEMPLATE_SLUG } from "@/lib/template-access";
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -102,7 +103,7 @@ export function resumeContentToTemplateInput(content: ResumeContent, fallbackNam
   };
 }
 
-export function resumeContentToHtml(content: ResumeContent, fallbackName = "Resume", templateSlug = "modern-minimal"): string {
+export function resumeContentToHtml(content: ResumeContent, fallbackName = "Resume", templateSlug = FREE_TEMPLATE_SLUG): string {
   return renderTemplate(templateSlug, resumeContentToTemplateInput(content, fallbackName));
 }
 

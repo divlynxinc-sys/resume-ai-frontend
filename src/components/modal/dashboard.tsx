@@ -31,6 +31,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
 import { downloadResumeHtmlAsPdf, resumeContentToHtml } from "@/lib/resume-export";
+import { readResumeDraft } from "@/components/modal/resume-builder.helpers";
+import { FREE_TEMPLATE_SLUG, isTemplateLockedForFree } from "@/lib/template-access";
 
 export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: string; collapsed?: boolean }) {
   const navigate = useNavigate();
@@ -387,6 +389,7 @@ function RecentActivity({
 }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { isPaid } = usePlan();
   const [searchQuery, setSearchQuery] = useState("");
   const [activities, setActivities] = useState<{ id: number; name: string; date: string }[]>([]);
   const [activityStatus, setActivityStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -431,7 +434,9 @@ function RecentActivity({
     setDownloadingId(id);
     try {
       const resume = await resumeService.get(id);
-      const html = resumeContentToHtml(resume.content, resume.title);
+      const draftSlug = readResumeDraft(id)?.templateSlug ?? FREE_TEMPLATE_SLUG;
+      const effectiveSlug = isTemplateLockedForFree(draftSlug, isPaid) ? FREE_TEMPLATE_SLUG : draftSlug;
+      const html = resumeContentToHtml(resume.content, resume.title, effectiveSlug);
       const fileName = resume.title?.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Resume";
       await downloadResumeHtmlAsPdf(html, `${fileName}.pdf`);
     } catch {
