@@ -1132,7 +1132,7 @@ function ResumePreview({
 export default function ResumeBuilderScreen() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");
-  const initialTemplate = searchParams.get("template") || 'modern-minimal';
+  const initialTemplate = searchParams.get("template") || FREE_TEMPLATE_SLUG;
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabKey>('job');
