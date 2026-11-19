@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -6,6 +6,7 @@ import {
   Outlet,
   ScrollRestoration,
   useLocation,
+  useNavigate,
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,6 +81,21 @@ function Page({ children }: { children: React.ReactNode }) {
  * position — which is why it is here and not in the guards.
  */
 function RootLayout() {
+  // PlanProvider (see main.tsx) wraps <App/>, so its modals render outside
+  // this RouterProvider tree and can't call useNavigate() directly. They
+  // dispatch a "navigate-to" CustomEvent instead (same pattern as the
+  // existing upgrade-required/usage-limit-reached event bus); this listener,
+  // mounted inside the router, performs the actual client-side navigation.
+  const navigate = useNavigate();
+  useEffect(() => {
+    const onNavigateTo = (e: Event) => {
+      const path = (e as CustomEvent<{ path: string }>).detail?.path;
+      if (path) navigate(path);
+    };
+    window.addEventListener("navigate-to", onNavigateTo);
+    return () => window.removeEventListener("navigate-to", onNavigateTo);
+  }, [navigate]);
+
   return (
     <>
       <ScrollRestoration />
