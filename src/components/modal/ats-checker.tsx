@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -31,6 +31,8 @@ import { useConfettiBurst } from "@/hooks/use-confetti-burst";
 import { useAuth } from "@/contexts/AuthContext";
 import { useJobDescriptionImport } from "@/hooks/use-job-description-import";
 import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/shared/job-description-source";
+import { resumeService } from "@/services/resume";
+import { mapContentToLocal, resumeDataToPlainText, blankResume } from "@/components/modal/resume-builder.helpers";
 
 /**
  * The free, ungated ATS checker.
@@ -294,9 +296,14 @@ function ShareRow({ report }: { report: AtsReport }) {
 
 export default function AtsCheckerScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const incomingState = location.state as { jobDescription?: unknown; roleTitle?: unknown; resumeId?: unknown } | null;
+  const incomingDescription = incomingState?.jobDescription;
+  const incomingRoleTitle = typeof incomingState?.roleTitle === "string" ? incomingState.roleTitle : "";
+  const incomingResumeId = incomingState?.resumeId;
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [resume, setResume] = useState("");
-  const [jd, setJd] = useState("");
+  const [jd, setJd] = useState(typeof incomingDescription === "string" ? incomingDescription : "");
   const {
     mode: jdMode, setMode: setJdMode, url: jdUrl, setUrl: setJdUrl,
     fetching: jdFetching, error: jdFetchError, importedFrom: jdImportedFrom,
@@ -374,6 +381,29 @@ export default function AtsCheckerScreen() {
     const pending = takePendingAtsFile();
     if (pending) void handleFile(pending);
   }, [handleFile]);
+
+  // Coming from an interview report with a résumé already on file: fetch it and
+  // run the check immediately, so the user isn't asked to re-upload what we already have.
+  useEffect(() => {
+    if (!incomingResumeId || !isAuthenticated || authLoading) return;
+    const id = Number(incomingResumeId);
+    if (Number.isNaN(id)) return;
+    let cancelled = false;
+    resumeService.get(id)
+      .then((r) => {
+        if (cancelled) return;
+        const text = resumeDataToPlainText(mapContentToLocal(r.content, blankResume));
+        if (!text.trim()) return;
+        setResume(text);
+        setFileName(r.title || "Your saved résumé");
+        setSubmitted(true);
+      })
+      .catch(() => {
+        // Deleted/inaccessible résumé — fall back to the manual upload flow below,
+        // the notice banner still points the user at the job description we carried over.
+      });
+    return () => { cancelled = true; };
+  }, [incomingResumeId, isAuthenticated, authLoading]);
 
   useSeo({
     title: "Free ATS Resume Checker — No Signup | Jobsynk",
@@ -566,6 +596,13 @@ export default function AtsCheckerScreen() {
                 <p className="mt-1 text-xs leading-5 text-[var(--app-fg-soft)]">Instant ATS feedback, private by design, and completely free.</p>
               </div>
             </div>
+
+            {typeof incomingDescription === "string" && incomingDescription.trim() && !resume && (
+              <p className="mb-5 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-4 py-3 text-xs leading-5 text-[var(--accent-text)]">
+                Job description{incomingRoleTitle ? ` from your ${incomingRoleTitle} interview` : ""} is ready — add your résumé below to check it against the role.
+              </p>
+            )}
+
             <input
               ref={inputRef}
               type="file"
