@@ -1168,9 +1168,14 @@ export default function ResumeBuilderScreen() {
         if (draft?.resume) setResume(draft.resume);
         if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return;
-        showToast("That résumé no longer exists. Start a new one or open another.", "error");
+        // Only a real 404 means the résumé is gone -- a network error, 401 or
+        // 500 must not tell the user their résumé was deleted.
+        const status = (err as { status?: number } | null)?.status;
+        if (status === 404) {
+          showToast("That résumé no longer exists. Start a new one or open another.", "error");
+        }
         setStartModalOpen(true);
       });
     // Persisted AI optimization reports are intentionally not loaded here.

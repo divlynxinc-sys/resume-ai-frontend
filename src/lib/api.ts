@@ -224,7 +224,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         : typeof data?.detail?.message === "string"
         ? data.detail.message
         : fallbackMessage;
-    throw new Error(msg);
+    const genericErr = new Error(msg) as Error & { status?: number };
+    genericErr.status = res.status;
+    throw genericErr;
   }
 
   return data as T;

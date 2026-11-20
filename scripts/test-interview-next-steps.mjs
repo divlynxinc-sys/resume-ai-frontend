@@ -56,6 +56,12 @@ try {
   page.on("request", (request) => {
     const path = new URL(request.url()).pathname;
     if (!path.startsWith("/api/")) return request.continue();
+    if (path === "/api/resumes/999") {
+      return request.respond({ status: 404, contentType: "application/json", body: JSON.stringify({ detail: "Resume not found" }) });
+    }
+    if (path === "/api/resumes/998") {
+      return request.respond({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "Internal error" }) });
+    }
     const body = path === "/api/profile/me"
       ? { id: "free-user", name: "Test User", email: "test@example.com", role: "user", credits_remaining: 0 }
       : path === "/api/settings/account/summary" ? { current_plan: null, credits_remaining: 0 }
@@ -87,7 +93,20 @@ try {
   await page.goto(`${base}/ai-interviews/smoke-report/report`, { waitUntil: "networkidle2" });
   await page.waitForSelector("#report-next-steps");
   assert.ok(await page.$('a[href="/my-resumes"]'), "Résumé-list fallback missing when no résumé was selected");
-  console.log("Interview next steps and free ATS handoff passed.");
+
+  // A real 404 (résumé actually deleted) shows the toast.
+  await page.goto(`${base}/resumes?id=999`, { waitUntil: "networkidle2" });
+  await page.waitForFunction(() => document.body.textContent?.includes("no longer exists"), { timeout: 5000 });
+
+  // A 500 (transient server error, NOT a deletion) must never show that toast.
+  await page.goto(`${base}/resumes?id=998`, { waitUntil: "networkidle2" });
+  await new Promise((r) => setTimeout(r, 500)); // let the failed fetch settle
+  assert.ok(
+    !(await page.evaluate(() => document.body.textContent?.includes("no longer exists"))),
+    "500 response incorrectly showed the deleted-résumé toast",
+  );
+
+  console.log("Interview next steps, free ATS handoff, and deleted-vs-errored résumé toast all passed.");
 } finally {
   await browser?.close();
   await server.close();
