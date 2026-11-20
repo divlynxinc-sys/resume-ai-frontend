@@ -89,6 +89,10 @@ try {
     { timeout: 5000 },
   );
   assert.ok((await page.url()).endsWith("/ats-checker"));
+  if (process.env.ATS_PREFILL_SCREENSHOT) {
+    await new Promise((r) => setTimeout(r, 400));
+    await page.screenshot({ path: process.env.ATS_PREFILL_SCREENSHOT, fullPage: true });
+  }
   session.resume_id = null;
   await page.goto(`${base}/ai-interviews/smoke-report/report`, { waitUntil: "networkidle2" });
   await page.waitForSelector("#report-next-steps");
@@ -97,6 +101,7 @@ try {
   // A real 404 (résumé actually deleted) shows the toast.
   await page.goto(`${base}/resumes?id=999`, { waitUntil: "networkidle2" });
   await page.waitForFunction(() => document.body.textContent?.includes("no longer exists"), { timeout: 5000 });
+  if (process.env.DELETED_TOAST_SCREENSHOT) await page.screenshot({ path: process.env.DELETED_TOAST_SCREENSHOT, fullPage: true });
 
   // A 500 (transient server error, NOT a deletion) must never show that toast.
   await page.goto(`${base}/resumes?id=998`, { waitUntil: "networkidle2" });
