@@ -1,4 +1,4 @@
-import { BASE_URL } from "@/lib/api";
+import { BASE_URL, parseErrorDetail } from "@/lib/api";
 
 export interface HREmailDraftsRequest {
   resume_id?: number;
@@ -77,7 +77,7 @@ export const hrEmailDraftsService = {
             }),
           );
         } else {
-          detail = typeof data.detail === "string" ? data.detail : detail;
+          detail = parseErrorDetail(data, res.status);
         }
       } catch {
         /* non-JSON error body */
