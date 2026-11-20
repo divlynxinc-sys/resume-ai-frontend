@@ -19,6 +19,9 @@ import {
   resolveProjectFromSection,
   readResumeDraft,
   writeResumeDraft,
+  removeResumeDraft,
+  readResumeTemplate,
+  writeResumeTemplate,
   type ResumeData,
   type Experience,
   type Education,
@@ -1151,6 +1154,10 @@ export default function ResumeBuilderScreen() {
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(blankResume);
   const [resumeId, setResumeId] = useState<number | null>(null);
+  // The server's updated_at as of the last load or save we know about. Used to
+  // tell whether a local draft still reflects the latest saved version, or is
+  // stale because a newer save happened elsewhere (see resume-builder.helpers.ts).
+  const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(null);
   const [resumeFileName, setResumeFileName] = useState("");
   const [saving, setSaving] = useState(false);
   const [completedModalOpen, setCompletedModalOpen] = useState(false);
@@ -1174,12 +1181,24 @@ export default function ResumeBuilderScreen() {
         setResumeId(r.id);
         if (r.title) setResumeFileName(r.title);
         if (r.content) setResume(mapContentToLocal(r.content));
-        // Restore any unsaved local edits + the chosen template for this resume so
-        // the user sees it "as they left it" (the server only has sections that were
-        // explicitly saved via "Save & Next").
+        setBaseUpdatedAt(r.updated_at);
+
+        // Restore any unsaved local edits for this resume so the user sees it
+        // "as they left it" (the server only has sections that were explicitly
+        // saved via "Save & Next") -- but only if the draft still matches the
+        // server's current updated_at. If updated_at has moved on, a newer
+        // save happened elsewhere (another tab/browser) and the draft is
+        // stale: applying it would silently overwrite that newer save, so we
+        // drop it instead.
         const draft = readResumeDraft(r.id);
-        if (draft?.resume) setResume(draft.resume);
-        if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
+        if (draft?.resume && draft.baseUpdatedAt === r.updated_at) {
+          setResume(draft.resume);
+        } else if (draft) {
+          removeResumeDraft(r.id);
+        }
+
+        const savedTemplate = readResumeTemplate(r.id);
+        if (savedTemplate) setTemplateSlug(savedTemplate);
       })
       .catch(() => {
         setStartModalOpen(true);
@@ -1188,19 +1207,32 @@ export default function ResumeBuilderScreen() {
     // The builder now presents the live ATS readiness score only.
   }, [editId]);
 
-  // Persist mid-session edits (and the chosen template) per-resume so they survive
-  // navigation / refresh and are restored on the next visit.
+  // Persist mid-session edits per-resume so they survive navigation / refresh
+  // and are restored on the next visit, tagged with the server version they
+  // were made against (see the load effect above for how that's used).
+  useEffect(() => {
+    if (resumeId !== null && baseUpdatedAt !== null) {
+      writeResumeDraft(resumeId, { resume, baseUpdatedAt });
+    }
+  }, [resume, resumeId, baseUpdatedAt]);
+
+  // The chosen template has no backend field to live in, so it's persisted on
+  // its own, independent of the content draft above -- it must survive a
+  // successful save (which clears the content draft) and only disappears when
+  // the resume itself is deleted.
   useEffect(() => {
     if (resumeId !== null) {
-      writeResumeDraft(resumeId, { resume, templateSlug });
+      writeResumeTemplate(resumeId, templateSlug);
     }
-  }, [resume, templateSlug, resumeId]);
+  }, [templateSlug, resumeId]);
 
   // Sync title to backend when resumeFileName changes
   useEffect(() => {
     if (resumeId === null) return;
     const timer = setTimeout(() => {
-      resumeService.update(resumeId, { title: resumeFileName || resume.name || "Untitled" }).catch(() => {});
+      resumeService.update(resumeId, { title: resumeFileName || resume.name || "Untitled" })
+        .then((r) => setBaseUpdatedAt(r.updated_at))
+        .catch(() => {});
     }, 600);
     return () => clearTimeout(timer);
   }, [resumeFileName]);
@@ -1303,6 +1335,13 @@ export default function ResumeBuilderScreen() {
           if (customMapped) {
             await resumeService.patchContent(resumeId, customMapped.section, customMapped.body);
           }
+        }
+
+        // patchContent's response doesn't include updated_at, so refresh it
+        // with one follow-up GET -- keeps the local draft from looking stale
+        // immediately after a save that it isn't.
+        if (mapped) {
+          resumeService.get(resumeId).then((r) => setBaseUpdatedAt(r.updated_at)).catch(() => {});
         }
 
         if (activeTab === "custom") {
