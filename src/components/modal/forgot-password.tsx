@@ -5,9 +5,17 @@ import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 import lightLogo from "../../assets/Logo-02.png";
 import darkLogo from "../../assets/Logo-05.png";
 import { useTheme } from "@/contexts/ThemeContext";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { authService } from "@/services/auth";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  if (typeof err !== "object" || err === null) return fallback;
+  const message = "message" in err ? (err as { message?: unknown }).message : undefined;
+  return typeof message === "string" ? message : fallback;
 }
 
 export default function ForgotPasswordScreen() {
@@ -15,6 +23,8 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,11 +34,21 @@ export default function ForgotPasswordScreen() {
       setError("Please enter a valid email address.");
       return;
     }
+    if (!turnstileToken) {
+      setError("Please complete the security verification.");
+      return;
+    }
 
     setStatus("loading");
-    // Simulate a reset-link request until the password reset API is connected.
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setStatus("sent");
+    try {
+      await authService.forgotPassword(email.trim().toLowerCase(), turnstileToken);
+      setStatus("sent");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Something went wrong. Please try again."));
+      setStatus("idle");
+      setTurnstileToken(null);
+      setTurnstileKey((key) => key + 1);
+    }
   };
 
   return (
@@ -107,9 +127,16 @@ export default function ForgotPasswordScreen() {
                 )}
               </div>
 
+              <TurnstileWidget
+                key={turnstileKey}
+                action="forgot_password"
+                onVerify={setTurnstileToken}
+                onError={setError}
+              />
+
               <button
                 type="submit"
-                disabled={status === "loading" || !isValidEmail(email)}
+                disabled={status === "loading" || !isValidEmail(email) || !turnstileToken}
                 className="flex h-10 w-full items-center justify-center rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-white transition-all hover:bg-[var(--btn-primary-hover)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[var(--btn-primary-bg)]"
               >
                 {status === "loading" ? "Sending reset link…" : status === "sent" ? "Send another link" : "Send reset link"}
