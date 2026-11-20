@@ -293,6 +293,8 @@ const DRAFT_PREFIX = "resume-draft:";
 export interface ResumeDraft {
   resume?: ResumeData;
   baseUpdatedAt?: string;
+  /** @deprecated kept only so a pre-existing draft's template isn't lost; new drafts use writeResumeTemplate instead. */
+  templateSlug?: string;
 }
 
 export function readResumeDraft(id: number): ResumeDraft | null {
@@ -329,7 +331,12 @@ const TEMPLATE_PREFIX = "resume-template:";
 
 export function readResumeTemplate(id: number): string | null {
   try {
-    return localStorage.getItem(`${TEMPLATE_PREFIX}${id}`);
+    const current = localStorage.getItem(`${TEMPLATE_PREFIX}${id}`);
+    if (current) return current;
+    // Fall back to a pre-existing draft's embedded templateSlug (the shape
+    // before this key existed) so a résumé opened before this change doesn't
+    // silently lose its chosen template and revert to Classic Professional.
+    return readResumeDraft(id)?.templateSlug ?? null;
   } catch {
     return null;
   }

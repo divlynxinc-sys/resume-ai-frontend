@@ -1183,6 +1183,17 @@ export default function ResumeBuilderScreen() {
         if (r.content) setResume(mapContentToLocal(r.content));
         setBaseUpdatedAt(r.updated_at);
 
+        // Read the template BEFORE the draft below is possibly removed: for a
+        // résumé opened before the template moved to its own key, it only
+        // exists as the legacy draft's templateSlug (readResumeTemplate falls
+        // back to that). Persist it to the new key right away so it survives
+        // even if the draft turns out to be stale and gets deleted next.
+        const savedTemplate = readResumeTemplate(r.id);
+        if (savedTemplate) {
+          setTemplateSlug(savedTemplate);
+          writeResumeTemplate(r.id, savedTemplate);
+        }
+
         // Restore any unsaved local edits for this resume so the user sees it
         // "as they left it" (the server only has sections that were explicitly
         // saved via "Save & Next") -- but only if the draft still matches the
@@ -1196,9 +1207,6 @@ export default function ResumeBuilderScreen() {
         } else if (draft) {
           removeResumeDraft(r.id);
         }
-
-        const savedTemplate = readResumeTemplate(r.id);
-        if (savedTemplate) setTemplateSlug(savedTemplate);
       })
       .catch(() => {
         setStartModalOpen(true);
