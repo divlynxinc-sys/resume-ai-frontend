@@ -280,12 +280,20 @@ export function mapContentToLocal(content: ResumeContent, emptyResume: ResumeDat
 
 // --- Per-resume local draft persistence ---------------------------------------
 // Shared by the builder (which writes drafts) and the My Resumes previews (which
-// read them) so the card preview reflects the latest local edits AND the chosen
-// template — keyed by resume id so one resume's edits never leak into another.
+// read them) so the card preview reflects the latest local edits — keyed by
+// resume id so one resume's edits never leak into another.
+//
+// `baseUpdatedAt` is the server's `updated_at` at the moment this draft was
+// written. A draft is only safe to apply if it still matches the resume's
+// CURRENT `updated_at` — otherwise someone saved a newer version (another
+// tab, another browser) since this draft was made, and the draft must be
+// dropped rather than silently overwriting that newer save.
 const DRAFT_PREFIX = "resume-draft:";
 
 export interface ResumeDraft {
   resume?: ResumeData;
+  baseUpdatedAt?: string;
+  /** @deprecated kept only so a pre-existing draft's template isn't lost; new drafts use writeResumeTemplate instead. */
   templateSlug?: string;
 }
 
@@ -298,11 +306,55 @@ export function readResumeDraft(id: number): ResumeDraft | null {
   }
 }
 
-export function writeResumeDraft(id: number, data: { resume: ResumeData; templateSlug: string }) {
+export function writeResumeDraft(id: number, data: { resume: ResumeData; baseUpdatedAt: string }) {
   try {
     localStorage.setItem(`${DRAFT_PREFIX}${id}`, JSON.stringify(data));
   } catch {
     /* quota / serialization errors are non-fatal */
+  }
+}
+
+export function removeResumeDraft(id: number) {
+  try {
+    localStorage.removeItem(`${DRAFT_PREFIX}${id}`);
+  } catch {
+    /* non-fatal */
+  }
+}
+
+// The chosen template lives in its own key, independent of the draft's
+// lifecycle: the backend never persists a resume's template_id, so this is
+// the only record of what the user picked. It must survive a save (which can
+// safely drop the content draft) and only disappears when the resume itself
+// is deleted.
+const TEMPLATE_PREFIX = "resume-template:";
+
+export function readResumeTemplate(id: number): string | null {
+  try {
+    const current = localStorage.getItem(`${TEMPLATE_PREFIX}${id}`);
+    if (current) return current;
+    // Fall back to a pre-existing draft's embedded templateSlug (the shape
+    // before this key existed) so a résumé opened before this change doesn't
+    // silently lose its chosen template and revert to Classic Professional.
+    return readResumeDraft(id)?.templateSlug ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeResumeTemplate(id: number, templateSlug: string) {
+  try {
+    localStorage.setItem(`${TEMPLATE_PREFIX}${id}`, templateSlug);
+  } catch {
+    /* non-fatal */
+  }
+}
+
+export function removeResumeTemplate(id: number) {
+  try {
+    localStorage.removeItem(`${TEMPLATE_PREFIX}${id}`);
+  } catch {
+    /* non-fatal */
   }
 }
 

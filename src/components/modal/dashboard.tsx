@@ -31,7 +31,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { dashboardService } from "@/services";
 import { resumeService } from "@/services/resume";
 import { downloadResumeHtmlAsPdf, resumeContentToHtml } from "@/lib/resume-export";
-import { readResumeDraft } from "@/components/modal/resume-builder.helpers";
+import { readResumeTemplate, removeResumeDraft, removeResumeTemplate } from "@/components/modal/resume-builder.helpers";
 import { FREE_TEMPLATE_SLUG, isTemplateLockedForFree } from "@/lib/template-access";
 
 export function Sidebar({ activeRoute, collapsed = false }: { activeRoute?: string; collapsed?: boolean }) {
@@ -434,8 +434,8 @@ function RecentActivity({
     setDownloadingId(id);
     try {
       const resume = await resumeService.get(id);
-      const draftSlug = readResumeDraft(id)?.templateSlug ?? FREE_TEMPLATE_SLUG;
-      const effectiveSlug = isTemplateLockedForFree(draftSlug, isPaid) ? FREE_TEMPLATE_SLUG : draftSlug;
+      const savedSlug = readResumeTemplate(id) ?? FREE_TEMPLATE_SLUG;
+      const effectiveSlug = isTemplateLockedForFree(savedSlug, isPaid) ? FREE_TEMPLATE_SLUG : savedSlug;
       const html = resumeContentToHtml(resume.content, resume.title, effectiveSlug);
       const fileName = resume.title?.replace(/[^a-zA-Z0-9 ]/g, "").trim() || "Resume";
       await downloadResumeHtmlAsPdf(html, `${fileName}.pdf`);
@@ -450,6 +450,8 @@ function RecentActivity({
     setLoading(true);
     try {
       await resumeService.delete(id);
+      removeResumeDraft(id);
+      removeResumeTemplate(id);
       setActivities((prev) => prev.filter((a) => a.id !== id));
       setDeletingId(null);
       showToast("Resume deleted successfully!");
