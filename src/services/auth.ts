@@ -42,4 +42,10 @@ export const authService = {
 
   googleAuth: (credential: string, turnstile_token: string) =>
     api.post<LoginResponse>("/auth/google", { credential, turnstile_token }),
+
+  forgotPassword: (email: string, turnstile_token: string) =>
+    api.post<{ message: string }>("/auth/forgot-password", { email, turnstile_token }),
+
+  resetPassword: (token: string, new_password: string) =>
+    api.post<{ message: string }>("/auth/reset-password", { token, new_password }),
 };

@@ -60,7 +60,7 @@ export function TurnstileWidget({
   onVerify,
   onError,
 }: {
-  action: "login" | "signup";
+  action: "login" | "signup" | "forgot_password";
   onVerify: (token: string | null) => void;
   onError?: (message: string) => void;
 }) {
