@@ -441,9 +441,16 @@ export function PricingSection({ showPlanActions = true }: { showPlanActions?: b
 }
 
 export default function PricingScreen() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  // isAuthenticated starts false while the profile fetch is in flight, so a
+  // logged-in user with a slow network would see the public layout flash
+  // before swapping to the sidebar. If a token is already stored, assume the
+  // app layout while auth resolves instead. Guarded by typeof window so the
+  // prerendered build (no window) still emits the public layout.
+  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("accessToken");
+  const showAppLayout = isAuthenticated || (isLoading && hasToken);
 
-  if (!isAuthenticated) {
+  if (!showAppLayout) {
     return (
       <div className="min-h-screen w-full bg-[var(--app-bg)] text-white">
         <SiteNavbar marketingMode />
