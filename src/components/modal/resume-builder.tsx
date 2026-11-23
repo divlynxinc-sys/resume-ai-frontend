@@ -1266,6 +1266,7 @@ export default function ResumeBuilderScreen() {
     try {
       const r = await resumeService.create({ title: "New Resume", template_id: null });
       setResumeId(r.id);
+      setBaseUpdatedAt(r.updated_at);
       addResumeCreatedNotification("blank");
       showToast("Resume created successfully!");
     } catch {
@@ -1293,6 +1294,7 @@ export default function ResumeBuilderScreen() {
       // fromUpload creates the resume AND returns parsed content in one call
       const r = await resumeService.fromUpload(selectedFile, "Uploaded Resume");
       setResumeId(r.id);
+      setBaseUpdatedAt(r.updated_at);
       setResume(mapContentToLocal(r.content));
       setUploadModalOpen(false);
       setSelectedFile(null);
