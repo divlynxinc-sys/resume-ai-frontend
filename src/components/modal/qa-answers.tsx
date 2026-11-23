@@ -473,7 +473,7 @@ export default function QAAnswersScreen() {
   const canGenerate = useMemo(() => {
     if (streaming) return false;
     if (!jobDescription.trim()) return false;
-    if (questionCount < 5 || questionCount > 20) return false;
+    if (questionCount < 5 || questionCount > 15) return false;
     if (source === "saved") return selectedId !== null;
     return resumeText.trim().length > 0;
   }, [streaming, jobDescription, questionCount, source, selectedId, resumeText]);
@@ -707,7 +707,7 @@ export default function QAAnswersScreen() {
                   <input
                     type="range"
                     min={5}
-                    max={20}
+                    max={15}
                     value={questionCount}
                     onChange={(e) => setQuestionCount(Number(e.target.value))}
                     className="w-full accent-[var(--accent)]"
