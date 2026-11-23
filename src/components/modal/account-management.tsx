@@ -246,6 +246,10 @@ export default function AccountManagementScreen() {
       showToast("New passwords do not match.", "error");
       return;
     }
+    if (newPw.length < 8 || newPw.length > 128) {
+      showToast("Password must be between 8 and 128 characters.", "error");
+      return;
+    }
 
     setPwSaving(true);
     try {

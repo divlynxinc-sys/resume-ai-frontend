@@ -78,6 +78,26 @@ function shouldAttemptRefresh(path: string) {
   return !SESSION_ENDPOINTS.has(path);
 }
 
+/**
+ * Turn a FastAPI error body into a readable message. `detail` is a plain
+ * string for most errors, but a Pydantic validation failure (422) sends an
+ * array of `{msg, loc, type}` objects instead -- callers that only checked
+ * `typeof detail === "string"` fell through to a raw "Request failed (422)"
+ * for every validation error. Exported so the streaming services (which use
+ * raw fetch, not this file's request wrapper) can share the same parsing.
+ */
+export function parseErrorDetail(data: unknown, status: number): string {
+  const fallback = `Request failed (${status})`;
+  const detail = (data as { detail?: unknown } | null | undefined)?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const first = detail[0] as { msg?: unknown } | undefined;
+    return typeof first?.msg === "string" ? first.msg : fallback;
+  }
+  const message = (detail as { message?: unknown } | null | undefined)?.message;
+  return typeof message === "string" ? message : fallback;
+}
+
 async function attemptRefresh(): Promise<string | null> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return null;
