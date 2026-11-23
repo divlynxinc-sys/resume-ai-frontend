@@ -46,6 +46,7 @@ const CookiePolicyScreen = lazy(() => import("./components/modal/cookie-policy")
 const SecurityScreen     = lazy(() => import("./components/modal/security"));
 const EnterpriseScreen   = lazy(() => import("./components/modal/enterprise"));
 const ForgotPassword     = lazy(() => import("./components/modal/forgot-password"));
+const ResetPassword      = lazy(() => import("./components/modal/reset-password"));
 const ResumeGenerated    = lazy(() => import("./components/modal/resume-generated"));
 const ResumeComparison   = lazy(() => import("./components/modal/resume-comparison"));
 const AdvancedAnalytics  = lazy(() => import("./components/modal/advanced-analytics"));
@@ -156,6 +157,10 @@ const router = createBrowserRouter([
   { path: "/enterprise",     element: <Page><EnterpriseScreen /></Page> },
   { path: "/faq",            element: <Page><FAQScreen /></Page> },
   { path: "/forgot-password",element: <Page><ForgotPassword /></Page> },
+  // Deliberately NOT PublicOnlyRoute: a logged-in user following a reset
+  // link from their email must still be able to reach this page, not get
+  // bounced to the dashboard.
+  { path: "/reset-password", element: <Page><ResetPassword /></Page> },
 
   // Public-only (redirect authenticated users away)
   {
