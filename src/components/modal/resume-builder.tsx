@@ -19,6 +19,7 @@ import {
   resolveProjectFromSection,
   readResumeDraft,
   writeResumeDraft,
+  blankResume,
   type ResumeData,
   type Experience,
   type Education,
@@ -168,22 +169,6 @@ function calculateLiveAtsEstimate(resume: ResumeData): LiveAtsEstimate {
     suggestions: checks.filter((check) => !check.done).map((check) => check.suggestion),
   };
 }
-
-const blankResume: ResumeData = {
-  name: "",
-  email: "",
-  phone: "",
-  location: "",
-  linkedin: "",
-  portfolio: "",
-  experiences: [],
-  education: [],
-  skills: [],
-  skillCategories: [],
-  summary: "",
-  job: { title: "", company: "", location: "", description: "" },
-  customSections: [],
-};
 
 /** Map API ResumeContent → local ResumeData (delegates to helpers module so
  * test scripts can reuse the same logic without bundling React). */
@@ -1169,8 +1154,10 @@ export default function ResumeBuilderScreen() {
     if (!editId) return;
     const id = Number(editId);
     if (Number.isNaN(id)) return;
+    let cancelled = false;
     resumeService.get(id)
       .then((r) => {
+        if (cancelled) return;
         setResumeId(r.id);
         if (r.title) setResumeFileName(r.title);
         if (r.content) setResume(mapContentToLocal(r.content));
@@ -1181,12 +1168,20 @@ export default function ResumeBuilderScreen() {
         if (draft?.resume) setResume(draft.resume);
         if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        // Only a real 404 means the résumé is gone -- a network error, 401 or
+        // 500 must not tell the user their résumé was deleted.
+        const status = (err as { status?: number } | null)?.status;
+        if (status === 404) {
+          showToast("That résumé no longer exists. Start a new one or open another.", "error");
+        }
         setStartModalOpen(true);
       });
     // Persisted AI optimization reports are intentionally not loaded here.
     // The builder now presents the live ATS readiness score only.
-  }, [editId]);
+    return () => { cancelled = true; };
+  }, [editId, showToast]);
 
   // Persist mid-session edits (and the chosen template) per-resume so they survive
   // navigation / refresh and are restored on the next visit.
