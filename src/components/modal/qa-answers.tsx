@@ -31,6 +31,8 @@ interface ResumeOption {
   updatedAt?: string;
 }
 
+const MAX_CUSTOM_QUESTIONS = 15;
+
 const TONES: { value: Tone; label: string; desc: string }[] = [
   { value: "professional", label: "Professional", desc: "Polished and confident" },
   { value: "enthusiastic", label: "Enthusiastic", desc: "Warm and energetic" },
@@ -469,14 +471,16 @@ export default function QAAnswersScreen() {
       .filter(Boolean);
     return lines.length ? lines : undefined;
   }, [customQuestions]);
+  const tooManyCustomQuestions = (questionsArray?.length ?? 0) > MAX_CUSTOM_QUESTIONS;
 
   const canGenerate = useMemo(() => {
     if (streaming) return false;
     if (!jobDescription.trim()) return false;
     if (questionCount < 5 || questionCount > 15) return false;
+    if (tooManyCustomQuestions) return false;
     if (source === "saved") return selectedId !== null;
     return resumeText.trim().length > 0;
-  }, [streaming, jobDescription, questionCount, source, selectedId, resumeText]);
+  }, [streaming, jobDescription, questionCount, tooManyCustomQuestions, source, selectedId, resumeText]);
 
   const parsedItems = useMemo(() => {
     if (streaming) return [];
@@ -718,21 +722,29 @@ export default function QAAnswersScreen() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-[var(--app-fg)]">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <label htmlFor="qa-custom-questions" className="text-sm font-medium text-[var(--app-fg)]">
                       Custom questions (optional)
-                    </div>
-                    <div className="text-xs text-[var(--app-fg-soft)]">
-                      One per line
-                    </div>
+                    </label>
+                    <p id="qa-custom-questions-hint" className="text-xs text-[var(--app-fg-soft)]">
+                      Up to {MAX_CUSTOM_QUESTIONS}, one per line
+                    </p>
                   </div>
                   <textarea
+                    id="qa-custom-questions"
+                    aria-invalid={tooManyCustomQuestions || undefined}
+                    aria-describedby={tooManyCustomQuestions ? "qa-custom-questions-hint qa-custom-questions-error" : "qa-custom-questions-hint"}
                     value={customQuestions}
                     onChange={(e) => setCustomQuestions(e.target.value)}
                     placeholder="e.g. Tell me about a time you handled a production incident…"
                     rows={4}
                     className="w-full rounded-lg border border-[var(--app-border-strong)] bg-[var(--btn-secondary-bg)] px-3 py-2.5 text-sm text-[var(--app-fg)] placeholder:text-[var(--app-fg-soft)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 resize-y"
                   />
+                  {tooManyCustomQuestions && (
+                    <p id="qa-custom-questions-error" role="alert" className="text-sm text-[var(--app-fg)]">
+                      Remove extra questions to continue. The limit is {MAX_CUSTOM_QUESTIONS}.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
