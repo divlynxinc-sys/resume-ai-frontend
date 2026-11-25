@@ -1,12 +1,12 @@
 import type { ReactNode, ChangeEvent } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Download, ChevronDown, X } from "lucide-react";
 import { renderTemplate } from "@/lib/resume-templates";
 import { downloadResumeHtmlAsPdf, downloadTemplateInputAsDocx } from "@/lib/resume-export";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
-import { resumeService } from "@/services";
+import { resumeService, type Resume } from "@/services";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { usePlan } from "@/contexts/PlanContext";
@@ -20,6 +20,9 @@ import {
   readResumeDraft,
   writeResumeDraft,
   blankResume,
+  removeResumeDraft,
+  readResumeTemplate,
+  writeResumeTemplate,
   type ResumeData,
   type Experience,
   type Education,
@@ -265,7 +268,7 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
   }
 }
 
-function Tabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
+function Tabs({ active, onChange, disabled }: { active: TabKey; onChange: (t: TabKey) => void; disabled: boolean }) {
   const items: { key: TabKey; label: string }[] = [
     { key: "job", label: "Job Description" },
     { key: "personal", label: "Personal Info" },
@@ -282,6 +285,7 @@ function Tabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => v
           <button
             key={it.key}
             type="button"
+            disabled={disabled}
             onClick={() => onChange(it.key)}
             className={`relative shrink-0 ${active === it.key ? "text-white" : "text-white/80 hover:text-white"}`}
           >
@@ -1114,6 +1118,21 @@ function ResumePreview({
   );
 }
 
+type SavedResume = Pick<Resume, "id" | "title" | "updated_at">;
+
+// Keep in-flight writes visible across in-app navigation and reopen.
+const pendingResumeWrites = new Map<number, Promise<void>>();
+
+function enqueueResumeWrite(id: number, write: () => Promise<void>) {
+  const request = Promise.resolve(pendingResumeWrites.get(id)).then(write);
+  const settled = request.catch(() => {});
+  pendingResumeWrites.set(id, settled);
+  void settled.then(() => {
+    if (pendingResumeWrites.get(id) === settled) pendingResumeWrites.delete(id);
+  });
+  return request;
+}
+
 export default function ResumeBuilderScreen() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("id");
@@ -1136,7 +1155,17 @@ export default function ResumeBuilderScreen() {
   // Always start blank — data is loaded via API only
   const [resume, setResume] = useState<ResumeData>(blankResume);
   const [resumeId, setResumeId] = useState<number | null>(null);
+  const [loadingResume, setLoadingResume] = useState(Boolean(editId));
+  // The server's updated_at as of the last load or save we know about. Used to
+  // tell whether a local draft still reflects the latest saved version, or is
+  // stale because a newer save happened elsewhere (see resume-builder.helpers.ts).
+  const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(null);
   const [resumeFileName, setResumeFileName] = useState("");
+  // True once the user has typed in the file-name field. Guards the rename
+  // debounce below so a blank field left untouched after create/upload never
+  // PATCHes the title to "Untitled" or the parsed name.
+  const fileNameTouched = useRef(false);
+  const savedResume = useRef<SavedResume | null>(null);
   const [saving, setSaving] = useState(false);
   const [completedModalOpen, setCompletedModalOpen] = useState(false);
   const [errors, setErrors] = useState<SectionErrors>({});
@@ -1149,24 +1178,64 @@ export default function ResumeBuilderScreen() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const rememberSavedResume = useCallback(({ id, title, updated_at }: Resume) => {
+    savedResume.current = { id, title, updated_at };
+    setResumeId(id);
+    setResumeFileName(title);
+    setBaseUpdatedAt(updated_at);
+  }, []);
+
+  const syncDraftVersion = useCallback((saved: SavedResume, updatedAt: string) => {
+    // Persist the acknowledgement even if the user left the builder while the
+    // request was in flight. Keep drafts based on another version untouched.
+    const draft = readResumeDraft(saved.id);
+    if (draft?.resume && draft.baseUpdatedAt === saved.updated_at) {
+      writeResumeDraft(saved.id, { resume: draft.resume, baseUpdatedAt: updatedAt });
+    }
+    saved.updated_at = updatedAt;
+    if (savedResume.current === saved) setBaseUpdatedAt(updatedAt);
+  }, []);
+
   // Load existing resume when editing
   useEffect(() => {
-    if (!editId) return;
     const id = Number(editId);
-    if (Number.isNaN(id)) return;
+    if (!editId || Number.isNaN(id)) {
+      setLoadingResume(false);
+      return;
+    }
+    setLoadingResume(true);
     let cancelled = false;
-    resumeService.get(id)
+    Promise.resolve(pendingResumeWrites.get(id))
+      .then(() => cancelled ? undefined : resumeService.get(id))
       .then((r) => {
-        if (cancelled) return;
-        setResumeId(r.id);
-        if (r.title) setResumeFileName(r.title);
+        if (cancelled || !r) return;
+        rememberSavedResume(r);
         if (r.content) setResume(mapContentToLocal(r.content));
-        // Restore any unsaved local edits + the chosen template for this resume so
-        // the user sees it "as they left it" (the server only has sections that were
-        // explicitly saved via "Save & Next").
+
+        // Read the template BEFORE the draft below is possibly removed: for a
+        // résumé opened before the template moved to its own key, it only
+        // exists as the legacy draft's templateSlug (readResumeTemplate falls
+        // back to that). Persist it to the new key right away so it survives
+        // even if the draft turns out to be stale and gets deleted next.
+        const savedTemplate = readResumeTemplate(r.id);
+        if (savedTemplate) {
+          setTemplateSlug(savedTemplate);
+          writeResumeTemplate(r.id, savedTemplate);
+        }
+
+        // Restore any unsaved local edits for this resume so the user sees it
+        // "as they left it" (the server only has sections that were explicitly
+        // saved via "Save & Next") -- but only if the draft still matches the
+        // server's current updated_at. If updated_at has moved on, a newer
+        // save happened elsewhere (another tab/browser) and the draft is
+        // stale: applying it would silently overwrite that newer save, so we
+        // drop it instead.
         const draft = readResumeDraft(r.id);
-        if (draft?.resume) setResume(draft.resume);
-        if (draft?.templateSlug) setTemplateSlug(draft.templateSlug);
+        if (draft?.resume && draft.baseUpdatedAt === r.updated_at) {
+          setResume(draft.resume);
+        } else if (draft) {
+          removeResumeDraft(r.id);
+        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -1177,28 +1246,55 @@ export default function ResumeBuilderScreen() {
           showToast("That résumé no longer exists. Start a new one or open another.", "error");
         }
         setStartModalOpen(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingResume(false);
       });
     // Persisted AI optimization reports are intentionally not loaded here.
     // The builder now presents the live ATS readiness score only.
     return () => { cancelled = true; };
-  }, [editId, showToast]);
+  }, [editId, showToast, rememberSavedResume]);
 
-  // Persist mid-session edits (and the chosen template) per-resume so they survive
-  // navigation / refresh and are restored on the next visit.
+  // Persist mid-session edits per-resume so they survive navigation / refresh
+  // and are restored on the next visit, tagged with the server version they
+  // were made against (see the load effect above for how that's used).
+  useEffect(() => {
+    if (resumeId !== null && baseUpdatedAt !== null) {
+      writeResumeDraft(resumeId, { resume, baseUpdatedAt });
+    }
+  }, [resume, resumeId, baseUpdatedAt]);
+
+  // The chosen template has no backend field to live in, so it's persisted on
+  // its own, independent of the content draft above -- it must survive a
+  // successful save (which clears the content draft) and only disappears when
+  // the resume itself is deleted.
   useEffect(() => {
     if (resumeId !== null) {
-      writeResumeDraft(resumeId, { resume, templateSlug });
+      writeResumeTemplate(resumeId, templateSlug);
     }
-  }, [resume, templateSlug, resumeId]);
+  }, [templateSlug, resumeId]);
 
-  // Sync title to backend when resumeFileName changes
+  // Debounce real renames. Loading a title must not advance the server version.
   useEffect(() => {
-    if (resumeId === null) return;
+    const saved = savedResume.current;
+    if (!saved || saved.id !== resumeId) return;
+    if (!fileNameTouched.current) return;
+    if (resumeFileName === saved.title && !pendingResumeWrites.has(saved.id)) return;
+    const title = resumeFileName || resume.name || "Untitled";
+    let cancelled = false;
     const timer = setTimeout(() => {
-      resumeService.update(resumeId, { title: resumeFileName || resume.name || "Untitled" }).catch(() => {});
+      void enqueueResumeWrite(saved.id, async () => {
+        if (cancelled || savedResume.current !== saved || title === saved.title) return;
+        const r = await resumeService.update(saved.id, { title });
+        saved.title = r.title;
+        syncDraftVersion(saved, r.updated_at);
+      });
     }, 600);
-    return () => clearTimeout(timer);
-  }, [resumeFileName]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [resumeId, resumeFileName, resume.name, syncDraftVersion]);
 
   // AI optimization is intentionally disabled in the builder completion flow.
   // The previous implementation called resumeService.optimizeWithAi(...) here.
@@ -1225,7 +1321,9 @@ export default function ResumeBuilderScreen() {
     localStorage.removeItem('resumeData');
     try {
       const r = await resumeService.create({ title: "New Resume", template_id: null });
-      setResumeId(r.id);
+      rememberSavedResume(r);
+      fileNameTouched.current = false;
+      setResumeFileName("");
       addResumeCreatedNotification("blank");
       showToast("Resume created successfully!");
     } catch {
@@ -1252,7 +1350,9 @@ export default function ResumeBuilderScreen() {
     try {
       // fromUpload creates the resume AND returns parsed content in one call
       const r = await resumeService.fromUpload(selectedFile, "Uploaded Resume");
-      setResumeId(r.id);
+      rememberSavedResume(r);
+      fileNameTouched.current = false;
+      setResumeFileName("");
       setResume(mapContentToLocal(r.content));
       setUploadModalOpen(false);
       setSelectedFile(null);
@@ -1271,6 +1371,7 @@ export default function ResumeBuilderScreen() {
 
   /** Save current section then advance */
   const goNext = async () => {
+    if (saving) return;
     const idx = order.indexOf(activeTab);
 
     const validation = validateSection(activeTab, resume);
@@ -1281,24 +1382,30 @@ export default function ResumeBuilderScreen() {
     }
     setErrors({});
 
-    if (resumeId !== null) {
+    const saved = savedResume.current;
+    if (saved) {
       const mapped = localToApiSection(activeTab, resume);
+      // Mirror categorized skills into custom because /skills accepts a flat list.
+      const customMapped = activeTab === "skills" && resume.skillCategories?.length
+        ? localToApiSection("custom", resume)
+        : null;
       setSaving(true);
       try {
-        if (mapped) {
-          await resumeService.patchContent(resumeId, mapped.section, mapped.body);
-          if (activeTab !== "custom") {
-            showToast("Section saved successfully!");
+        await enqueueResumeWrite(saved.id, async () => {
+          if (savedResume.current !== saved || !mapped) return;
+          await resumeService.patchContent(saved.id, mapped.section, mapped.body);
+          try {
+            if (customMapped) {
+              await resumeService.patchContent(saved.id, customMapped.section, customMapped.body);
+            }
+          } finally {
+            // The section PATCH has no updated_at. Refresh even if the second
+            // PATCH fails, so the first successful write cannot orphan the draft.
+            const r = await resumeService.get(saved.id);
+            syncDraftVersion(saved, r.updated_at);
           }
-        }
-        // The /skills endpoint accepts only a flat string[]. Mirror the
-        // categorized list into the `custom` payload so it survives reload.
-        if (activeTab === "skills" && resume.skillCategories?.length) {
-          const customMapped = localToApiSection("custom", resume);
-          if (customMapped) {
-            await resumeService.patchContent(resumeId, customMapped.section, customMapped.body);
-          }
-        }
+        });
+        if (savedResume.current !== saved) return;
 
         if (activeTab === "custom") {
           setPreviewMode("preview");
@@ -1306,9 +1413,11 @@ export default function ResumeBuilderScreen() {
           showToast("Resume completed successfully!");
           return;
         }
+        if (mapped) showToast("Section saved successfully!");
       } catch (err) {
         console.error(err);
         showToast("Failed to save section.", "error");
+        return;
       } finally {
         setSaving(false);
       }
@@ -1343,27 +1452,28 @@ export default function ResumeBuilderScreen() {
         mainClassName="w-full max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-8"
       >
         {/* Left (main form) */}
-        <div className="min-w-0">
+        <fieldset className="min-w-0" disabled={loadingResume} aria-busy={loadingResume}>
           <PageHeader mode={previewMode} setMode={setPreviewMode} />
+          {loadingResume && <p role="status" className="mt-4 text-sm">Loading résumé…</p>}
 
           <div className="mt-4 mb-2">
             <input
               type="text"
               value={resumeFileName}
-              onChange={(e) => setResumeFileName(e.target.value)}
+              onChange={(e) => { fileNameTouched.current = true; setResumeFileName(e.target.value); }}
               placeholder={resume.name || "Untitled"}
               className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-white/40 outline-none focus:border-white/25 focus:bg-white/[0.07] transition-colors"
             />
           </div>
 
-          <Tabs active={activeTab} onChange={setActiveTab} />
+          <Tabs active={activeTab} onChange={setActiveTab} disabled={saving} />
 
           <div className="mt-6">
             {renderForm()}
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button className="rounded-lg border border-white/15 px-5 py-2 text-sm text-white/80 hover:bg-white/[0.06]" onClick={goPrev}>Back</button>
+            <button className="rounded-lg border border-white/15 px-5 py-2 text-sm text-white/80 hover:bg-white/[0.06]" onClick={goPrev} disabled={saving}>Back</button>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white disabled:opacity-60"
@@ -1374,7 +1484,7 @@ export default function ResumeBuilderScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </fieldset>
 
         {/* Right side — Preview */}
         <div className="min-w-0 max-w-full xl:sticky xl:top-[80px] xl:self-start xl:pt-4">

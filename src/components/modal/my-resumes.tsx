@@ -19,6 +19,9 @@ import {
   mapContentToLocal,
   toTemplateInput,
   readResumeDraft,
+  readResumeTemplate,
+  removeResumeDraft,
+  removeResumeTemplate,
   type ResumeData,
 } from "./resume-builder.helpers";
 
@@ -131,10 +134,12 @@ function MiniResumePreview({ id }: { id: string }) {
       }
     };
 
-    // Prefer the local draft (latest edits + chosen template) so the card matches
-    // what the user last saw in the builder; otherwise use the saved server content.
+    // Prefer the local draft (latest edits) so the card matches what the user
+    // last saw in the builder; otherwise use the saved server content. The
+    // chosen template is read separately -- it survives independently of the
+    // content draft (see resume-builder.helpers.ts).
     const draft = readResumeDraft(Number(id));
-    const rawSlug = draft?.templateSlug || FREE_TEMPLATE_SLUG;
+    const rawSlug = readResumeTemplate(Number(id)) || FREE_TEMPLATE_SLUG;
     const slug = isTemplateLockedForFree(rawSlug, isPaid) ? FREE_TEMPLATE_SLUG : rawSlug;
     if (draft?.resume) {
       renderInto(draft.resume, slug);
@@ -372,6 +377,8 @@ export default function MyResumesScreen() {
     setDeleting(true);
     try {
       await resumeService.delete(Number(id));
+      removeResumeDraft(Number(id));
+      removeResumeTemplate(Number(id));
       setResumes((prev) => prev.filter((r) => r.id !== id));
     } catch { /* silently fail */ }
     finally {
@@ -390,8 +397,8 @@ export default function MyResumesScreen() {
       if (!resume.content) throw new Error("This resume does not have any content to download.");
 
       const baseName = safeFileName(resume.title || downloadTarget.title);
-      const draftSlug = readResumeDraft(Number(downloadTarget.id))?.templateSlug ?? FREE_TEMPLATE_SLUG;
-      const effectiveSlug = isTemplateLockedForFree(draftSlug, isPaid) ? FREE_TEMPLATE_SLUG : draftSlug;
+      const savedSlug = readResumeTemplate(Number(downloadTarget.id)) ?? FREE_TEMPLATE_SLUG;
+      const effectiveSlug = isTemplateLockedForFree(savedSlug, isPaid) ? FREE_TEMPLATE_SLUG : savedSlug;
       const html = resumeContentToHtml(resume.content, baseName, effectiveSlug);
 
       if (format === "pdf") {
