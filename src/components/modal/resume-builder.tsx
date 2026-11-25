@@ -1161,6 +1161,10 @@ export default function ResumeBuilderScreen() {
   // stale because a newer save happened elsewhere (see resume-builder.helpers.ts).
   const [baseUpdatedAt, setBaseUpdatedAt] = useState<string | null>(null);
   const [resumeFileName, setResumeFileName] = useState("");
+  // True once the user has typed in the file-name field. Guards the rename
+  // debounce below so a blank field left untouched after create/upload never
+  // PATCHes the title to "Untitled" or the parsed name.
+  const fileNameTouched = useRef(false);
   const savedResume = useRef<SavedResume | null>(null);
   const [saving, setSaving] = useState(false);
   const [completedModalOpen, setCompletedModalOpen] = useState(false);
@@ -1274,6 +1278,7 @@ export default function ResumeBuilderScreen() {
   useEffect(() => {
     const saved = savedResume.current;
     if (!saved || saved.id !== resumeId) return;
+    if (!fileNameTouched.current) return;
     if (resumeFileName === saved.title && !pendingResumeWrites.has(saved.id)) return;
     const title = resumeFileName || resume.name || "Untitled";
     let cancelled = false;
@@ -1317,6 +1322,8 @@ export default function ResumeBuilderScreen() {
     try {
       const r = await resumeService.create({ title: "New Resume", template_id: null });
       rememberSavedResume(r);
+      fileNameTouched.current = false;
+      setResumeFileName("");
       addResumeCreatedNotification("blank");
       showToast("Resume created successfully!");
     } catch {
@@ -1344,6 +1351,8 @@ export default function ResumeBuilderScreen() {
       // fromUpload creates the resume AND returns parsed content in one call
       const r = await resumeService.fromUpload(selectedFile, "Uploaded Resume");
       rememberSavedResume(r);
+      fileNameTouched.current = false;
+      setResumeFileName("");
       setResume(mapContentToLocal(r.content));
       setUploadModalOpen(false);
       setSelectedFile(null);
@@ -1451,7 +1460,7 @@ export default function ResumeBuilderScreen() {
             <input
               type="text"
               value={resumeFileName}
-              onChange={(e) => setResumeFileName(e.target.value)}
+              onChange={(e) => { fileNameTouched.current = true; setResumeFileName(e.target.value); }}
               placeholder={resume.name || "Untitled"}
               className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-white/40 outline-none focus:border-white/25 focus:bg-white/[0.07] transition-colors"
             />
