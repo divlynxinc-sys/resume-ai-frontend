@@ -15,25 +15,32 @@ export interface SignupResponse {
 export interface OtpSendResponse {
   message: string;
   otp_sent: boolean;
+  challenge_id: string;
+  expires_at: string;
+  resend_available_at: string;
+  server_now: string;
 }
 
 export interface OtpVerifyResponse {
   message: string;
   verified: boolean;
+  signup_token: string;
+  signup_expires_at: string;
+  server_now: string;
 }
 
 export const authService = {
   login: (email: string, password: string, turnstile_token: string) =>
     api.post<LoginResponse>("/auth/login", { email, password, turnstile_token }),
 
-  signup: (name: string, email: string, password: string) =>
-    api.post<LoginResponse>("/auth/signup", { name, email, password }),
+  signup: (name: string, email: string, password: string, signup_token: string) =>
+    api.post<LoginResponse>("/auth/signup", { name, email, password, signup_token }),
 
-  signupSendOtp: (email: string, turnstile_token = "") =>
+  signupSendOtp: (email: string, turnstile_token: string) =>
     api.post<OtpSendResponse>("/auth/signup/send-otp", { email, turnstile_token }),
 
-  signupVerifyOtp: (email: string, otp_code: string) =>
-    api.post<OtpVerifyResponse>("/auth/signup/verify-otp", { email, otp_code }),
+  signupVerifyOtp: (email: string, challenge_id: string, otp_code: string) =>
+    api.post<OtpVerifyResponse>("/auth/signup/verify-otp", { email, challenge_id, otp_code }),
 
   refresh: (refresh_token: string) =>
     api.post<LoginResponse>("/auth/refresh", { refresh_token }),

@@ -14,7 +14,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string, turnstileToken: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, signupToken: string) => Promise<void>;
   googleLogin: (credential: string, turnstileToken: string) => Promise<{ is_new_user: boolean }>;
   logout: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -82,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await establishSession(await authService.login(email, password, turnstileToken));
   };
 
-  const signup = async (name: string, email: string, password: string) => {
-    await establishSession(await authService.signup(name, email, password));
+  const signup = async (name: string, email: string, password: string, signupToken: string) => {
+    await establishSession(await authService.signup(name, email, password, signupToken));
   };
 
   const googleLogin = async (credential: string, turnstileToken: string) => {

@@ -10,9 +10,10 @@ import darkBrandIcon from "../../assets/Logo-06.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/contexts/ToastContext";
-import { authService } from "@/services/auth";
+import { authService, type OtpSendResponse } from "@/services/auth";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { deadlineAt, remainingSeconds, signupDeadlines } from "@/lib/signup-timers";
 
 function BrandBar() {
   const { theme } = useTheme();
@@ -71,7 +72,30 @@ const passwordRules = [
   { key: "special", label: "One special character (!@#$...)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ];
 
-const OTP_COOLDOWN_SECONDS = 5 * 60;
+function signupErrorDetail(error: unknown) {
+  const detail = (error as { detail?: unknown } | null)?.detail;
+  return typeof detail === "object" && detail !== null
+    ? detail as { code?: string; server_now?: string; retry_at?: string }
+    : {};
+}
+
+function useSignupClock(active: boolean) {
+  const [now, setNow] = useState(() => performance.now());
+  useEffect(() => {
+    if (!active) return;
+    const update = () => setNow(performance.now());
+    update();
+    const interval = window.setInterval(update, 250);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [active]);
+  return now;
+}
 
 function getErrorMessage(err: unknown, fallback: string) {
   if (typeof err !== "object" || err === null) return fallback;
@@ -158,28 +182,26 @@ function PasswordChecklist({ password }: { password: string }) {
 
 function OtpVerification({
   email,
+  challenge,
   onVerified,
   onBack,
 }: {
   email: string;
-  onVerified: () => void;
+  challenge: OtpSendResponse;
+  onVerified: (signupToken: string) => void;
   onBack: () => void;
 }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState<"idle" | "verifying">("idle");
-  const [timer, setTimer] = useState(OTP_COOLDOWN_SECONDS);
-  const [canResend, setCanResend] = useState(false);
+  const [status, setStatus] = useState<"idle" | "verifying" | "sending">("idle");
+  const [currentChallenge, setCurrentChallenge] = useState(challenge.challenge_id);
+  const [deadlines, setDeadlines] = useState(() => signupDeadlines(challenge));
+  const now = useSignupClock(true);
+  const [resendToken, setResendToken] = useState<string | null>(null);
+  const [widgetKey, setWidgetKey] = useState(0);
+  const expiresIn = remainingSeconds(deadlines.expiresAt, now);
+  const resendIn = remainingSeconds(deadlines.resendAt, now);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (timer <= 0) {
-      setCanResend(true);
-      return;
-    }
-    const id = setInterval(() => setTimer((t) => t - 1), 1000);
-    return () => clearInterval(id);
-  }, [timer]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -215,6 +237,7 @@ function OtpVerification({
   };
 
   const handleVerify = async () => {
+    if (status !== "idle" || remainingSeconds(deadlines.expiresAt, performance.now()) === 0) return;
     const code = otp.join("");
     if (code.length !== 6) {
       setError("Please enter the full 6-digit code.");
@@ -223,9 +246,14 @@ function OtpVerification({
     setError("");
     setStatus("verifying");
     try {
-      await authService.signupVerifyOtp(email, code);
-      onVerified();
+      const verified = await authService.signupVerifyOtp(email, currentChallenge, code);
+      if (!verified.signup_token) throw new Error("Reload and request a new verification code.");
+      onVerified(verified.signup_token);
     } catch (err: unknown) {
+      const { code } = signupErrorDetail(err);
+      if (code === "signup_code_expired" || code === "signup_code_attempt_limit") {
+        setDeadlines((previous) => ({ ...previous, expiresAt: performance.now() }));
+      }
       setError(getErrorMessage(err, "Verification failed."));
     } finally {
       setStatus("idle");
@@ -233,15 +261,27 @@ function OtpVerification({
   };
 
   const handleResend = async () => {
+    if (!resendToken || status !== "idle" || remainingSeconds(deadlines.resendAt, performance.now()) > 0) return;
     setError("");
-    setCanResend(false);
-    setTimer(OTP_COOLDOWN_SECONDS);
-    setOtp(["", "", "", "", "", ""]);
+    setStatus("sending");
     try {
-      await authService.signupSendOtp(email);
+      const next = await authService.signupSendOtp(email, resendToken);
+      if (!next.challenge_id) throw new Error("Reload and request a new verification code.");
+      setCurrentChallenge(next.challenge_id);
+      setDeadlines(signupDeadlines(next));
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to resend OTP."));
-      setCanResend(true);
+      const detail = signupErrorDetail(err);
+      if (detail.retry_at && detail.server_now) {
+        const retryAt = deadlineAt(detail.server_now, detail.retry_at, performance.now());
+        setDeadlines((previous) => ({ ...previous, resendAt: Math.max(previous.resendAt, retryAt) }));
+      }
+    } finally {
+      setResendToken(null);
+      setWidgetKey((key) => key + 1);
+      setStatus("idle");
     }
   };
 
@@ -282,19 +322,22 @@ function OtpVerification({
                     value={digit}
                     onChange={(e) => handleChange(i, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(i, e)}
-                    disabled={status === "verifying"}
+                    disabled={status !== "idle"}
                     className="w-10 h-12 sm:w-12 sm:h-14 rounded-xl bg-[var(--btn-secondary-bg)] text-center text-xl font-bold outline-none border border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
                   />
                 ))}
               </div>
 
               <div className="mt-4 text-center">
-                {timer > 0 ? (
+                {expiresIn > 0 ? (
                   <p className="text-xs text-white/40">
-                    Code expires in <span className="text-white/70 font-medium">{formatTime(timer)}</span>
+                    Code expires in <span className="text-white/70 font-medium">{formatTime(expiresIn)}</span>
                   </p>
                 ) : (
                   <p className="text-xs text-red-400">Code expired</p>
+                )}
+                {resendIn > 0 && (
+                  <p className="mt-1 text-xs text-[var(--app-fg-muted)]">Resend available in {formatTime(resendIn)}</p>
                 )}
               </div>
 
@@ -302,25 +345,31 @@ function OtpVerification({
 
               <button
                 onClick={handleVerify}
-                disabled={status === "verifying" || otp.join("").length !== 6}
+                disabled={status !== "idle" || expiresIn === 0 || otp.join("").length !== 6}
                 className="mt-6 w-full rounded-xl bg-[var(--accent)] px-6 py-3 text-white text-sm font-medium hover:bg-[var(--accent-hover)] active:scale-[0.99] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent)]"
               >
                 {status === "verifying" ? "Verifying…" : "Verify Email"}
               </button>
 
+              {resendIn === 0 && (
+                <div className="mt-4">
+                  <TurnstileWidget key={widgetKey} action="signup" onVerify={setResendToken} onError={setError} />
+                </div>
+              )}
               <div className="mt-4 flex items-center justify-between text-xs">
                 <button
                   onClick={onBack}
+                  disabled={status !== "idle"}
                   className="text-white/50 hover:text-white transition-colors flex items-center gap-1"
                 >
                   <ArrowLeft className="size-3" /> Back
                 </button>
                 <button
                   onClick={handleResend}
-                  disabled={!canResend}
+                  disabled={resendIn > 0 || !resendToken || status !== "idle"}
                   className="text-[var(--accent-text)] hover:text-[var(--accent-hover)] transition-colors disabled:text-white/30 disabled:cursor-not-allowed"
                 >
-                  Resend code
+                  {status === "sending" ? "Sending…" : "Resend code"}
                 </button>
               </div>
             </section>
@@ -366,6 +415,10 @@ export default function Signup() {
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [error, setError] = useState("");
   const [step, setStep] = useState<"form" | "otp" | "completing">("form");
+  const [challenge, setChallenge] = useState<OtpSendResponse | null>(null);
+  const [retryAt, setRetryAt] = useState(0);
+  const formNow = useSignupClock(step === "form" && retryAt > 0);
+  const retryIn = remainingSeconds(retryAt, formNow);
   const [credentialFieldsUnlocked, setCredentialFieldsUnlocked] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
@@ -374,22 +427,32 @@ export default function Signup() {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const handleSendOtp = async () => {
+    if (status !== "idle" || remainingSeconds(retryAt, performance.now()) > 0) return;
     setError("");
     if (!firstName.trim()) { setError("First name is required."); return; }
     if (!lastName.trim()) { setError("Last name is required."); return; }
     if (!email.trim()) { setError("Email is required."); return; }
     if (!emailRegex.test(email)) { setError("Please enter a valid email address."); return; }
     if (!password) { setError("Password is required."); return; }
+    if (password.length > 128) { setError("Password must be at most 128 characters."); return; }
     if (!allPasswordRulesPassed) { setError("Password does not meet all requirements."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     if (!turnstileToken) { setError("Please complete the security verification."); return; }
 
     setStatus("loading");
     try {
-      await authService.signupSendOtp(email, turnstileToken);
+      const sent = await authService.signupSendOtp(email, turnstileToken);
+      if (!sent.challenge_id) throw new Error("Reload and request a new verification code.");
+      setChallenge(sent);
+      setTurnstileToken(null);
+      setTurnstileKey((key) => key + 1);
       setStep("otp");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to send verification code."));
+      const detail = signupErrorDetail(err);
+      if (detail.retry_at && detail.server_now) {
+        setRetryAt(deadlineAt(detail.server_now, detail.retry_at, performance.now()));
+      }
       setTurnstileToken(null);
       setTurnstileKey((key) => key + 1);
     } finally {
@@ -397,27 +460,33 @@ export default function Signup() {
     }
   };
 
-  const handleOtpVerified = async () => {
+  const handleOtpVerified = async (signupToken: string) => {
     setStep("completing");
     setError("");
     try {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      await signup(fullName, email, password);
+      await signup(fullName, email, password, signupToken);
       showToast("Account created successfully!");
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Signup failed.");
       showToast(msg, "error");
-      setError(msg);
+      const status = (err as { status?: number } | null)?.status;
+      setError(status ? msg : msg + " If your account was created, sign in with your new password.");
+      setChallenge(null);
       setStep("form");
     }
   };
 
-  if (step === "otp") {
+  if (step === "otp" && challenge) {
     return (
       <OtpVerification
         email={email}
+        challenge={challenge}
         onVerified={handleOtpVerified}
-        onBack={() => setStep("form")}
+        onBack={() => {
+          setChallenge(null);
+          setStep("form");
+        }}
       />
     );
   }
@@ -498,7 +567,10 @@ export default function Signup() {
                       spellCheck={false}
                       placeholder="Email Address"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setRetryAt(0);
+                      }}
                       onFocus={() => setCredentialFieldsUnlocked(true)}
                       readOnly={!credentialFieldsUnlocked}
                       disabled={status === "loading" || !turnstileToken}
@@ -548,9 +620,9 @@ export default function Signup() {
                     <button
                       className="h-9 shrink-0 rounded-lg bg-[var(--btn-primary-bg)] px-5 text-sm font-medium text-white transition-all hover:bg-[var(--btn-primary-hover)] active:scale-[0.99] disabled:opacity-50 disabled:hover:bg-[var(--btn-primary-bg)]"
                       onClick={handleSendOtp}
-                      disabled={status === "loading" || !turnstileToken}
+                      disabled={status === "loading" || !turnstileToken || retryIn > 0}
                     >
-                      {status === "loading" ? "Sending verification code…" : "Create Account"}
+                      {status === "loading" ? "Sending verification code…" : retryIn > 0 ? "Try again in " + retryIn + "s" : "Create Account"}
                     </button>
                     <Link
                       to={requestedNextPath ? withNextParam("/login", requestedNextPath) : "/login"}
