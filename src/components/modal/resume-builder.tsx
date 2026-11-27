@@ -6,7 +6,7 @@ import { renderTemplate } from "@/lib/resume-templates";
 import { downloadResumeHtmlAsPdf, downloadTemplateInputAsDocx } from "@/lib/resume-export";
 import SiteNavbar from "../layout/site-navbar";
 import PageWithSidebar from "../layout/page-with-sidebar";
-import { resumeService } from "@/services";
+import { resumeService, type ResumeContent, type ResumeImportReview } from "@/services";
 import { addResumeCreatedNotification } from "@/services/notifications";
 import { useToast } from "@/contexts/ToastContext";
 import { usePlan } from "@/contexts/PlanContext";
@@ -1130,6 +1130,11 @@ export default function ResumeBuilderScreen() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [importReview, setImportReview] = useState<ResumeImportReview | null>(null);
+  const [importError, setImportError] = useState("");
+  const importRequest = useRef<string | null>(null);
+  const confirmingImport = useRef(false);
+  const supportedFile = selectedFile && /\.(pdf|docx)$/i.test(selectedFile.name) && selectedFile.size <= 10 * 1024 * 1024;
 
   // Load existing resume when editing
   useEffect(() => {
@@ -1223,23 +1228,25 @@ export default function ResumeBuilderScreen() {
     const ext = file.name.toLowerCase().split('.').pop();
     if (ext !== 'pdf' && ext !== 'docx') {
       setUploadError('Please upload a PDF or DOCX file.');
+    } else if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Choose a file that is 10 MB or smaller.");
     }
   };
 
-  /** Build upon existing: upload file → parse → fill form */
+  /** Parse the file for review before creating a saved resume. */
   const handleUploadContinue = async () => {
-    if (!selectedFile || uploadError) return;
+    if (!selectedFile || !supportedFile || uploading) return;
     setUploading(true);
     setUploadError(null);
     try {
-      // fromUpload creates the resume AND returns parsed content in one call
-      const r = await resumeService.fromUpload(selectedFile, "Uploaded Resume");
-      setResumeId(r.id);
-      setResume(mapContentToLocal(r.content));
+      const review = await resumeService.reviewUpload(selectedFile);
+      if (!review.content) throw new Error("Resume import is temporarily unavailable.");
+      importRequest.current = crypto.randomUUID();
+      setImportReview(review);
+      setImportError("");
+      setResume(mapContentToLocal(review.content));
+      setActiveTab("personal");
       setUploadModalOpen(false);
-      setSelectedFile(null);
-      addResumeCreatedNotification("complete");
-      showToast("Resume uploaded and parsed successfully!");
     } catch (err) {
       const msg = (err as Error).message || "Failed to parse resume. Try a different file.";
       setUploadError(msg);
@@ -1251,9 +1258,66 @@ export default function ResumeBuilderScreen() {
 
   const order: TabKey[] = ['job', 'personal', 'experience', 'education', 'skills', 'summary', 'custom'];
 
+  const exitImport = (changeFile: boolean) => {
+    if (confirmingImport.current) return;
+    setImportReview(null);
+    setImportError("");
+    setUploadError(null);
+    setResume(blankResume);
+    importRequest.current = null;
+    if (changeFile) {
+      setUploadModalOpen(true);
+    } else {
+      setSelectedFile(null);
+      setStartModalOpen(true);
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importReview || !importRequest.current || confirmingImport.current) return;
+    setImportError("");
+    confirmingImport.current = true;
+    setSaving(true);
+    const content = { ...importReview.content } as ResumeContent;
+    for (const tab of order) {
+      const mapped = localToApiSection(tab, resume);
+      if (!mapped) continue;
+      if (mapped.section === "info") {
+        content.info = { ...(mapped.body as ResumeContent["info"]), email: resume.email.trim() || null };
+      } else if (mapped.section === "custom") {
+        content.custom = { ...content.custom, ...(mapped.body as ResumeContent["custom"]) };
+      } else {
+        Object.assign(content, { [mapped.section]: mapped.body });
+      }
+    }
+    try {
+      const imported = await resumeService.create({
+        title: resumeFileName.trim() || "Uploaded Resume",
+        content,
+        import_request_id: importRequest.current,
+      });
+      setResumeId(imported.id);
+      setResume(mapContentToLocal(imported.content));
+      setImportReview(null);
+      importRequest.current = null;
+      setSelectedFile(null);
+      addResumeCreatedNotification("complete");
+      showToast("Resume imported and saved.");
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Could not save the import. Please try again.");
+    } finally {
+      confirmingImport.current = false;
+      setSaving(false);
+    }
+  };
+
   /** Save current section then advance */
   const goNext = async () => {
     const idx = order.indexOf(activeTab);
+    if (importReview) {
+      if (idx < order.length - 1) setActiveTab(order[idx + 1]);
+      return;
+    }
 
     const validation = validateSection(activeTab, resume);
     if (validation) {
@@ -1327,6 +1391,40 @@ export default function ResumeBuilderScreen() {
         {/* Left (main form) */}
         <div className="min-w-0">
           <PageHeader mode={previewMode} setMode={setPreviewMode} />
+          {importReview && (
+            <section aria-labelledby="import-review-title" className="my-5 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-[var(--app-fg)]">
+              <h2 id="import-review-title" className="text-lg font-semibold">Review your imported resume</h2>
+              <p className="mt-1 text-sm text-[var(--app-fg-muted)]">Check and edit the fields below before saving.</p>
+              {importReview.warnings.length > 0 && (
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--app-fg-muted)]">
+                  {importReview.warnings.map((warning) => (
+                    <li key={warning.section + warning.code}>{warning.section}: {warning.message}</li>
+                  ))}
+                </ul>
+              )}
+              {importReview.unassigned.length > 0 && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-[var(--accent-text)]">Unassigned text</summary>
+                  <ul className="mt-2 max-h-52 space-y-2 overflow-y-auto whitespace-pre-wrap break-words text-[var(--app-fg-muted)]">
+                    {importReview.unassigned.map((block, index) => <li key={index}>{block.text}</li>)}
+                  </ul>
+                </details>
+              )}
+              <details className="mt-3 text-sm">
+                <summary className="cursor-pointer text-[var(--accent-text)]">Extracted source text</summary>
+                <pre className="mt-2 max-h-52 overflow-y-auto whitespace-pre-wrap break-words font-sans text-[var(--app-fg-muted)]">{importReview.source_text}</pre>
+              </details>
+              {importError && <p role="alert" className="mt-3 text-sm text-[var(--tone-reject)]">{importError}</p>}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" disabled={saving} onClick={confirmImport} className="rounded-lg bg-[var(--btn-primary-bg)] px-4 py-2 text-sm font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:opacity-50">
+                  {saving ? "Saving…" : "Use this resume"}
+                </button>
+                <button type="button" disabled={saving} onClick={() => exitImport(true)} className="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm disabled:opacity-50">Change file</button>
+                <button type="button" disabled={saving} onClick={() => exitImport(false)} className="rounded-lg border border-[var(--app-border)] px-4 py-2 text-sm disabled:opacity-50">Cancel import</button>
+              </div>
+            </section>
+          )}
+          <fieldset className="min-w-0" disabled={Boolean(importReview) && saving}>
 
           <div className="mt-4 mb-2">
             <input
@@ -1350,12 +1448,13 @@ export default function ResumeBuilderScreen() {
               <button
                 className="rounded-lg bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-sm text-white disabled:opacity-60"
                 onClick={goNext}
-                disabled={saving}
+                disabled={saving || (Boolean(importReview) && activeTab === "custom")}
               >
-                {saving ? "Saving…" : activeTab === "custom" ? "Complete Resume" : "Save & Next"}
+                {saving ? "Saving…" : importReview ? "Next section" : activeTab === "custom" ? "Complete Resume" : "Save & Next"}
               </button>
             </div>
           </div>
+          </fieldset>
         </div>
 
         {/* Right side — Preview */}
@@ -1456,12 +1555,13 @@ export default function ResumeBuilderScreen() {
                   color: "var(--app-fg-muted)",
                   border: "1px solid var(--app-border-strong)",
                 }}
-                onClick={() => { setUploadModalOpen(false); setSelectedFile(null); setUploadError(null); handleStartScratch(); }}
+                disabled={uploading}
+                onClick={() => { setUploadModalOpen(false); setSelectedFile(null); setUploadError(null); setStartModalOpen(true); }}
               >
                 Cancel
               </button>
               <button
-                disabled={!selectedFile || !!uploadError || uploading}
+                disabled={!supportedFile || uploading}
                 className="rounded-lg px-5 py-2 text-sm font-medium disabled:opacity-50 min-w-[110px] transition-colors"
                 style={{ backgroundColor: "var(--accent)", color: "#ffffff" }}
                 onClick={handleUploadContinue}
@@ -1471,7 +1571,7 @@ export default function ResumeBuilderScreen() {
                     <span className="h-3.5 w-3.5 rounded-full border-2 animate-spin" style={{ borderColor: "#ffffff", borderTopColor: "transparent" }} />
                     Parsing…
                   </span>
-                ) : "Continue"}
+                ) : "Review import"}
               </button>
             </div>
           </div>
