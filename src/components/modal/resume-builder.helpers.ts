@@ -5,6 +5,8 @@
  */
 
 import type { ResumeContent } from "@/services/resume";
+import { linkParts } from "@/lib/resume-templates/utils";
+import type { ProjectItem } from "@/lib/resume-templates/types";
 
 export interface Experience {
   role: string;
@@ -46,17 +48,111 @@ export interface CustomSection {
  * the content lines for resumes authored before those fields existed.
  */
 export function resolveProjectFromSection(s: CustomSection): { url: string; label: string; bullets: string[] } {
-  const lines = (s.content ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
-  let url = (s.link ?? "").trim();
+  const lines = (s.content ?? "").split("\n").map((line) => line.trim()).filter(Boolean);
+  let url = linkParts(s.link)?.href ?? "";
   const bullets: string[] = [];
   for (const line of lines) {
-    if (!url && /^(https?:\/\/|www\.|github\.com\/)/i.test(line)) {
-      url = line;
+    const legacyUrl = s.link === undefined && !url && /^(https?:\/\/|www\.|github\.com\/)/i.test(line)
+      ? linkParts(line)?.href
+      : undefined;
+    if (legacyUrl) {
+      url = legacyUrl;
     } else {
-      bullets.push(line);
+      const bullet = projectBullet(line);
+      if (bullet) bullets.push(bullet);
     }
   }
   return { url, label: (s.linkLabel ?? "").trim(), bullets };
+}
+
+function projectBullet(line: string): string {
+  return line.trim().replace(/^(?:[-*•]|\d+\.)\s+/, "").trim();
+}
+
+function optionalText(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function records(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object" && !Array.isArray(item)))
+    : [];
+}
+
+function structuredProjectToSection(project: Record<string, unknown>): CustomSection {
+  const details = Array.isArray(project.bullets)
+    ? project.bullets.filter((bullet): bullet is string => typeof bullet === "string").join("\n")
+    : optionalText(project.bullets);
+  const link = project.link && typeof project.link === "object"
+    ? project.link as Record<string, unknown>
+    : {};
+  return {
+    title: optionalText(project.title) ?? optionalText(project.name) ?? "",
+    content: details?.trim() ? details : optionalText(project.description) ?? "",
+    link: optionalText(project.link) ?? optionalText(link.url) ?? optionalText(link.link) ?? optionalText(project.url),
+    linkLabel: optionalText(link.label) ?? optionalText(project.link_label),
+  };
+}
+
+function projectTitle(section: CustomSection): string {
+  return section.title?.trim() || "Project";
+}
+
+function hasProjectContent(section: CustomSection): boolean {
+  const { url, bullets } = resolveProjectFromSection(section);
+  return Boolean(section.title?.trim() || url || bullets.length);
+}
+
+export function readProjectSections(custom: ResumeContent["custom"]): CustomSection[] {
+  const sections = records(custom.sections).map((section): CustomSection => ({
+    title: optionalText(section.title) ?? "",
+    content: optionalText(section.content) ?? "",
+    link: optionalText(section.link),
+    linkLabel: optionalText(section.linkLabel),
+  })).filter(hasProjectContent);
+  const projects = records(custom.projects).map(structuredProjectToSection).filter(hasProjectContent);
+  const used = new Set<CustomSection>();
+  const merged = sections.map((section) => {
+    const title = projectTitle(section).toLowerCase();
+    const original = resolveProjectFromSection(section);
+    const candidates = projects.filter((project) =>
+      !used.has(project) && projectTitle(project).toLowerCase() === title);
+    const match = candidates.find((project) => resolveProjectFromSection(project).url === original.url)
+      ?? (candidates.length === 1 && (!original.url || !resolveProjectFromSection(candidates[0]).url)
+        ? candidates[0]
+        : undefined);
+    if (!match) return section;
+
+    used.add(match);
+    const mirrored = resolveProjectFromSection(match);
+    const bullets = new Set(original.bullets);
+    const extra = mirrored.bullets.filter((bullet) => !bullets.has(bullet));
+    return {
+      ...section,
+      content: extra.length ? [section.content, ...extra].filter(Boolean).join("\n") : section.content,
+      link: section.link ?? (original.url ? undefined : match.link),
+      linkLabel: section.linkLabel ?? match.linkLabel,
+    };
+  });
+  return [...merged, ...projects.filter((project) => !used.has(project))];
+}
+
+export function toTemplateProjects(sections: CustomSection[]): ProjectItem[] {
+  return sections.filter(hasProjectContent).map((section) => {
+    const { url, label, bullets } = resolveProjectFromSection(section);
+    return { title: projectTitle(section), link: url ? { url, label: label || undefined } : undefined, bullets };
+  });
+}
+
+export function projectSectionsToApi(sections: CustomSection[]) {
+  const meaningful = sections.filter(hasProjectContent);
+  return {
+    sections: meaningful,
+    projects: meaningful.map((section) => {
+      const { url, label, bullets } = resolveProjectFromSection(section);
+      return { title: projectTitle(section), link: url, link_label: label || undefined, bullets };
+    }),
+  };
 }
 
 export interface ResumeData {
@@ -185,41 +281,7 @@ export function mapContentToLocal(content: ResumeContent, emptyResume: ResumeDat
   const job = (content.job_description ?? {}) as Record<string, string>;
   const custom = (content.custom ?? {}) as Record<string, unknown>;
 
-  const backendSections = custom.sections;
-  const backendProjects = (custom as { projects?: unknown }).projects;
-
-  const customSectionsFromBackend =
-    Array.isArray(backendSections)
-      ? (backendSections as Record<string, unknown>[]).map((s) => ({
-          title: typeof s?.title === "string" ? s.title : "",
-          content: typeof s?.content === "string" ? s.content : "",
-        }))
-      : [];
-
-  const customSectionsFromProjects =
-    Array.isArray(backendProjects) && customSectionsFromBackend.length === 0
-      ? (backendProjects as Record<string, unknown>[]).map((p) => {
-          const bullets = Array.isArray(p?.bullets) ? p.bullets : typeof p?.bullets === "string" ? [p.bullets] : [];
-          const rawLink = (p as { link?: unknown }).link;
-          const url =
-            typeof rawLink === "string"
-              ? rawLink
-              : rawLink && typeof rawLink === "object"
-                ? String((rawLink as Record<string, unknown>).url ?? "")
-                : "";
-          const label =
-            (rawLink && typeof rawLink === "object" ? String((rawLink as Record<string, unknown>).label ?? "") : "") ||
-            (typeof (p as { link_label?: unknown }).link_label === "string" ? String((p as { link_label?: unknown }).link_label) : "");
-          return {
-            title: typeof p?.title === "string" ? p.title : "Project",
-            content: bullets.map((b) => String(b)).join("\n"),
-            link: url || undefined,
-            linkLabel: label || undefined,
-          };
-        })
-      : [];
-
-  const customSections = customSectionsFromBackend.length > 0 ? customSectionsFromBackend : customSectionsFromProjects;
+  const customSections = readProjectSections(custom);
 
   const backendSkillCategories = (custom as { skillCategories?: unknown }).skillCategories;
   const skillCategories = Array.isArray(backendSkillCategories)
@@ -367,12 +429,7 @@ export function toTemplateInput(resume: ResumeData): TemplateInput {
           endDate: e.endDate,
           bullets: e.bullets,
         })),
-      projects: resume.customSections
-        .filter((s) => s.title || s.content)
-        .map((s) => {
-          const { url, label, bullets } = resolveProjectFromSection(s);
-          return { title: s.title, link: label ? { url, label } : url, bullets };
-        }),
+      projects: toTemplateProjects(resume.customSections),
       education: resume.education
         .filter((e) => e.school || e.degree)
         .map((e) => ({

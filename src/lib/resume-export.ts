@@ -1,3 +1,4 @@
+import { blankResume, mapContentToLocal, toTemplateProjects } from "@/components/modal/resume-builder.helpers";
 import type { ResumeContent } from "@/services/resume";
 import { renderTemplate, type TemplateInput } from "@/lib/resume-templates";
 import { apiRequestBlob } from "@/lib/api";
@@ -22,27 +23,6 @@ function descriptionBullets(value: unknown): string[] {
     .filter(Boolean);
 }
 
-/**
- * Normalize a stored project link into the `{ url, label }` shape used across
- * the PDF and Word exports (feature 1.4 — "link display mode"). Accepts:
- *   - a bare URL string (legacy)            → { url, label: url }
- *   - an object { url, label }              → passed through
- *   - a separate `link_label` field         → used as the label for a string url
- */
-function normalizeLink(link: unknown, label?: unknown): { url: string; label?: string } | undefined {
-  if (link && typeof link === "object" && !Array.isArray(link)) {
-    const obj = link as Record<string, unknown>;
-    const url = text(obj.url) || text(obj.link);
-    if (!url) return undefined;
-    const lbl = text(obj.label) || text(label);
-    return { url, label: lbl || undefined };
-  }
-  const url = text(link);
-  if (!url) return undefined;
-  const lbl = text(label);
-  return { url, label: lbl || undefined };
-}
-
 export function resumeContentToTemplateInput(content: ResumeContent, fallbackName = "Resume"): TemplateInput {
   const info = record(content.info);
   const custom = record(content.custom);
@@ -57,7 +37,6 @@ export function resumeContentToTemplateInput(content: ResumeContent, fallbackNam
     })
     .filter((item) => item.category && item.skills.length);
   const flatSkills = textList(content.skills);
-  const rawProjects = Array.isArray(custom.projects) ? custom.projects : [];
 
   return {
     candidate_info: {
@@ -80,14 +59,7 @@ export function resumeContentToTemplateInput(content: ResumeContent, fallbackNam
           bullets: descriptionBullets(item.description),
         }))
         .filter((item) => item.role || item.company || item.bullets.length),
-      projects: rawProjects
-        .map(record)
-        .map((item) => ({
-          title: text(item.title) || "Project",
-          link: normalizeLink(item.link, item.link_label),
-          bullets: textList(item.bullets).length ? textList(item.bullets) : descriptionBullets(item.description),
-        }))
-        .filter((item) => item.title || item.bullets.length),
+      projects: toTemplateProjects(mapContentToLocal(content, blankResume).customSections),
       education: content.education
         .map(record)
         .map((item) => ({

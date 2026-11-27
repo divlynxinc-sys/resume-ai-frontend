@@ -85,7 +85,7 @@ export const resumeService = {
 
   patchContent: (id: number, section: string, body: unknown) =>
     api.patch<{ message: string; section: string; content: unknown }>(
-      `/resumes/${id}/content?section=${section}`,
+      `/resumes/${id}/content?section=${section}${section === "custom" ? "&merge_custom=true" : ""}`,
       body
     ),
 
