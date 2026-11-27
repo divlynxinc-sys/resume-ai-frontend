@@ -1,12 +1,26 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { getSafeRedirectPath } from "@/lib/navigation";
 import SiteNavbar from "../layout/site-navbar";
 
 export default function OnboardingScreen() {
-  const navigate = useNavigate();
+  const { completeOnboarding } = useAuth();
+  const [params] = useSearchParams();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const destination = getSafeRedirectPath(params.get("next"));
 
-  const proceed = () => {
-    localStorage.setItem("firstLoginShown", "true");
-    navigate("/dashboard");
+  const proceed = async () => {
+    setError("");
+    setSaving(true);
+    try {
+      await completeOnboarding();
+    } catch {
+      setError("Could not save your onboarding progress. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -29,15 +43,18 @@ export default function OnboardingScreen() {
                 <li className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">Visit the Help Center for tutorials and FAQs.</li>
               </ul>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <button onClick={proceed} className="rounded-xl bg-[oklch(0.488_0.243_264.376)] px-5 py-2 text-white font-medium hover:bg-[oklch(0.488_0.243_264.376)/90]">Continue to Dashboard</button>
-                <button onClick={proceed} className="rounded-xl border border-[var(--app-border)] px-5 py-2 text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] hover:bg-[var(--app-surface)]">Skip for now</button>
+                <button disabled={saving} onClick={proceed} className="rounded-xl bg-[var(--btn-primary-bg)] px-5 py-2 font-medium text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] disabled:opacity-50">
+                  {saving ? "Saving…" : destination === "/dashboard" ? "Continue to Dashboard" : "Continue"}
+                </button>
+                <button disabled={saving} onClick={proceed} className="rounded-xl border border-[var(--app-border)] px-5 py-2 text-[var(--app-fg-muted)] hover:text-[var(--app-fg)] hover:bg-[var(--app-surface)] disabled:opacity-50">Skip for now</button>
               </div>
+              {error && <p role="alert" className="mt-3 text-sm text-[var(--tone-reject)]">{error}</p>}
             </div>
           </div>
         </section>
 
         <section className="mt-10 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6">
-          <div className="text-[var(--app-fg-muted)] text-sm">Prefer a guided setup? Explore <Link to="/user-details" className="text-cyan-300 hover:text-white">User Details</Link> to fill profile info.</div>
+          <div className="text-[var(--app-fg-muted)] text-sm">Prefer a guided setup? Explore <Link to="/user-details" state={{ fromOnboarding: true }} className="text-[var(--accent-text)] hover:underline">User Details</Link> to fill profile info.</div>
         </section>
       </main>
     </div>

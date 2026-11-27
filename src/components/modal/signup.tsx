@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { ArrowLeft, Eye, EyeOff, Check, X, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -333,11 +333,9 @@ function OtpVerification({
 
 export default function Signup() {
   const { signup, googleLogin } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const requestedNextPath = getSafeRedirectPath(searchParams.get("next"), "");
-  const authSuccessPath = requestedNextPath || "/dashboard";
 
   const handleGoogleSuccess = async (accessToken: string) => {
     setError("");
@@ -349,7 +347,6 @@ export default function Signup() {
     try {
       const { is_new_user } = await googleLogin(accessToken, turnstileToken);
       showToast(is_new_user ? "Account created successfully!" : "Logged in successfully!");
-      navigate(authSuccessPath);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Google signup failed.");
       showToast(msg, "error");
@@ -407,7 +404,6 @@ export default function Signup() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       await signup(fullName, email, password);
       showToast("Account created successfully!");
-      navigate(authSuccessPath);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Signup failed.");
       showToast(msg, "error");

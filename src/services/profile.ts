@@ -10,6 +10,7 @@ export interface UserProfile {
   linkedin_url: string | null;
   portfolio_url: string | null;
   credits_remaining: number;
+  onboarding_completed?: boolean;
 }
 
 export interface UpdateProfilePayload {
@@ -28,6 +29,7 @@ export interface ChangePasswordPayload {
 
 export const profileService = {
   getMe: () => api.get<UserProfile>("/profile/me"),
+  completeOnboarding: () => api.post<UserProfile>("/profile/onboarding/complete"),
   updateMe: (data: UpdateProfilePayload) => api.patch<UserProfile>("/profile/me", data),
   changePassword: (data: ChangePasswordPayload) =>
     api.post<UserProfile>("/profile/change-password", data),
