@@ -70,6 +70,8 @@ const SESSION_ENDPOINTS = new Set([
   "/auth/login/otp/start",
   "/auth/login/otp/verify",
   "/auth/signup",
+  "/auth/signup/send-otp",
+  "/auth/signup/verify-otp",
   "/auth/google",
   "/auth/refresh",
 ]);
@@ -244,8 +246,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
         : typeof data?.detail?.message === "string"
         ? data.detail.message
         : fallbackMessage;
-    const genericErr = new Error(msg) as Error & { status?: number };
+    const genericErr = new Error(msg) as Error & { status?: number; detail?: unknown };
     genericErr.status = res.status;
+    genericErr.detail = data?.detail;
     throw genericErr;
   }
 
