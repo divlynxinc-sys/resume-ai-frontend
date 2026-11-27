@@ -17,6 +17,13 @@ export interface ResumeContent {
   custom: Record<string, unknown>;
 }
 
+export interface ResumeImportReview {
+  content: ResumeContent;
+  warnings: { code: string; section: string; message: string }[];
+  unassigned: { section: string; text: string }[];
+  source_text: string;
+}
+
 export interface Resume {
   id: number;
   title: string;
@@ -50,8 +57,8 @@ export const resumeService = {
 
   get: (id: number) => api.get<Resume>(`/resumes/${id}`),
 
-  create: (data: { title: string; template_id?: number | null }) =>
-    api.post<Resume>(`/resumes?mode=scratch`, { ...data, content: null }),
+  create: (data: { title: string; template_id?: number | null; content?: ResumeContent; import_request_id?: string }) =>
+    api.post<Resume>("/resumes?mode=scratch", { content: null, ...data }),
 
   update: (id: number, data: Partial<Pick<Resume, "title" | "template_id" | "status" | "content">>) =>
     api.patch<Resume>(`/resumes/${id}`, data),
@@ -78,6 +85,12 @@ export const resumeService = {
     const fd = new FormData();
     fd.append("file", file);
     return api.post<ResumeContent>("/resumes/parse-upload", fd);
+  },
+
+  reviewUpload: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post<ResumeImportReview>("/resumes/parse-upload?include_review=true", fd);
   },
 
   getContent: (id: number, section: string) =>
