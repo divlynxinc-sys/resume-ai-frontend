@@ -11,6 +11,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
+import { publicPaths } from "@/lib/public-routes";
 
 // ─── Lazy-load every page ─────────────────────────────────────────────────────
 const LandingPage        = lazy(() => import("./components/modal/landing-page"));
@@ -137,37 +138,37 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
   // Public – always accessible
-  { path: "/",               element: <Page><LandingPage /></Page> },
+  { path: publicPaths.home, element: <Page><LandingPage /></Page> },
   // Public content surface. These are ALSO emitted as static HTML by
   // scripts/prerender.mjs, because AI crawlers (GPTBot, ClaudeBot,
   // PerplexityBot) fetch JS but never execute it — to them a lazy() route is a
   // blank page. Vercel serves the prerendered file from the filesystem before
   // the SPA rewrite in vercel.json ever applies; React then mounts over it.
-  { path: "/blog",           element: <Page><BlogScreen /></Page> },
-  { path: "/blog/:slug",     element: <Page><BlogPostScreen /></Page> },
+  { path: publicPaths.blog, element: <Page><BlogScreen /></Page> },
+  { path: publicPaths.blog + "/:slug", element: <Page><BlogPostScreen /></Page> },
   // Free tool. DELIBERATELY ungated — no auth, no backend, no LLM call. It runs
   // entirely client-side (lib/ats-check.ts + lib/resume-extract.ts), which is what
   // lets us give the result away without a signup wall. The whole point of it.
-  { path: "/ats-checker",    element: <Page><AtsCheckerScreen /></Page> },
-  { path: "/pricing",        element: <Page><PricingScreen /></Page> },
-  { path: "/terms",          element: <Page><TermsScreen /></Page> },
-  { path: "/privacy",        element: <Page><PrivacyScreen /></Page> },
-  { path: "/cookie-policy",  element: <Page><CookiePolicyScreen /></Page> },
-  { path: "/security",       element: <Page><SecurityScreen /></Page> },
-  { path: "/enterprise",     element: <Page><EnterpriseScreen /></Page> },
-  { path: "/faq",            element: <Page><FAQScreen /></Page> },
-  { path: "/forgot-password",element: <Page><ForgotPassword /></Page> },
+  { path: publicPaths.atsChecker, element: <Page><AtsCheckerScreen /></Page> },
+  { path: publicPaths.pricing, element: <Page><PricingScreen /></Page> },
+  { path: publicPaths.terms, element: <Page><TermsScreen /></Page> },
+  { path: publicPaths.privacy, element: <Page><PrivacyScreen /></Page> },
+  { path: publicPaths.cookiePolicy, element: <Page><CookiePolicyScreen /></Page> },
+  { path: publicPaths.security, element: <Page><SecurityScreen /></Page> },
+  { path: publicPaths.enterprise, element: <Page><EnterpriseScreen /></Page> },
+  { path: publicPaths.faq, element: <Page><FAQScreen /></Page> },
+  { path: publicPaths.forgotPassword, element: <Page><ForgotPassword /></Page> },
   // Deliberately NOT PublicOnlyRoute: a logged-in user following a reset
   // link from their email must still be able to reach this page, not get
   // bounced to the dashboard.
-  { path: "/reset-password", element: <Page><ResetPassword /></Page> },
+  { path: publicPaths.resetPassword, element: <Page><ResetPassword /></Page> },
 
   // Public-only (redirect authenticated users away)
   {
     element: <PublicOnlyRoute />,
     children: [
-      { path: "/login",  element: <Page><LoginScreen /></Page> },
-      { path: "/signup", element: <Page><Signup /></Page> },
+      { path: publicPaths.login, element: <Page><LoginScreen /></Page> },
+      { path: publicPaths.signup, element: <Page><Signup /></Page> },
     ],
   },
 
