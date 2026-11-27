@@ -67,8 +67,6 @@ function shouldRedirectToLogin() {
 // fail because of an unrelated stale refresh token.
 const SESSION_ENDPOINTS = new Set([
   "/auth/login",
-  "/auth/login/otp/start",
-  "/auth/login/otp/verify",
   "/auth/signup",
   "/auth/google",
   "/auth/refresh",
