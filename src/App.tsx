@@ -10,7 +10,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSafeRedirectPath, withNextParam } from "@/lib/navigation";
+import { getSafeRedirectPath, onboardingPath, withNextParam } from "@/lib/navigation";
 
 // ─── Lazy-load every page ─────────────────────────────────────────────────────
 const LandingPage        = lazy(() => import("./components/modal/landing-page"));
@@ -107,8 +107,11 @@ function RootLayout() {
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 function PrivateRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const pathname = location.pathname.toLowerCase().replace(/\/+$/, "");
+  const requested = location.pathname + location.search + location.hash;
 
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) {
@@ -116,15 +119,29 @@ function PrivateRoute() {
     return <Navigate to={withNextParam("/login", next)} replace />;
   }
 
+  if (pathname === "/onboarding") {
+    return user?.onboarding_completed === false
+      ? <Outlet />
+      : <Navigate to={getSafeRedirectPath(searchParams.get("next"))} replace />;
+  }
+  const guidedSetup = pathname === "/user-details" && location.state?.fromOnboarding === true;
+  if (user?.onboarding_completed === false && !guidedSetup) {
+    return <Navigate to={onboardingPath(requested)} replace />;
+  }
+
   return <Outlet />;
 }
 
 function PublicOnlyRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
 
   if (isLoading) return <PageLoader />;
-  if (isAuthenticated) return <Navigate to={getSafeRedirectPath(searchParams.get("next"))} replace />;
+  if (isAuthenticated) {
+    const next = searchParams.get("next");
+    const destination = user?.onboarding_completed === false ? onboardingPath(next) : getSafeRedirectPath(next);
+    return <Navigate to={destination} replace />;
+  }
   return <Outlet />;
 }
 

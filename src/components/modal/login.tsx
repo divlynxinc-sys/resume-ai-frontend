@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode, FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -71,11 +71,8 @@ export default function LoginScreen() {
   const [turnstileKey, setTurnstileKey] = useState(0);
 
   const { login, googleLogin, refreshUser } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextPath = getSafeRedirectPath(searchParams.get("next"), "");
-  const defaultPath = () => (localStorage.getItem("firstLoginShown") ? "/dashboard" : "/onboarding");
-  const authSuccessPath = () => nextPath || defaultPath();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -87,7 +84,6 @@ export default function LoginScreen() {
       setStatus("google");
       try {
         await googleLogin(tokenResponse.access_token, turnstileToken);
-        navigate(authSuccessPath());
       } catch (err: unknown) {
         setError(getErrorMessage(err, "Google login failed"));
         setTurnstileToken(null);
@@ -141,11 +137,9 @@ export default function LoginScreen() {
         localStorage.setItem("accessToken", "dev-bypass-token");
         localStorage.setItem("refreshToken", "dev-bypass-refresh");
         await refreshUser();
-        navigate(authSuccessPath());
         return;
       }
       await login(normalizedEmail, password, turnstileToken);
-      navigate(authSuccessPath());
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Login failed."));
       setTurnstileToken(null);
