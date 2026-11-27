@@ -16,6 +16,7 @@ import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
+  normalizeExperienceBullets,
   resolveProjectFromSection,
   readResumeDraft,
   writeResumeDraft,
@@ -137,9 +138,9 @@ function AtsScoreProgress({ score }: { score: number }) {
 }
 
 function calculateLiveAtsEstimate(resume: ResumeData): LiveAtsEstimate {
-  const experiences = resume.experiences.filter((item) =>
-    Boolean(item.role.trim() || item.company.trim() || item.bullets.some((bullet) => bullet.trim()))
-  );
+  const experiences = resume.experiences
+    .map((item) => ({ ...item, bullets: normalizeExperienceBullets(item.bullets) }))
+    .filter((item) => item.role.trim() || item.company.trim() || item.bullets.length);
   const projects = resume.customSections.filter((item) =>
     Boolean(item.title.trim() || item.content.trim())
   );
@@ -200,7 +201,7 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
           start_date: e.startDate ?? "",
           end_date: e.endDate ?? "",
           location: e.location ?? "",
-          description: e.bullets.join("\n"),
+          description: normalizeExperienceBullets(e.bullets).join("\n"),
         })),
       };
     case "education":
@@ -467,7 +468,7 @@ function ExperienceForm({ resume, setResume }: { resume: ResumeData; setResume: 
               <Label>Highlights (one per line)</Label>
               <TextArea
                 value={exp.bullets.join("\n")}
-                onChange={(v) => updateExp(idx, { bullets: v.split("\n").map((t) => t.trim()).filter(Boolean) })}
+                onChange={(v) => updateExp(idx, { bullets: v.split("\n") })}
                 rows={5}
               />
             </div>
@@ -701,7 +702,7 @@ function ProjectsForm({ resume, setResume }: { resume: ResumeData; setResume: (r
 
 function hasResumeContent(r: ResumeData): boolean {
   const hasExp = r.experiences.some(
-    (e) => e.role || e.company || e.bullets.length > 0
+    (e) => e.role || e.company || e.bullets.some((bullet) => bullet.trim())
   );
   const hasEdu = r.education.some((e) => e.school || e.degree);
   return Boolean(

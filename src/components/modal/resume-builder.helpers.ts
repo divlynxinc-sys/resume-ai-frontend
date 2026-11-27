@@ -15,6 +15,10 @@ export interface Experience {
   bullets: string[];
 }
 
+export function normalizeExperienceBullets(lines: string[]): string[] {
+  return lines.map((line) => line.trim()).filter(Boolean);
+}
+
 export interface Education {
   school: string;
   degree?: string;
@@ -305,7 +309,7 @@ export function resumeDataToPlainText(r: ResumeData): string {
     lines.push("", "Experience");
     for (const e of r.experiences) {
       lines.push(`${e.role} — ${e.company}${e.location ? `, ${e.location}` : ""} (${e.startDate || "?"} – ${e.endDate || "Present"})`);
-      lines.push(...e.bullets.map((b) => `• ${b}`));
+      lines.push(...normalizeExperienceBullets(e.bullets).map((b) => `• ${b}`));
     }
   }
   if (r.education.length) {
@@ -358,15 +362,15 @@ export function toTemplateInput(resume: ResumeData): TemplateInput {
     resume: {
       summary: resume.summary,
       experiences: resume.experiences
-        .filter((e) => e.role || e.company || e.bullets.length)
         .map((e) => ({
           role: e.role,
           company: e.company,
           location: e.location,
           startDate: e.startDate ?? "",
           endDate: e.endDate,
-          bullets: e.bullets,
-        })),
+          bullets: normalizeExperienceBullets(e.bullets),
+        }))
+        .filter((e) => e.role || e.company || e.bullets.length),
       projects: resume.customSections
         .filter((s) => s.title || s.content)
         .map((s) => {
