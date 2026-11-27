@@ -1,3 +1,6 @@
+import { withNextParam } from "./navigation";
+import { isPublicAppPath } from "./public-routes";
+
 // Production always uses Vercel's same-origin proxy. This deliberately ignores
 // a stale VITE_API_URL deployment variable, which previously sent browsers
 // directly to an old Railway hostname and caused CORS/DNS "Failed to fetch"
@@ -42,24 +45,7 @@ function getRefreshToken() {
   return localStorage.getItem("refreshToken");
 }
 
-const PUBLIC_ROUTES = new Set([
-  "/",
-  "/pricing",
-  "/terms",
-  "/privacy",
-  "/cookie-policy",
-  "/security",
-  "/enterprise",
-  "/faq",
-  "/forgot-password",
-  "/login",
-  "/signup",
-]);
-
-function shouldRedirectToLogin() {
-  if (typeof window === "undefined") return false;
-  return !PUBLIC_ROUTES.has(window.location.pathname);
-}
+const PASSWORD_RECOVERY_ENDPOINTS = new Set(["/auth/forgot-password", "/auth/reset-password"]);
 
 // A 401 from an endpoint that establishes or refreshes a session is an auth
 // result (for example, bad credentials), not an expired-session signal. Trying
@@ -72,6 +58,7 @@ const SESSION_ENDPOINTS = new Set([
   "/auth/signup",
   "/auth/google",
   "/auth/refresh",
+  ...PASSWORD_RECOVERY_ENDPOINTS,
 ]);
 
 function shouldAttemptRefresh(path: string) {
@@ -98,32 +85,51 @@ export function parseErrorDetail(data: unknown, status: number): string {
   return typeof message === "string" ? message : fallback;
 }
 
-async function attemptRefresh(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
+async function attemptRefresh(refreshToken: string) {
   try {
     const res = await fetchApi("/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
-    if (!res.ok) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      return null;
-    }
-    const data = await res.json();
-    localStorage.setItem("accessToken", data.access_token);
-    localStorage.setItem("refreshToken", data.refresh_token);
-    return data.access_token as string;
+    if (!res.ok) return null;
+    const data = await res.json() as { access_token?: unknown; refresh_token?: unknown };
+    if (typeof data.access_token !== "string" || typeof data.refresh_token !== "string") return null;
+    return { accessToken: data.access_token, refreshToken: data.refresh_token };
   } catch {
     return null;
   }
 }
 
+async function recoverSession(failedAccessToken: string | null): Promise<string> {
+  const currentAccess = getToken();
+  if (currentAccess && currentAccess !== failedAccessToken) return currentAccess;
+
+  const refreshToken = getRefreshToken();
+  const replacement = refreshToken ? await attemptRefresh(refreshToken) : null;
+  const latestAccess = getToken();
+  if (latestAccess !== currentAccess || getRefreshToken() !== refreshToken) {
+    if (latestAccess) return latestAccess;
+  } else if (replacement) {
+    localStorage.setItem("accessToken", replacement.accessToken);
+    localStorage.setItem("refreshToken", replacement.refreshToken);
+    return replacement.accessToken;
+  } else {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  }
+
+  if (typeof window !== "undefined" && !isPublicAppPath(window.location.pathname)) {
+    const { pathname, search, hash } = window.location;
+    window.location.href = withNextParam("/login", pathname + search + hash);
+  }
+  throw new Error("Session expired. Please log in again.");
+}
+
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = PASSWORD_RECOVERY_ENDPOINTS.has(path) ? null : getToken();
   // Dev bypass — no network calls while DB integration is pending
-  if (localStorage.getItem("accessToken") === "dev-bypass-token") {
+  if (token === "dev-bypass-token") {
     throw new Error("DEV_BYPASS: backend not connected");
   }
 
@@ -134,7 +140,6 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   };
   if (!isFormData) headers["Content-Type"] = "application/json";
 
-  const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   let res = await fetchApi(path, { ...options, headers });
@@ -145,18 +150,8 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   }
 
   if (res.status === 401 && shouldAttemptRefresh(path)) {
-    const newToken = await attemptRefresh();
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`;
-      res = await fetchApi(path, { ...options, headers });
-    } else {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      if (shouldRedirectToLogin()) {
-        window.location.href = "/login";
-      }
-      throw new Error("Session expired. Please log in again.");
-    }
+    headers["Authorization"] = `Bearer ${await recoverSession(token)}`;
+    res = await fetchApi(path, { ...options, headers });
   }
 
   if (res.status === 204) return undefined as T;
@@ -273,16 +268,8 @@ export async function apiRequestBlob(path: string, body: unknown, options: Reque
   let res = await fetch(`${BASE_URL}${path}`, init);
 
   if (res.status === 401) {
-    const newToken = await attemptRefresh();
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`;
-      res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
-    } else {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      if (shouldRedirectToLogin()) window.location.href = "/login";
-      throw new Error("Session expired. Please log in again.");
-    }
+    headers["Authorization"] = `Bearer ${await recoverSession(token)}`;
+    res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
   }
 
   if (!res.ok) {

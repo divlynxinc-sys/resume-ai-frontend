@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Eye, EyeOff, Lock, XCircle } from "lucide-reac
 import lightLogo from "../../assets/Logo-02.png";
 import darkLogo from "../../assets/Logo-05.png";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/auth";
 
 // Same error for a missing, malformed, expired or already-used token -- never
@@ -14,9 +15,9 @@ const GENERIC_LINK_ERROR = "This link is invalid or has expired. Request a new o
 
 export default function ResetPasswordScreen() {
   const { theme } = useTheme();
+  const { clearLocalSession } = useAuth();
   const [searchParams] = useSearchParams();
-  const [token, setToken] = useState<string | null>(null);
-  const [linkChecked, setLinkChecked] = useState(false);
+  const [token] = useState(() => searchParams.get("token"));
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,14 +28,11 @@ export default function ResetPasswordScreen() {
   // the address bar, browser history, or get accidentally shared via a
   // screenshot/copied link after the page has loaded.
   useEffect(() => {
-    const raw = searchParams.get("token");
-    setToken(raw);
-    setLinkChecked(true);
-    if (raw) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("token")) return;
+    url.searchParams.delete("token");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [token]);
 
   const validate = () => {
     if (newPassword.length < 8 || newPassword.length > 128) {
@@ -61,6 +59,7 @@ export default function ResetPasswordScreen() {
     setStatus("loading");
     try {
       await authService.resetPassword(token, newPassword);
+      clearLocalSession();
       setStatus("done");
     } catch {
       setError(GENERIC_LINK_ERROR);
@@ -68,7 +67,7 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  const showMissingTokenError = linkChecked && !token;
+  const showMissingTokenError = !token;
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-[var(--app-bg)] text-[var(--app-fg)]">

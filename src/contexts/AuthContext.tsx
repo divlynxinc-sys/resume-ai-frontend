@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import { authService, profileService } from "@/services";
@@ -17,6 +18,7 @@ interface AuthContextValue {
   signup: (name: string, email: string, password: string) => Promise<void>;
   googleLogin: (credential: string, turnstileToken: string) => Promise<{ is_new_user: boolean }>;
   logout: () => Promise<void>;
+  clearLocalSession: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -25,6 +27,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const localSessionVersion = useRef(0);
+
+  const clearLocalSession = useCallback(() => {
+    localSessionVersion.current += 1;
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("polar-reconciled");
+    setUser(null);
+  }, []);
 
   // Temporary dev bypass — remove once DB integration is live
   const DEV_BYPASS_TOKEN = "dev-bypass-token";
@@ -41,15 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = useCallback(async () => {
+    const version = localSessionVersion.current;
     if (localStorage.getItem("accessToken") === DEV_BYPASS_TOKEN) {
       setUser(DEV_USER);
       return;
     }
     try {
       const profile = await profileService.getMe();
-      setUser(profile);
+      if (version === localSessionVersion.current) setUser(profile);
     } catch {
-      setUser(null);
+      if (version === localSessionVersion.current) setUser(null);
     }
   }, []);
 
@@ -106,15 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore – still clear local state
     }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    clearLocalSession();
     sessionStorage.clear();
-    setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, signup, googleLogin, logout, refreshUser }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, signup, googleLogin, logout, clearLocalSession, refreshUser }}
     >
       {children}
     </AuthContext.Provider>
