@@ -16,7 +16,7 @@ import { JobDescriptionLinkPanel, JobDescriptionModeToggle } from "@/components/
 import {
   mapContentToLocal as mapContentToLocalImpl,
   toTemplateInput,
-  resolveProjectFromSection,
+  projectSectionsToApi,
   readResumeDraft,
   writeResumeDraft,
   blankResume,
@@ -230,30 +230,12 @@ function localToApiSection(tab: TabKey, resume: ResumeData): { section: string; 
         },
       };
     case "custom": {
-      // Backend AI adapter currently reads `custom.projects` (array of {title, link, bullets}).
-      // We treat any custom section whose title includes "project" as a project input for AI.
-      const sections = resume.customSections ?? [];
-      const projects = sections
-        .filter((sec) => (sec.title ?? "").toLowerCase().includes("project"))
-        .map((sec) => {
-          const { url, label, bullets: rawBullets } = resolveProjectFromSection(sec);
-          const bullets = rawBullets
-            .map((line) => line.replace(/^(\-|\*|•|\d+\.)\s*/g, "").trim())
-            .filter(Boolean);
-
-          return {
-            title: sec.title || "Project",
-            link: url,
-            link_label: label || undefined,
-            bullets,
-          };
-        });
-
+      const { sections, projects } = projectSectionsToApi(resume.customSections);
       return {
         section: "custom",
         body: {
           projects,
-          sections, // keep the raw structure for later features
+          sections,
           // Round-trip skill categories: the dedicated /skills endpoint only
           // accepts a flat string[], so we persist categories alongside custom.
           skillCategories: resume.skillCategories ?? [],

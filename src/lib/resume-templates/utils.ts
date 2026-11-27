@@ -50,10 +50,17 @@ export function linkParts(
 ): { href: string; text: string } | null {
   if (!link) return null;
   const url = (typeof link === 'string' ? link : link.url || '').trim();
-  if (!url) return null;
+  if (!url || /[\u0000-\u0020\u007f]/.test(url)) return null;
   const label = (typeof link === 'string' ? '' : (link.label || '')).trim();
-  const href = /^(https?:|mailto:)/i.test(url) ? url : `https://${url}`;
-  return { href, text: label || url };
+  if (/^mailto:/i.test(url)) return { href: url, text: label || url };
+  if (/^[a-z][\w+.-]*:/i.test(url) && !/^https?:\/\//i.test(url)) return null;
+  const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+  try {
+    const parsed = new URL(href);
+    return parsed.hostname ? { href, text: label || url } : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
